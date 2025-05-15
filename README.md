@@ -185,9 +185,22 @@ To get some ideas of what's possible, existing products and projects are examine
 
 # Beamforming Algorithms
 
+* Differential
+  - subtract rear-facing mic from forward-facing mic
+  - high off-axis rejection
+  - easy to implement, but not steerable
+
 * Delay-and-Sum
   - most fundamental and widely used technique for beamforming
-  - delays the signal from each mic by an amount defined by the desired "look direction"
+  - delay the signal from each mic by an amount defined by the desired "look direction"
+    * each mic has a given delay and all mics are summed together to steer the beam (on-axis response)
+  - typically done with linear array where 0deg angle is perpendicular to the array
+  - can increase gain of on-axis signals
+  - can attenuate off-axis signals (but very frequency-dependent)
+  - symmetric, 0deg and 180deg are equivalent
+  - can increase system SNR (AGWN sums to zero)
+    * e.g., can get 3dB SNR gain with every additional mic used
+    * however, lower SNR mics can get same SNR with fewer mics, or better SNR with same number of mics
   - pros
     * easy to implement in both time and frequency domains
     * low computation/memory cost, can be run in real time
@@ -210,6 +223,16 @@ To get some ideas of what's possible, existing products and projects are examine
   - sensitive to high background noise or reverberation in the sound scene
   - improve by pre-processing to separate direct components from the diffuse field
     * subspace separation has been shown to be effective
+  - more complex processing than simple D&S or Differential
+  - individual amplification and delay provided for each mic in the array
+    * preserves on-axis sensitivity and maximizes off-axis attenuation
+  - typically amplification and dealy are applied per-frequency at each mic
+    * either with an FIR filter or frequency-domain processing
+  - steer beam in Direction-of-Arrival (DoA)
+    * sensitive to errors in DoA estimation and multi-path signals
+
+* Linear Constraint Minimum Variance (LCMV)
+  - ?
 
 * Multi-Signal Classification (MUSIC)
   - subspace-based beamforming approach
@@ -250,22 +273,31 @@ To get some ideas of what's possible, existing products and projects are examine
   - unlike other spatial filtering approaches, doesn't require direct estimation of mic noise
   - extended to spherical harmonic domain for arbitrary combinations of beamformers
 
+* Generalized Sidelobe Canceler (GSC)
+  - ?
+
+* Frost Beamforming
+  - ?
+
 # Microphone Elements
 
-* sensiBel
-  - SBM100
-    * optical MEMS
-    * SNR (20-20KHz): 80 dBA
-      - >10dB (8x) better SNR than capacitive MEMS mics
-    * Saturation: 146 dBSPL
-    * THD: <0.5%
-    * Sensitivity: -46 dBFS (typ @ 1KHz)
-    * Dynamic Range: 132 dB
-    * Sample Rate: up to 192KHz
-    * Clock freq: 1.5-12MHz
-    * Digital Interface: PDM, I2S, 8-channel TDM
+* general characteristics
+  - higher SNR mics provide greater directionality than lower SNR ones
+  - ?
 
-* Knowles SPH0645LM4H-B
+### sensiBel SBM100
+  - optical MEMS
+  - SNR (20-20KHz): 80 dBA
+    * >10dB (8x) better SNR than capacitive MEMS mics
+  - Saturation: 146 dBSPL
+  - THD: <0.5%
+  - Sensitivity: -46 dBFS (typ @ 1KHz)
+  - Dynamic Range: 132 dB
+  - Sample Rate: up to 192KHz
+  - Clock freq: 1.5-12MHz
+  - Digital Interface: PDM, I2S, 8-channel TDM
+
+### Knowles SPH0645LM4H-B
   - digital MEMS
   - Power Supply: 1.8V (typ) <3.6V (max) @ 600uA (typ), <100mA (max)
   - Interface: I2S
@@ -280,7 +312,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - AOP: 10% THD @ 1KHZ, 120dBSPL
   - PSSR: 200mVpp sine @ 1KHz: -86dBA
 
-* InvenSense ICS-52000
+### InvenSense ICS-52000
   - digital MEMS
   - Bottom Ported
   - on-board ADC, decimation, filtering, signal conditioning
@@ -297,7 +329,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - Interface: 24b, twos complement, MSB first
     * each mic in daisy-chain emits in subsequent 32b slots
 
-* InvenSense ICS-43434
+### InvenSense ICS-43434
   - digital MEMS
   - Bottom Ported
   - on-board ADC, decimation, filtering, signal conditioning
@@ -318,7 +350,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - Noise Floor (20-20KHz, A-weighted RMS): -90 dBFS
   - Group Delay (sound input to digital output): 2/fs secs
 
-* InvenSense ICS-43432
+### InvenSense ICS-43432
   - Digital MEMS
   - Bottom Ported
   - on-board ADC, decimation, filtering, signal conditioning
@@ -347,7 +379,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - Group Delay (sound input to digital output): 2/fs secs
   - synchronize mics via WS signal
 
-* Infineon IM69D120
+### Infineon IM69D120
   - Digital MEMS
   - Dynamic Range: 95dBA
   - Distorion: <=1% @ up to 118dBSPL
@@ -374,7 +406,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - Fclk: 3.072MHz (typ)
   - startup time: 50ms
 
-* Solid State System 3SM222KMT1KA-P (aka 3SM222)
+### Solid State System 3SM222KMT1KA-P (aka 3SM222)
   - Digital MEMS
   - on-board pre-amp, ADC
   - Top Ported
@@ -398,7 +430,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - PSR+N: -80dBFS(A)
   - has low-power mode (different specs)
 
-* ST Micro MP23DB01HP
+### ST Micro MP23DB01HP
   - Digital MEMS
   - Bottom Ported
   - Pattern: omni
@@ -416,7 +448,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - AOP (94dBSPL @ 1KHz): 135dBSPL
   - PSR (100mVpp sine wave): -95dBFS
 
-* ST Micro MP34DT05-A
+### ST Micro MP34DT05-A
   - Digital MEMS
   - Top Ported
   - Pattern: omni
@@ -433,7 +465,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - THD (1KHz): 94dBSPL=0.2%, 110dBSPL=0.7%, 120dBSPL=6% (all typ)
   - Freq Response: 35-10KHz?
 
-* PUI Audio AMM-3738-B-R
+### PUI Audio AMM-3738-B-R
   - Analog MEMS
   - Pattern: omni
   - on-board pre-amp
@@ -446,7 +478,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - TDH (94dB 1KHz): 0.5%
   - AOP (1KHz 10% THD): 125dB
 
-* InvenSense (TDK) T3902
+### InvenSense (TDK) T3902
   - Digital MEMS
   - Bottom Ported
   - Pattern: omni
@@ -477,31 +509,6 @@ To get some ideas of what's possible, existing products and projects are examine
   - match audio input path dynamic range to ADCs
   - careful layout of audio front-end to ensure low noise
   - get ADCs that share common clock and (if multiple in a package) sample at the same point
-* types of Beamforming
-  - Delay-and-Sum (aka Phased-Array Processing)
-    * each mic has a given delay and all mics are summed together to steer the beam (on-axis response)
-    * typically done with linear array where 0deg angle is perpendicular to the array
-    * can increase gain of on-axis signals
-    * can attenuate off-axis signals (but very frequency-dependent)
-    * symmetric, 0deg and 180deg are equivalent
-    * can increase system SNR (AGWN sums to zero)
-      - e.g., can get 3dB SNR gain with every additional mic used
-        * however, lower SNR mics can get same SNR with fewer mics, or better SNR with same number of mics
-  - Differential
-    * subtract rear-facing mic from forward-facing mic
-    * high off-axis rejection
-  - Maximum Variance Distortionless Response (MVDR)
-    * more complex processing than simple D&S or Differential
-    * individual amplification and delay provided for each mic in the array
-      - preserves on-axis sensitivity and maximizes off-axis attenuation
-    * typically amplification and dealy are applied per-frequency at each mic
-      - either with an FIR filter or frequency-domain processing
-    * steer beam in Direction-of-Arrival (DoA)
-      - sensitive to errors in DoA estimation and multi-path signals
-    * higher SNR mics provide greater directionality than lower SNR ones
-  - Linear Constrain Minimum Variance (LCMV)
-  - Generalized Sidelobe Canceler (GSC)
-  - Frost Beamforming
 * Advantages of low SNR mic in beamforming applications
   - https://audioxpress.com/article/microphone-array-beamforming-with-optical-mems-microphones
   - a better SNR mic can do better than multiple lesser SNR mics
