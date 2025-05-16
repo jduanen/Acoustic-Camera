@@ -29,6 +29,16 @@ To get some ideas of what's possible, existing products and projects are examine
 
 ## Commercial Beamforming Products
 
+* 16SoundsUSB
+  - https://github.com/introlab/16SoundsUSB
+  - also 8x mic version
+  - open HW, based on XMOS xCORE-200
+  - 2x Cirrus Logic CS5368 ADC
+  - CS2100 clock generator and clock muliplier/jitter-reduced freq synthesizer
+  - 8-96KHz sampling rates
+  - USB powered
+  - electret and MEMS mics connected to shielded RJ11 connectors
+
 * Audio Technica
   - https://www.audio-technica.com/en-us/atnd1061
   - ATND1061 beamforming ceiling array microphone
@@ -185,6 +195,14 @@ To get some ideas of what's possible, existing products and projects are examine
 
 # Beamforming Algorithms
 
+Below is a survey of some commonly used beamforming algorithms.
+
+To create an Acoustic Camera, we want to compute the power map of the sources in the field of view.
+Some of these algorithms are focused on steering the look direction of the array.  Beam-steering alone can be used to generate the desired power map by rastering the beam and accumulating a power map. This approach is slow and results in a map where the different regions are sampled at different points in time, leading to a less useful output.
+For this application, it's better to use an algorithm that generates a power map directly from each frame of sampled input data.
+
+### Beamforming Without Power-Map Generation
+
 * Differential
   - subtract rear-facing mic from forward-facing mic
   - high off-axis rejection
@@ -209,12 +227,7 @@ To get some ideas of what's possible, existing products and projects are examine
     * limited ability to distinguish between multiple closely-spaced sources
       - especially with a small array aperture or small number of mics
     * produces side lobe artifacts that can mask weaker sources
-
-* Plane Wave Decomposition (PWD)
-  - signal-independent beamformer for spherical mic arrays
-  - most commonly used in spherical harmonic domain
-    * decompose sound scene into individual spatial components -- aka Spherical Harmonics
-  - assumes plane-waves, so far-field only
+  - this talks about time-domain only, can also do this in the frequency domain
 
 * Minimum-Variance Distortionless Response (MVDR)
   - signal-dependent beamforming technique
@@ -232,7 +245,53 @@ To get some ideas of what's possible, existing products and projects are examine
     * sensitive to errors in DoA estimation and multi-path signals
 
 * Linear Constraint Minimum Variance (LCMV)
-  - ?
+  - widely used spatial filtering approach
+  - passes signals from specific directions or with certain properties
+    * minimizes interference and noise from all other directions
+  - objective is to minimize output power (variance) of the array signal
+    * subject to a set of linear constraints that
+      - preserve the desired signals
+      - suppress interference from specific directions
+  - linear constraints ensure that the beamformer maintains
+    * a specified response in terms of gain and phase
+      - for certain directions or for certain signals
+    * e.g., unity gain for the desired direction and null known interferers
+  - optimization problem
+    * constraints defined desired beam pattern
+      - e.g., main lobe direction, direction of nulls
+    * Covariance Matrix is estimated from sensor array input data
+    * computes the weights that minimize output power, while satisfying constraints
+  - can impose multiple constraints for complex beam patterns
+    * e.g., multiple main lobes/nulls
+  - minimizes unwanted signals while preserving desired sources
+
+* Generalized Side-Lobe Canceller (GSC)
+  - adaptive beamforming approach
+  - simpler to implement than LCMV, similar performance/function
+    * doesn't require matrix inversion
+  - splits input signals from array into two main paths
+    * Fixed (Quiescent) Beamformer Path
+      - pre-steer the array toward the desired signal direction (e.g., with D&S)
+    * Side-Lobe Cancelling Path
+      - use blocking matrix to remove the desired single, leaving the interference and noise
+      - remove this with an adaptive filter (e.g., LMS or RLS)
+  - subtracts the two paths
+    * cancels interference and noise, while preserving the signal from the main lobe
+  - better interference rejection than D&S
+  - computationally efficient for large arrays
+  - flexible and robust in dynamic noise environments
+
+* Frost Beamforming
+  - adaptive beamforming technique to enhance signal in the "look directions", whil minimizing noise and interference from other directions
+  - filter-and-sum: each mic has a delay stage (to steer the beam) followed by an FIR filter
+  - outputs of all FIR filters is summed to create the output
+  - adaptive FIR filters' weights are updated using a Constrained Least Mean Squares (CLMS) approach
+    * minimizes the MSE (output power)
+    * subject to the constraint that the signal from the look direction is unmodified
+  - works for wideband signals because the FIR filter can shape the frequency response for each channel
+  - better SNR and interference ratio (SNIR) than D&S
+
+### Beamforming With Power-Map Generation
 
 * Multi-Signal Classification (MUSIC)
   - subspace-based beamforming approach
@@ -266,18 +325,286 @@ To get some ideas of what's possible, existing products and projects are examine
   - iterative deconvolution: iteratively removes sources and refines the map
   - uses sources' spatial coherence to separate overlapping sources
 
+* Plane Wave Decomposition (PWD)
+  - signal-independent beamformer for spherical mic arrays
+  - most commonly used in spherical harmonic domain
+    * decompose sound scene into individual spatial components -- aka Spherical Harmonics
+  - assumes plane-waves, so far-field only
+  - represents complex wave field as a sum (or superposition) of plane waves characterized by a direction and amplitude
+  - used for reconstructing and manipulating sound fields measured by mic arrays
+  - Plane Wave: wave whose value at any instant is constant across any plane perpendicular to its direction of propagation
+  - Decomposition: any measured acoustic field can be expressed as the some of multiple plane waves arriving from different directions
+    * each plane wave is defined by its angle of incidence and frequency of content
+  - measured data from mic array is modeled as a linear combination of plane waves
+    * this is an inverse problem: given the array data, estimate the amplitudes and directions of the constituent plane waves
+  - decomposition algorithms include:
+    * D&S Beamforming: aligns and sums signals for different directions, scanning for plane wave components
+    * Regularized Inversion: uses constraints (e.g., L2 or L1 norms) to stabilize the solution and suppress noise/artifacts
+    * Spherical/Cylindrical Harmonics: for 3D analysis, field can be expanded in terms of spherical or cylindrical harmonics, which are related to plane wave decomposition
+  - result is a map or spectrum showing amplitude (and sometimes, phase) of plane waves as a function of direction and frequency
+  - accuracy and resolution of plane wave decomposition depend on array geometry and chosen regularization methods chosen to solve the inverse problem
+  - sparse decomposition methods (using L1 norm) can provide cleaner results with fewer artifacts
+    * especially in noisy or underdetermined scenarios
+
 * Cross-Pattern Coherence (CroPaC)
   - spatial-filtering beamforming technique
   - measures correlation between coincident beamformers
     * post-filters to suppress noise, interferers, and reverberation
   - unlike other spatial filtering approaches, doesn't require direct estimation of mic noise
   - extended to spherical harmonic domain for arbitrary combinations of beamformers
-
-* Generalized Sidelobe Canceler (GSC)
   - ?
 
-* Frost Beamforming
+* HR-CLEAN_SC
   - ?
+
+* COMET2
+  - gridless version of (HR-)CLEAN-SC are not as accurate as COMET2
+
+* Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS)
+  - uses linear system of equations, makes no assumptions
+    * N (equal to the number of grid points) equations and N unknowns
+  - full rank equations are solved with an iterative method
+  - noise radiated from a region of interest is determined by summing the mean-squared values over that region
+  - algorithm
+    * beamform over the source region to get the "dirty" map
+      - dirty map is measured sound power, blurred by the array's PSF
+    * model dirty map as a convolution of the true source distribution with the array's PSF
+      - dirty map (power measured at each grid point) = PSF matrix (how source at a location affects measurement at other locations) * True source strengths (unknowns to be solved for)
+    * solve this system of equations with an iterative non-negative least squares approach
+      - at each step, estimates source strengths that best explain the observed dirty map, given the array's PSF
+    * result is a "clean" map with improved spatial resolution and reduced side-lobes
+  - output map provides explicit source strength values
+    * not just relative levels like other methods
+  - computationally intensive, especially for large grids
+    * but provides superior performance for complex sound fields
+  - techniques have been developed to reduce the computation costs
+    * e.g., DAMAS2 and compressed grids
+  - developed after CLEAN deconvolution approach
+  - converges (very slowly) to the solution of CMF
+
+* Covariance Matrix Fitting (CMF)
+  - used to estimate source locations and strengths by fitting a modeled covariance matrix to the measured Cross-Spectral Matrix (CSM) obtained from the mic array
+  - assumes model for the spatial distribution of sources and computes theoretical covariance matrix for this model
+  - adjusts model parameters (e.g., source positions and powers) so that the modeled covariance matrix best matches the measured one
+    * typically done by minimizing a fitting error
+  - good for source location and quantification in low-/mid-frequencies
+  - comparable to methods like DAMAS and eigenvalue-based approaches
+  - particularly effective when the number of sources is limited and the array is high quality
+  - frequently used with regularization techniques like NNLS or LassoLars to improve robustness
+
+### ML-based Beamforming
+
+* shown to be better than conventional SVD-based methods, particularly in dynamic or complex environments
+* more adaptable to varying signal environments
+* Classification-Based Transfer Learning (CBTL) and Denoising-Based Transfer Learning (DBTL) are better than or equal to traditional blind beamforming across diverse conditions
+* ML methods like RL can speed up beam selection and reduce computational overhead
+* ML models (including CNNs) have high beam tracking accuracy, outperforming other approaches in realtime applications
+* generalize well after training with synthetic data and transfer learning
+
+* Models
+  - ?
+
+# Open-Source Acoustic Beamforming Software
+
+* List of tools for acoustic beamforming
+  - https://github.com/eac-ufsm/beamforming-tools
+
+* ACOSOLO: Acoustical Source Localization with Optimization Methods
+  - https://github.com/gilleschardon/acosolo
+  - optimization-based source localization implementations
+    * includes: CMF, Gridless, etc.
+  - implementations of optimization-/sparsity-based methods for source location
+    * Beamforming: maximum likelihood for one source
+    * CMF: optimized implementation
+    * Gridless methods: for conditional and unconditional models
+      - Conditional: estimation of powers of random sources
+      - Unconditional: estimation of amplitudes of deterministic sources
+    * Greedy localization of correlated sources
+    * maximum likelihood for localization of a source with asynchronous arrays
+  - several demos
+    * beamforming with syncrhonous/asynchronous arrays, using simulated data
+    * CMF with experimental data
+    * gridless source localization with experimental data
+    * localization of correlated sources with simulated data
+
+* Acoular: python package for acoustic beamforming
+  - https://github.com/acoular/acoular
+  - provides multiple algorithms, including deconvolution
+  - FOSS, started in 2006 as library for wind tunnel testing using mic arrays
+  - funded by DFG in 2024
+  - multi-channel signal processing
+  - simulation and analysis of moving audio sources
+  - generates synthetic data and supports training of ML models through Acoupipe
+  - GUI-based apps with SpectAcoular
+  - extensible, ~100 classes
+  - data acquisition, data import, time-domain linear/nonlinear filtering, spectrum estimation, array layout and mapping grids definition, spatial filtering (beamforming), time-/frequency-based deconvolution, inverse estimation methods, fixed/moving source data synthesis
+  - uses lazy execution (only compute results that are needed, when they are needed)
+    * important for pipelined operations on big datasets
+
+* AcouPipe: Python toolkit for acoustical source localization and characterization
+  - https://github.com/adku1173/acoupipe
+  - https://adku1173.github.io/acoupipe/
+  - used for training ML models
+  - started in 2021
+  - toolbox for generating unique acoustical source localization and characterization datasets
+    * for training of ML models
+  - supports distributed computation via Ray
+    * https://docs.ray.io/en/master/
+  - comes with two default datasets
+  - two default classes to generate mic array datasets
+    * DatasetSynthetic: fast and simple method using white noise, spatially stationary, anechoic conditions
+    * DatasetMIRACLE: large set of measured spatial room impulse responses in anechoic chamber
+      - from TU Berlin MIRACLE dataset and synthetic signals
+      - realistic and quasi-infinite dataset
+  - stores only input features for ML (not raw time-series data)
+
+* Arlpy: a few beamforming algorithms for underwater applications
+  - https://github.com/org-arl/arlpy
+  - https://arlpy.readthedocs.io/en/latest/
+  - tools for DSP, comms, beamforming and array processing, plotting, etc.
+
+* Augen: Amiet-Acoular Integration Module in Python
+  - https://github.com/eac-ufsm/augen
+  - https://www.researchgate.net/publication/363031873_Integracao_de_multiplas_toolboxes_para_aplicacao_em_beamforming_e_aeroacustica
+  - integration between Acoular and Amiet (aeroacoustics) Tools
+  - examples of spiral array response
+
+* Beamlib: library of acoustic beamforming algorithms from signals obtained from mic array
+  - https://gitlab.isae-supaero.fr/acoustic-beamforming/beamlib
+  - part of POLA3 project
+  - generation and evaluation of mic arrays
+  - includes implementations of D&S, DAMAS, and CLEAN-PSF/-SC methods
+  - implemented mic arrays: Regular Grid, Archimedean Spiral, Dougherty log-Spiral, Arcondoulis Array, Underbrink
+
+* Beamforming30: >30 beamforming algorithms in python
+  - https://github.com/huangzhenyu/beamforming/tree/master
+  - Chinese
+  - frequency-domain beamforming
+  - time-domain beamforming
+  - plots of comparisons of different methods
+
+* Fast beamforming in Python: fast and efficient beamforming notebooks in python
+  - https://github.com/schipp/fast_beamforming
+  - direct approach to cross-correlation beamforming fails for large problems
+    * especially when matrices become too large for memory
+  - use 'dask' to distribute computation across multiple machines
+
+* MUSIC: C package for acoustic source localization
+  - https://github.com/VarunPwr/Hydrophone
+  - ?
+
+* Open Embedded Audition System (ODAS)
+  - https://github.com/introlab/odas
+  - https://github.com/introlab/odas/wiki
+  - replaces ManyEars
+  - C library for sound source localization, tracking, separation, and post-filtering
+  - has GUI for visualization
+  - open source 8x and 16x USB arrays
+    * 
+    * https://github.com/introlab/16SoundsUSB
+  - 
+
+* Pyroomacoustics: python package for room acoustics and audio
+  - https://github.com/LCAV/pyroomacoustics
+  - https://www.researchgate.net/publication/320344643_Pyroomacoustics_A_Python_Package_for_Audio_Room_Simulation_and_Array_Processing_Algorithms
+  - supports DoA, DSB, simulation
+  - package for rapid development and testing of audio array processing algorithms
+  - main parts:
+    * O-O interface to simulation scenarios involving multiple sources and mics in 2D and 3D rooms
+    * fast C++ implementation of image source model and ray tracing for general polyhedral rooms to generate room impulse responses and simulation propagation between sources and mics
+    * reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single-channel denoising
+  - includes datasets from CMU ARCTIC, TIMIT, Google Speech Commands Dataset
+  - includes several examples
+
+* SpectAcoular: GUI on top of Acoular
+  - https://github.com/acoular/spectacoular
+  - started in 2019
+  - ?
+
+* vBeam: fast and differentiable beamformer for optimizing ultrasound imaging
+  - https://github.com/magnusdk/vbeam
+  - ?
+
+# Microphone Array Patterns
+
+The pattern of the microphone array used in acoustic camera applications can be 2D or 3D.
+
+The distribution of mics in an array influences the achievable spatial resolution (aka the beamwidth) and the Maximum Side-Lobe Levels (MSL) (which is a measure of the ability of the array to reject sources that are off-beam).  Deconvolution methods (e.g., DAMAS) attempt to remove the properties of the array from beamforming results, but in practice, the array properties remain important in the quality of the results that can be provided.
+
+One study (https://www.acoustics.asn.au/conference_proceedings/AAS2013/papers/p5.pdf) demonstrated that the Underbrink pattern outperforms other array patterns in both resolution and MSL (over the tested frequencies). This study showed that arrays based on multiple arms, with mics more evenly distributed over the array's area, tended to get the best resolution (with adequate MSLs for most of the area). Also, arrays with a high density of mics in the center of the array tended to get the best MSLs directly below the array, at the expense of array resolution and performance over a larger array area.
+
+In general, for a given pattern, more mics improve noise rejection and directionality, providing better spatial resolution and better SNR. However, there are diminishing returns for doubling the number of mics in an array, and there's an increase in cost that grows linearly with the number of mics.
+
+Irregular spacing is preferred to avoid spatial aliasing or side-lobe artifacts that come with uniform mic spacing.
+
+Mics have to be closely matched in sensitivity and frequency response. Mismatched mics can degrade beam performance and reduce the directionality of the array.
+
+TBD: look into spherical arrays
+
+### 2D Array Patterns
+
+* Regular Grid
+  - 2D grid with mics at intersections
+  - uniform spacing leads to predictable, but higher, side-lobe levels (artifacts)
+    * this is due to periodic gaps in spatial sampling
+    * this can mask weaker sources or create false/ghost sources
+  - beam width is consistent across directions but wider compared to spiral arrays
+    * this reduces resolution for closely spaced sources
+  - prone to spatial aliasing at high frequencies
+    * if mic spacing exceeds half of the wavelength -- violating Nyquist criterion
+  - best suited for narrowband or mid-frequency applications that need uniform coverage
+  - easier to construct than other geometries
+  - better suited for planar (as opposed to 3D) measurements
+
+* Archimedean Spiral
+  - radius increases linearly with angle
+    * 'r(theta) = a + b*theta'
+  - parameters: min radius, max radius, number of turns, number of mics
+  - mics are spaced so angular positions are evenly distributed along the whole spirale angle, and their radii increase linearly from the center outward
+  - simple, single-arm spiral layout, relatively even distribution of mics from center outward
+
+* Dougherty log-Spiral
+  - logarithmic spiral, where radius increases exponentially with the angle
+    * 'r(theta) = r_0*e^(y*theta)' where y is related to the spiral angle
+  - mics are placed at equal arc-lengths along the spiral
+    * not at equal angular intervals
+  - arc length between mics is kept constant
+    * results in denser distribution near the center and sparser at the edge
+  - better spatial sampling at the center
+    * improved performance for central sources and wideband applications
+  - provides >10dB side-lobe suppression at high frequencies
+
+* Arcondoulis Array
+  - modified spiral array that adjusts the "squash" of the spiral in the x and y directions
+    allows for elliptical or non-circular spiral shapes
+  - mic density can be increased at the center by adjusting design parameters
+  - parameters: min/max radii (r_0, r_max), spiral angle, number of mics, squash factors (e_x, e_y)
+    * squash factors control the stretching of the spiral in x and y dims
+  - can choose parameters that put more mics near the center, if so desired
+  - flexible design that can emphasize central density or overall coverage
+  - often used to improve main-/side-lobe characteristics for sources near the center of the array
+
+* Underbrink
+  - patented
+  - multi-arm logarithmic spiral array, several arms radiating from the center
+  - each arm is a log-spiral and mics are distributed along each arm
+  - parameters: min/max radii (r_0, r_max), spiral angle, number of mics, number of arms
+  - mics rotated equally around the origin
+    * more uniform distribution of mics across the array aperture -- especially the outer regions
+  - high spatial resolution and good side-lobe performance across a wide area
+    * suitable for both central and off-axis source localization
+  - considered best all-around performance among spiral arrays
+
+* Bruel&Kjaer Spiral
+  - patented
+  - designed to be easily assembled/disassembled
+  - two concentric hoops with mics located on spokes between the hoops
+  - spokes are placed at an angle to the inner hoop, and mics have a non-uniform spacing along the spoke
+  - parameters: number of spokes, number of mics per spoke, spoke angle, and distribution of mic locations along the spoke
+  - looks like spokes come off the inner hoop at a tangent 
+  - mics are distributed with the same spacing on each spoke
+
+### 3D Array Patterns
 
 # Microphone Elements
 
