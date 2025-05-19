@@ -7,6 +7,49 @@ An Acoustic Camera computes a power map of the sound scene that exists within a 
 Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
+## Use of Beamforming in Acoustic Cameras
+
+To create an Acoustic Camera, we want to compute the power map of the sources in the video camera's Field of View (FoV).
+The camera's FoV is partitioned into a grid of rectangles corresponding to a set of one or more adjacent pixels. The grid can be defined in terms of Cartesian or polar coordinates (i.e., (x, y) or (az, el) tuples).
+The size (and shape) of the camera's FoV, as well as the number or size of the grid points are constrained by the number and spacing of the mics used in the array.
+The video sensor (and its associated optics) used by the camera is selected such that its FoV and resolution is a good match for the characteristics of the mic array.
+
+The camera processes the inputs from its microphone array to determine the amount of sound energy (in the frequency range(s) of interest) which comes from the a region in space defined by a pyramid who's apex is at the camera's focal point and is bounded by a grid rectangle.
+Various methods exist to provide additional information about the distance from the camera of the noise source detected within a pyramid.
+
+One approach to determining the amount of energy that emanates from a region of space is to use beamforming and steer the main beam to the desired point in space.
+Beamforming provides a means of measuring the energy coming from a region, while suppressing energy coming from other regions.
+A typical beamforming-based approach steers the beam (i.e., the main lobe) to the center point of each grid, computes the energy coming from that region, assembling values for all of the grid points into a map, and then overlaying that on the video output.
+The array of energy values resulting from scanning the beam over all the regions is known as an energy map, which can be overlaid on the video to provide a visualization of the sources of sound energy.
+
+The beam is formed and steered by setting time delay values for each of the array's microphones.
+The delay values required for each mic in the array to steer the beam in a given direction can be generated analytically (based on the location of the mics in the array), or can be generated as a result of a calibration process.
+
+* The calibration process can, for all grid points, generate the set of delays for each mic to steer the beam to the desired point in space.
+* The resulting time delay matrices can be used at runtime to steer the beam to the desired grid locations.
+* Calibration results in a delay matrix for each grid point, consisting of values representing the amount of delay to be applied to the corresponding mic to steer the beam to the given grid point.
+
+
+The sound energy coming from a region can be calculated by capturing a sequence of audio samples from each mic in the array (where each sample is captured at the same time, typically by using a common clock for all of the audio ADCs), converting each of these vectors of audio samples into the frequency domain (via an FFT), then computing a function (e.g., summation) of the magnitude/real values from each of the FFT output blocks to get the energy present (at different frequencies) at the point in time where each sample was acquired.
+The number of audio samples in each acquisition block is given by the number of mics in the array, and the number of time steps over which samples are taken.
+
+# Design Tradeoffs
+
+* Mic array
+  - number of mics
+  - spacing of mics
+  - position of mics
+* mic
+  - interface: PDM, I2S/PCM
+  - specs: SNR, sensitivity, freq response, noise, ?
+  - sample rate
+  - block size
+* processing
+  - algorithm: MUSIC, DAMAS, ?
+  - required resources: compute, memory, ?
+* 
+
+
 # System Requirements
 
 **TBD**
@@ -22,6 +65,8 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 # Target Design
 
 **TBD**
+
+
 
 # Existing Systems
 
@@ -193,15 +238,9 @@ To get some ideas of what's possible, existing products and projects are examine
 
 * ?
 
-# Beamforming Algorithms
+# A Sampling of Beamforming Algorithms
 
 Below is a survey of some commonly used beamforming algorithms.
-
-To create an Acoustic Camera, we want to compute the power map of the sources in the field of view.
-Some of these algorithms are focused on steering the look direction of the array.  Beam-steering alone can be used to generate the desired power map by rastering the beam and accumulating a power map. This approach is slow and results in a map where the different regions are sampled at different points in time, leading to a less useful output.
-For this application, it's better to use an algorithm that generates a power map directly from each frame of sampled input data.
-
-### Beamforming Without Power-Map Generation
 
 * Differential
   - subtract rear-facing mic from forward-facing mic
@@ -290,8 +329,6 @@ For this application, it's better to use an algorithm that generates a power map
     * subject to the constraint that the signal from the look direction is unmodified
   - works for wideband signals because the FIR filter can shape the frequency response for each channel
   - better SNR and interference ratio (SNIR) than D&S
-
-### Beamforming With Power-Map Generation
 
 * Multi-Signal Classification (MUSIC)
   - subspace-based beamforming approach
@@ -500,9 +537,8 @@ For this application, it's better to use an algorithm that generates a power map
   - C library for sound source localization, tracking, separation, and post-filtering
   - has GUI for visualization
   - open source 8x and 16x USB arrays
-    * 
     * https://github.com/introlab/16SoundsUSB
-  - 
+  - ?
 
 * Pyroomacoustics: python package for room acoustics and audio
   - https://github.com/LCAV/pyroomacoustics
@@ -510,7 +546,7 @@ For this application, it's better to use an algorithm that generates a power map
   - supports DoA, DSB, simulation
   - package for rapid development and testing of audio array processing algorithms
   - main parts:
-    * O-O interface to simulation scenarios involving multiple sources and mics in 2D and 3D rooms
+    * OO python interface to simulation scenarios involving multiple sources and mics in 2D and 3D rooms
     * fast C++ implementation of image source model and ray tracing for general polyhedral rooms to generate room impulse responses and simulation propagation between sources and mics
     * reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single-channel denoising
   - includes datasets from CMU ARCTIC, TIMIT, Google Speech Commands Dataset
