@@ -35,20 +35,80 @@ The number of audio samples in each acquisition block is given by the number of 
 
 # Design Tradeoffs
 
-* Mic array
-  - number of mics
-  - spacing of mics
-  - position of mics
-* mic
-  - interface: PDM, I2S/PCM
-  - specs: SNR, sensitivity, freq response, noise, ?
-  - sample rate
-  - block size
+* mic array characteristics
+  - aperture response
+  - spatial extent of array
+  - type and number of transducers
+  - transducer physical orientation and arrangement
+* general array characteristics
+  - larger mic arrays
+    * larger arrays prioritize low-frequency captures and wide-area coverage
+    * pros
+      - improved spatial resolution
+      - enhanced low-frequency (<1KHz) detection
+        * larger mic spacing captures longer wavelengths
+        * good for industrial noise
+      - higher dynamic range
+      - better noise suppression
+      - increased localization accuracy
+      - better in open/outdoor environments
+        * due to better low-frequency directionality
+    * cons
+      - cumbersome, less portable, larger, heavier
+      - more complex calibration
+      - limits to effectiveness in broadband applications
+        * due to problems with high-frequency grating lobes
+  - more mics in the array
+    * arrays with more mics optimize high-frequency detail and adaptive beamforming
+      - but comes with increased computation and power costs
+    * pros
+      - enhances spatial resolution and high-frequency accuracy
+        * reduced spatial aliasing
+        * sharper beamforming and better noise rejection >=5KHz
+      - better SNR
+        * through constructive interference
+      - works better in indoor/reverberant spaces
+        * leverages phase differences for more precision source localization
+    * cons
+      - low-freq performance limited by mic spacing in smaller array size
+      - more processing power and interconnect required
+      - more power required
+      - higher cost
+  - frequency response and directionality
+    * closer mic spacing improves high-frequency capture ability
+      - provides wider BW before spatial aliasing occurs
+        * spatial aliasing is an artifact of undersampling
+    * wider spacing of mics enhances directionality at low freq
+      - makes array more effective at blocking or localizing low-frequency sounds
+  - spatial aliasing
+    * if mics are spaced too far apart, high-frequency sounds can cause spatial aliasing
+      - array can't distinguish between real and ghost sources
+    * mic spacing should generally be less than half the wavelength of the highest freq of interest
+  - SNR
+    * optimal spacing can maximize SNR improvements
+      - too wide or too narrow spacing can reduce an array's effectiveness across different frequencies
+    * BW
+      - narrow spacing provides broader usable freq range
+      - wide spacing limits the array's BW -- only optimal for narrow freq range
+  - mic spacing balances freq response, directionality, and spatial aliasing
+* sound wavelength
+  - a function of pressure and temperature
+  - low freq sound (20-250Hz) wavelengths range from 18m to 1.4m
+  - in human speech, low freq is where the energy is and higher freqs are where the information is
+* localizing sound in the 100-1000Hz range
+  - ideal mic spacing: 170mm
+  - spacing of 100-200mm balances aliasing risk and low-frequency coverage
+* a dense array with 30+ mics and 100mm spacing provides good broadband coverage
+  - but comes with cost in processing power and complexity
+* a sparse array with 500mm spacing does well at low freq but fails above ~350Hz
+* industrial leak detection centers around 500Hz
+* broadband acoustic cameras typically use 100-150mm spacing and cover 200-1000Hz
+  - they give up low-frequency precision for aliasing-free operation
+* appears like many commercial products use arrays with spiral arms
+  - many are 20-40cm in diameter
 * processing
   - algorithm: MUSIC, DAMAS, ?
   - required resources: compute, memory, ?
-* 
-
 
 # System Requirements
 
@@ -879,70 +939,61 @@ TBD: look into spherical arrays
     * 42mm mic spacing for a BW of  4KHz requires 17dB gain @ 100Hz -> min mic SNR = 65dBA
     * 21mm mic spacing for a BW of  8KHz requires 22dB gain @ 100Hz -> min mic SNR = 70dBA
     *  7mm mic spacing for a BW of 24KHz requires 32dB gain @ 100Hz -> min mic SNR = 80dBA
-* general array characteristics
-  - larger mic arrays
-    * larger arrays prioritize low-frequency captures and wide-area coverage
-    * pros
-      - improved spatial resolution
-      - enhanced low-frequency (<1KHz) detection
-        * larger mic spacing captures longer wavelengths
-        * good for industrial noise
-      - higher dynamic range
-      - better noise suppression
-      - increased localization accuracy
-      - better in open/outdoor environments
-        * due to better low-frequency directionality
-    * cons
-      - cumbersome, less portable, larger, heavier
-      - more complex calibration
-      - limits to effectiveness in broadband applications
-        * due to problems with high-frequency grating lobes
-  - more mics in the array
-    * arrays with more mics optimize high-frequency detail and adaptive beamforming
-      - but comes with increased computation and power costs
-    * pros
-      - enhances spatial resolution and high-frequency accuracy
-        * reduced spatial aliasing
-        * sharper beamforming and better noise rejection >=5KHz
-      - better SNR
-        * through constructive interference
-      - works better in indoor/reverberant spaces
-        * leverages phase differences for more precision source localization
-    * cons
-      - low-freq performance limited by mic spacing in smaller array size
-      - more processing power and interconnect required
-      - more power required
-      - higher cost
-  - frequency response and directionality
-    * closer mic spacing improves high-frequency capture ability
-      - provides wider BW before spatial aliasing occurs
-        * spatial aliasing is an artifact of undersampling
-    * wider spacing of mics enhances directionality at low freq
-      - makes array more effective at blocking or localizing low-frequency sounds
-  - spatial aliasing
-    * if mics are spaced too far apart, high-frequency sounds can cause spatial aliasing
-      - array can't distinguish between real and ghost sources
-    * mic spacing should generally be less than half the wavelength of the highest freq of interest
-  - SNR
-    * optimal spacing can maximize SNR improvements
-      - too wide or too narrow spacing can reduce an array's effectiveness across different frequencies
-    * BW
-      - narrow spacing provides broader usable freq range
-      - wide spacing limits the array's BW -- only optimal for narrow freq range
-  - mic spacing balances freq response, directionality, and spatial aliasing
-* sound wavelength
-  - a function of pressure and temperature
-  - low freq sound (20-250Hz) wavelengths range from 18m to 1.4m
-  - in human speech, low freq is where the energy is and higher freqs are where the information is
-* localizing sound in the 100-1000Hz range
-  - ideal mic spacing: 170mm
-  - spacing of 100-200mm balances aliasing risk and low-frequency coverage
-* a dense array with 30+ mics and 100mm spacing provides good broadband coverage
-  - but comes with cost in processing power and complexity
-* a sparse array with 500mm spacing does well at low freq but fails above ~350Hz
-* industrial leak detection centers around 500Hz
-* broadband acoustic cameras typically use 100-150mm spacing and cover 200-1000Hz
-  - they give up low-frequency precision for aliasing-free operation
-* appears like many commercial products use arrays with spiral arms
-  - many are 20-40cm in diameter
 * ?
+
+# Docs
+
+* 000405.pdf: On the Design of a MEMS Microphone Array for a Mobile Beamforming Application
+  - built a mic array for the back of a smartphone
+  - simulated different mic array configurations
+  - used a genetic algorithm to optimize the placement of mics on a spiral
+  - used XMOS dev board and 16x mics
+    * Infineon’s IM69D130 digital MEMS mic
+* 000468.pdf: Optimal planar microphone array arrangements [2015]
+  - ?
+* 0080015889.pdf
+* 20080015889.pdf: A Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS) Determined from Phased Microphone Arrays [2004]
+  - ?
+* 2021_12_De+Lucia.pdf: Implementation of a low-cost acoustic camera using arrays of MEMS microphones [2020]
+  - ?
+* 254.pdf: Comparison of Different Beamforming-based Approaches for Sound Source Separation of Multiple Heavy Equipment at Construction Job Sites
+  - ?
+* 373.pdf: Acoular Workshop: Accessible and Reproducible Microphone Array Signal Processing with Python
+  - history and overview of Acoular
+* BeBeC-2016-S4.pdf: A Generic Approach to Synthesize Optimal Array Microphone Arrangements [2016]
+  - ?
+* BeBeC-2022-D06.pdf
+* BeBeC-2022-S07.pdf
+* bp2144.pdf
+* Chakravarthula_Seeing_With_Sound_Long-range_Acoustic_Beamforming_for_Multimodal_Scene_Understanding_CVPR_2023_paper.pdf [2023]
+  - 
+* EN-AVT-287-04.pdf: Fundamentals of Acoustic Beamforming [?]
+  - ?
+* GB2438259A.pdf: Audio recording system utilising a logarithmic spiral array [2006]
+  - UK Patent application
+  - ?
+* IN-Pflug-Krischker-AspectsOfTheUseOfMemsMicrophones-2017.pdf: Aspects of the Use of MEMS Microphones in Phased Array Systems [2017]
+  - ?
+* 'Lecture 4 - Microphone Arrays.pdf'
+* mccormack2017parametric.pdf: Parametric Acoustic Camera for Real-Time Sound Capture, Analysis and Tracking [2017]
+  - ?
+* microphone_array.pdf: Microphone Arrays : A Tutorial [2001]
+  - ?
+* Mon-1-2-5.pdf
+* noise-and-vibration-image-brochure-2024-gfaitech.pdf
+* p453.pdf: Design and Calibration of a Small Aeroacoustic Beamformer [2010]
+  - ?
+* p5.pdf: A comparison of popular beamforming arrays [2013]
+  - ?
+* s13272-019-00383-4.pdf
+* 'Schumacher - 2022 - Evaluation of microphone array methods for aircraf.pdf'
+* Sound_Localization_and_Speech_Enhancement_Algorith.pdf
+* time-domain-beamforming-3d-micarray-doebler-heilmann-meyer-2008-bebec.pdf
+* TP-2007-345.pdf
+* Wang_2023_J._Phys.__Conf._Ser._2479_012026.pdf: 
+Research on multi-sound source localization performance
+based on leaf-shaped microphone array [2022]
+  - ?
+  
+
+  
