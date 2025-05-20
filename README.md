@@ -35,6 +35,14 @@ The number of audio samples in each acquisition block is given by the number of 
 
 # Design Tradeoffs
 
+* key characteristics
+  - beam width (measured at 10dB from peak of main lobe)
+  - side-lobe levels (measured as difference between main lobe peak and highest side-lobe)
+
+* design objectives: narrow beam, low side-lobe levels
+  - the larger number of mics, the lower the side-lobe levels
+  - the larger the effective array size, the narrower the beam
+
 * mic array characteristics
   - aperture response
   - spatial extent of array
@@ -950,7 +958,8 @@ TBD: look into spherical arrays
   - used XMOS dev board and 16x mics
     * Infineon’s IM69D130 digital MEMS mic
 * 000468.pdf: Optimal planar microphone array arrangements [2015]
-  - ?
+  - simulated lots of array arrangements for Vogel's Spiral with different H and V values
+  - showed Underbrink Spiral is best tradeoff between beam width and side-lobe levels
 * 0080015889.pdf
 * 20080015889.pdf: A Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS) Determined from Phased Microphone Arrays [2004]
   - ?
@@ -961,7 +970,7 @@ TBD: look into spherical arrays
 * 373.pdf: Acoular Workshop: Accessible and Reproducible Microphone Array Signal Processing with Python
   - history and overview of Acoular
 * BeBeC-2016-S4.pdf: A Generic Approach to Synthesize Optimal Array Microphone Arrangements [2016]
-  - ?
+  - same material as 000468.pdf
 * BeBeC-2022-D06.pdf
 * BeBeC-2022-S07.pdf
 * bp2144.pdf
@@ -973,7 +982,12 @@ TBD: look into spherical arrays
   - UK Patent application
   - ?
 * IN-Pflug-Krischker-AspectsOfTheUseOfMemsMicrophones-2017.pdf: Aspects of the Use of MEMS Microphones in Phased Array Systems [2017]
-  - ?
+  - compared MEMS mics to electrec capsule mics in 2015 and again in 2017
+    * while MEMS got better in 2017, they still were worse than electret mics
+  - MEMS mic EIN levels were worse than analog electrec in 2017, but cheaper per channel
+    * can use more mics and effectively reduce the noise
+  - also MEMS mic freq response was not as good in 2017
+    * can do digital equalization filters to improve this for MEMS mics
 * 'Lecture 4 - Microphone Arrays.pdf'
 * mccormack2017parametric.pdf: Parametric Acoustic Camera for Real-Time Sound Capture, Analysis and Tracking [2017]
   - ?
@@ -996,4 +1010,3 @@ based on leaf-shaped microphone array [2022]
   - ?
   
 
-  
