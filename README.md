@@ -33,7 +33,7 @@ The key characteristics of any beamforming approach are the width of the main be
 The choice of beamforming algorithm and mic array define the key characteristics of the Acoustic Camera.
 For example, the distance at which sounds sources can be localized, the accuracy with which this localization can be done, the number and type of sound sources that can be simultaneously localized, the frequency range in which localization can be done, the dynamic range of sounds over which the localization is possible, etc.
 
-Beamforming is also considered to be a type of spatial filtering, i.e., the effect of beamforming is to amplify sounds in a given direction and attenuate sounds from all other directions.
+Beamforming is also considered to be a type of spatial filtering, i.e., the effect of beamforming is to increase the gain in a given direction and attenuate signals from all other directions.
 
 There are a wide variety of different types of beamforming algorithms in the literature, all with different performance characteristics and resource demands.
 
