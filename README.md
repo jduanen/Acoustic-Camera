@@ -17,6 +17,11 @@ The video sensor (and its associated optics) used by the camera is selected such
 The Acoustic Camera processes the inputs from its microphone array to determine the amount of sound energy (in the frequency range(s) of interest) which comes from the a region in space defined by a pyramid who's apex is at the camera's focal point and is bounded by a grid rectangle.
 Various methods exist to provide additional information about the distance from the camera of the noise source detected within a pyramid.
 
+An important aspect of Acoustic Camera design is the choice as to whether the sources are to be considered Far-Field (i.e., the sound waves interact with the mic array as plane waves) or Near-Field (in which case the curvature of the arriving sound waves must be taken into account).
+Idealized sounds sources are point-emitters which create sounds waves which radiate outwards in a spherical pattern.
+For this work, we will initially assume that the sources will all be Far-Field in nature. Which is to say, the sources are sufficiently far from the mic array that the curvature sound waves at the mic array is negligible.
+The actual distance required for a source to be considered Far-Field is a function of the wavelengths of the sound, the size of the mic array, and the spacing between mics.
+
 One approach to determining the amount of energy that emanates from a region of space is to use beamforming and steer the main beam to the desired point in space.
 Beamforming provides a means of measuring the energy coming from a region, while suppressing energy coming from other regions.
 
@@ -28,7 +33,7 @@ The key characteristics of any beamforming approach are the width of the main be
 The choice of beamforming algorithm and mic array define the key characteristics of the Acoustic Camera.
 For example, the distance at which sounds sources can be localized, the accuracy with which this localization can be done, the number and type of sound sources that can be simultaneously localized, the frequency range in which localization can be done, the dynamic range of sounds over which the localization is possible, etc.
 
-Beamforming is also known as spatial filtering.
+Beamforming is also considered to be a type of spatial filtering, i.e., the effect of beamforming is to amplify sounds in a given direction and attenuate sounds from all other directions.
 
 There are a wide variety of different types of beamforming algorithms in the literature, all with different performance characteristics and resource demands.
 
@@ -131,7 +136,7 @@ Below is a survey of some commonly used beamforming algorithms.
     * limited ability to distinguish between multiple closely-spaced sources
       - especially with a small array aperture or small number of mics
     * produces side lobe artifacts that can mask weaker sources
-  - this talks about time-domain only, can also do this in the frequency domain
+  - this describes the time-domain version, this can also be done in the frequency domain
 
 * Minimum-Variance Distortionless Response (MVDR)
   - signal-dependent beamforming technique
@@ -256,6 +261,18 @@ Below is a survey of some commonly used beamforming algorithms.
   - extended to spherical harmonic domain for arbitrary combinations of beamformers
   - ?
 
+* CLEAN-PSF
+  - building block to understand CLEAN-SC
+  - deconvolution technique from astronomy, for where less bright stars are near very bright ones
+  - considers the dirty map represents a convolution between the actual source distribution and the array's PSF
+  - approach
+    * iteratively finds the highest source value in the dirty map
+    * subtracts its contribution from the dirty map
+    * adds the source it finds to a separate clean map
+    * keep going until all sources are removed from the dirty map
+  - assumes sources behave like monopoles with negligible directivity effects
+    * not always true -- e.g., wind tunnels, aircraft fly-over, etc.
+
 * HR-CLEAN_SC
   - ?
 
@@ -263,6 +280,10 @@ Below is a survey of some commonly used beamforming algorithms.
   - gridless version of (HR-)CLEAN-SC are not as accurate as COMET2
 
 * Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS)
+  - this approach models the CSM considering a distribution of statistically independent sources in the grid
+    * modeled CSM is compared to the measured CSM, resulting in a linear system of equations
+      - modeled CSM uses a single source placed at each grid location
+    * solution of this system of equations provides source intensity and location
   - uses linear system of equations, makes no assumptions
     * N (equal to the number of grid points) equations and N unknowns
   - full rank equations are solved with an iterative method
@@ -279,10 +300,14 @@ Below is a survey of some commonly used beamforming algorithms.
     * not just relative levels like other methods
   - computationally intensive, especially for large grids
     * but provides superior performance for complex sound fields
-  - techniques have been developed to reduce the computation costs
-    * e.g., DAMAS2 and compressed grids
   - developed after CLEAN deconvolution approach
   - converges (very slowly) to the solution of CMF
+  - techniques have been developed to reduce the computation costs
+    * e.g., DAMAS2 and compressed grids
+  - DAMAS2 computes the PSF for each grid node in the frequency domain
+    * can use shift-invariant PSF to simplify the computations
+      - depends only on distance between grid node and source
+      - sacrifices spatial resolution
 
 * Covariance Matrix Fitting (CMF)
   - used to estimate source locations and strengths by fitting a modeled covariance matrix to the measured Cross-Spectral Matrix (CSM) obtained from the mic array
