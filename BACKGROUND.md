@@ -357,3 +357,19 @@ Below is a overview of some commonly used beamforming algorithms.
     * avoids grid quantization error inherent in D&S/MUSIC
     * solved via semi-definite programming (SDP); computationally expensive but exact
   - active research area 2015–present; SBL implementations available in Acoular ecosystem
+
+## Important Beamforming Concepts
+
+### Cross-Spectral Matrix (CSM)
+
+A frequency-domain matrix that stores the cross-power between every pair of mics at a given frequency.
+The diagonal entries of this matrix are the auto-power spectra of each mic, and its off-diagonal entries capture how strongly pairs of sensors are correlated in phase and amplitude.
+The CSM is used to estimate how signals and noise are distributed over the mic array.
+
+The CSM captures spatial correlations between mic signals at each frequency and contains the information needed to differentiate between coherent source energy and uncorrelated noise.
+
+In beamforming, the CSM is useful because it summarizes the spatial and spectral information needed to estimate where a sound source is located.
+A common approach combines the CSM with a steering model to form a map of likely source locations.
+The CSM is the input snapshot that an adaptive beamformer reads to decide how to steer, focus, and suppress unwanted signals.
+
+The CSM reflects the current sound field and so adaptive beamformers can respond to changing conditions better than when using fixed weights.
