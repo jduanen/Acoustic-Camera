@@ -4,7 +4,8 @@
 
 * 96× Infineon IM69D120 PDM MEMS mics
   - 69 dBA SNR, factory-calibrated, ±1 dB sensitivity match, ±2° phase match
-* Underbrink multi-arm logarithmic spiral pattern — 8 arms × 12 mics or 6 arms × 16 mics (to be optimized in Phase 1 simulation)
+* Underbrink multi-arm logarithmic spiral pattern
+  - 8x arms with 12x mics or 6x arms with 16x mics (to be optimized in Phase 1 simulation)
 * ~21 mm min mic spacing (satisfies Nyquist at 8 kHz: λ/2 = 343/(2×8000) ≈ 21.4 mm)
 * ~400–500 mm diameter aperture
 * Custom PCB(s); mics share PDM clock, paired on data lines via L/R select → 48 DATA + 1 CLK to FPGA
@@ -19,7 +20,7 @@
   - GbE packetization: assembled audio frames with sequence numbers and timestamps sent over UDP to host
   - Pin count: 48 DATA lines (2 mics per line via L/R select) + 1 CLK → manageable on mid-range FPGA
   - Inspired by Ben Wang's 192-mic FPGA design (50 MHz FPGA, GbE to GPU host)
-* Data rate: 96 ch × 48 kHz × 24 b ≈ 110 Mbps — fits comfortably within 1 GbE
+* Data rate: 96 ch × 48 kHz × 24 b ≈ 110 Mbps, which fits comfortably within 1 GbE
 * FPGA candidates
   - Lattice ECP5: preferred for open-source toolchain (Yosys/nextpnr)
   - Xilinx Artix-7 (XC7A100T): preferred for resource headroom and ecosystem maturity (101K LUTs, abundant I/O)
@@ -44,30 +45,34 @@
 
 Every commercial acoustic camera supports these:
 
-* Real-time energy map — beamformed sound field rendered as a 2D heatmap image
-* Video + acoustic overlay — live video with energy map overlaid (colormap on camera image)
-* Selectable frequency range — bandpass filter to focus on frequencies of interest (octave or 1/3 octave bands)
-* Dynamic range control — adjustable display floor and ceiling (analogous to brightness/contrast for the acoustic image)
-* Field of view selection — selectable FoV (e.g., 90° or 60°); must match video camera optics
-* Image persistence / temporal averaging — controls the time window over which energy is averaged
+* Real-time energy map: beamformed sound field rendered as a 2D heatmap image
+* Video + acoustic overlay: live video with energy map overlaid (colormap on camera image)
+* Selectable frequency range: bandpass filter to focus on frequencies of interest (octave or 1/3 octave bands)
+* Dynamic range control: adjustable display floor and ceiling (analogous to brightness/contrast for the acoustic image)
+* Field of view selection: selectable FoV (e.g., 90° or 60°); must match video camera optics
+* Image persistence/temporal averaging: controls the time window over which energy is averaged
   - fast = tracks transients; slow = reveals weak stationary sources
   - range: 10 ms to 10 s
-* Record / playback — capture synchronized audio, video, and energy map sequences; replay offline
+* Record/playback: capture synchronized audio, video, and energy map sequences; replay offline
 
 ### Extended Functions
 
 Features that differentiate higher-end products; implement progressively:
 
-* Algorithm selector — choose beamforming algorithm at runtime: D&S → MVDR → CLEAN-SC (and later ML-based)
-* Frequency-resolved maps — display energy maps at multiple octave bands simultaneously (side-by-side or toggled)
-* Source tracking — lock on and follow the loudest detected source across frames
-* Near-field / far-field mode — toggle assumption about wave curvature; affects steering delay computation
-* Depth / range estimation — estimate distance to source using a co-located depth camera (e.g., Intel RealSense); enables 3D source localization
-* Calibration mode — guided workflow to measure and store mic-to-mic sensitivity, phase, and position corrections
+* Algorithm selector: choose beamforming algorithm at runtime: D&S → MVDR → CLEAN-SC (and later ML-based)
+* Frequency-resolved maps: display energy maps at multiple octave bands simultaneously (side-by-side or toggled)
+* Source tracking: lock on and follow the loudest detected source across frames
+* Near-field/far-field mode: toggle assumption about wave curvature; affects steering delay computation
+* Depth/range estimation: estimate distance to source using a co-located depth camera (e.g., Intel RealSense); enables 3D source localization
+* Calibration mode: guided workflow to measure and store mic-to-mic sensitivity, phase, and position corrections
 
 ### Interface Design
 
-#### Phase 2 / Phase 3 — Host-tethered (USB)
+#### Phase 1: ?sim?
+
+?
+
+#### Phase 2 / Phase 3: Host-tethered (USB)
 
 Follow the ACAM_64 (Convergence Instruments) model: USB audio streaming to host PC, open protocol, Python-based desktop GUI.
 
@@ -84,20 +89,20 @@ GUI elements:
 
 Reference implementations:
 * ACAM_64 open USB CDC protocol (virtual COM port + USB audio streaming)
-* UMA-16 v2: raw 16-ch USB audio, host does all processing — good scaffold for Phase 3
+* UMA-16 v2: raw 16-ch USB audio, host does all processing, which is a good scaffold for Phase 3 work
 * SpectAcoular (GUI layer on top of Acoular): open source, Python/Bokeh
 
-#### Phase 4 — FPGA + GbE (full custom array)
+#### Phase 4: FPGA + GbE (full custom array)
 
 The FPGA hub sends 96-channel PCM audio over GbE (UDP packets). Host GUI additions:
 * GbE packet ingestion with sequence-number tracking and drop detection
 * Calibration workflow UI (guided mic position / sensitivity estimation)
 * Full algorithm suite (CLEAN-SC, MVDR, Functional Beamforming)
 
-#### Phase 4b — Standalone / Field Use
+#### Phase 4b: Standalone / Field Use
 
 As GbE tethering to a laptop becomes inconvenient for field use, optionally add:
 * Embedded web UI (served from onboard SBC, accessed via phone or tablet browser over WiFi)
-* Or small integrated touchscreen (7" is the commercial standard — HEAD VMA V pattern)
+* Or small integrated touchscreen (7" is the commercial standard: HEAD VMA V pattern)
 * Physical record/stop button(s) on the housing
 * Battery-powered operation with charge indicator
