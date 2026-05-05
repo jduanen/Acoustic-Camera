@@ -138,36 +138,40 @@ H=8×12 at α=22° is dropped — it has substantially worse MSL (−7.2dB @ 4kH
 * Array: Underbrink H=12×8, α=22° (96 mics)
 * Evaluation frequency: 4 kHz (HPBW ≈ 19°).
 
-Three algorithms benchmarked:
+Four algorithms benchmarked:
 - **D&S** — Conventional Delay-and-Sum: `P(θ) = h^H R h`
 - **MVDR** — Minimum Variance Distortionless Response (Capon): `P(θ) = 1 / (h^H R⁻¹ h)`
 - **CLEAN-SC** — Iterative source-coherence deconvolution (Sijtsma 2007)
+- **MUSIC** — Multiple Signal Classification: `P(θ) = 1 / (h^H E_n E_n^H h)` where E_n is the noise subspace
 
 ### Scenario results
 
-| Scenario | D&S | MVDR | CLEAN-SC |
-|---|---|---|---|
-| 1: single source at 0°, SNR=20 dB | 0.1° error | 0.1° error | 0.1° error |
-| 2: two equal sources ±15° (30° sep), SNR=20 dB | Resolved | Resolved | Resolved |
-| 3: two equal sources ±4.5° (9° sep ≈ 0.5×HPBW), SNR=20 dB | Not resolved | Not resolved | Not resolved |
-| 4: strong (−15°) / weak (−20 dB, +10°), SNR=30 dB | Not resolved | **Resolved** | Not resolved |
+| Scenario | D&S | MVDR | CLEAN-SC | MUSIC |
+|---|---|---|---|---|
+| 1: single source at 0°, SNR=20 dB | 0.1° error | 0.1° error | 0.1° error | 0.1° error |
+| 2: two equal sources ±15° (30° sep), SNR=20 dB | Resolved | Resolved | Resolved | Resolved |
+| 3: two equal sources ±4.5° (9° sep ≈ 0.5×HPBW), SNR=20 dB | Not resolved | Not resolved | Not resolved | **Resolved** |
+| 4: strong (−15°) / weak (−20 dB, +10°), SNR=30 dB | Not resolved | **Resolved** | Not resolved | **Resolved** |
 
 ### Key findings
 
 **All algorithms achieve sub-0.1° DoA accuracy** on a single isolated source at SNR=20dB
   * the limiting factor for accuracy is scan-grid resolution, not algorithm quality
 
-**Resolution limit is at the HPBW:**
-  * sources separated by 0.5×HPBW (9° @ 4kHz) are not resolved by any algorithm at 256 snapshots / SNR=20dB
-  * D&S is a matched filter so cannot exceed the Rayleigh limit
-  * MVDR's super-resolution advantage appears only at high SNR and large snapshot counts (not demonstrated here)
+**MUSIC demonstrates super-resolution:**
+  * MUSIC resolves two equal sources at 9° separation (0.5×HPBW) — the only algorithm to do so
+  * D&S cannot exceed the Rayleigh limit (matched filter)
+  * MVDR and CLEAN-SC also fail at this separation with 256 snapshots / SNR=20dB
+  * MUSIC's subspace method sidesteps the aperture limit — it does not scan a beamformed power map but searches for steering vectors orthogonal to the noise subspace
+  * Requires prior knowledge of source count (n_sources=2 specified)
 
-**MVDR has the best dynamic range:**
-  * only MVDR successfully detected the −20 dB weak source (25° from the strong source) @ SNR=30dB
+**MVDR and MUSIC both resolve the dynamic range scenario:**
+  * both successfully detected the −20 dB weak source (25° from the strong source) @ SNR=30dB
   * D&S fails because the strong source's side lobes mask the valley between the two sources
   * CLEAN-SC fails because the residual after subtracting the dominant source is not clean enough for the weak peak to emerge at this iteration depth (30 iterations, loop gain 0.5)
 
 **Practical implication for Phase 2/3:**
-  * two-source resolution requires at least 1×HPBW separation (~19° @ 4kHz, ~9° @ 8kHz) for reliable detection at typical SNR
+  * MUSIC is the best choice when source count is known and super-resolution matters (closely spaced sources)
+  * MVDR is preferred when source count is unknown but dynamic range is important
   * CLEAN-SC is preferred for clean single-source maps (suppresses diffuse clutter)
-  * MVDR is preferred when dynamic range and source separation matter
+  * D&S remains the baseline reference — simplest, most robust at all SNR
