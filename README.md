@@ -54,6 +54,13 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
     * array geometry visualization
     * a D&S beamforming demo
     * Underbrink vs. other patterns comparison
+      - H=12x8 has best side-lobe suppression
+      - spiral angle matters, a=35deg and a=22deg improve beam pattern a lot
+      - beamwidth is set by aperture only
+        * at 1kHz and below, the beam width is greater than the FOV, so can't localize
+          - is this a problem?
+          - where's the knee of the curve when it comes to beam width vs. aperture at lower frequencies?
+      - ?
 
 * TODOs
   - match camera and mic array resolution
