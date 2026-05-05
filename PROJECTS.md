@@ -35,7 +35,7 @@
   - Senior ECE project at CMU in 2020
   - 6x panels of 4x4 rectangular grids of MEMS mics
   - 96x mic array, FPGA, Host
-  - TDK Invesense mics
+  - TDK InvenSense mics
   - FPGA with mic array, ethernet to the Host
   - [rather large]
 
@@ -63,4 +63,3 @@
   - https://hackaday.com/2016/07/01/1024-pixel-sound-camera-treats-eyes-to-real-time-audio/
   - 32x32 MEMS mic array, made of 4x 8x8 arrays
 
-* ?

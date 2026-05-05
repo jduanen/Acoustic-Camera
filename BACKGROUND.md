@@ -90,6 +90,7 @@ Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Ma
   - returns DoA estimates directly without scanning a spatial spectrum
   - lower computational cost than MUSIC for the same resolution
   - requires arrays with specific geometric structure (pairs of displaced sub-arrays)
+  - *Ref: Roy, R. & Kailath, T. (1989). "ESPRIT — Estimation of Signal Parameters via Rotational Invariance Techniques." IEEE Trans. Acoust. Speech Signal Process. 37(7):984–995. doi:10.1109/29.32276*
 * CSSM (Coherent Signal Subspace Method)
   - extends subspace methods to wideband signals
   - aligns frequency-bin covariance matrices into a common subspace before eigen decomposition
@@ -161,10 +162,11 @@ Below is a overview of some commonly used beamforming algorithms.
   - more complex processing than simple D&S or Differential
   - individual amplification and delay provided for each mic in the array
     * preserves on-axis sensitivity and maximizes off-axis attenuation
-  - typically amplification and dealy are applied per-frequency at each mic
+  - typically amplification and delay are applied per-frequency at each mic
     * either with an FIR filter or frequency-domain processing
   - steer beam in Direction-of-Arrival (DoA)
     * sensitive to errors in DoA estimation and multi-path signals
+  - *Ref: Capon, J. (1969). "High-resolution frequency-wavenumber spectrum analysis." Proc. IEEE 57(8):1408–1418. doi:10.1109/PROC.1969.7278*
 
 ### Linear Constraint Minimum Variance (LCMV)
   - widely used spatial filtering approach
@@ -219,7 +221,7 @@ Below is a overview of some commonly used beamforming algorithms.
   - approach
     * Signal Model: create Spatial Covariance Matrix from input signals
     * Subspace Decomposition: decompose the Covariance Matrix into two orthogonal subspaces using eigenvalue decomposition
-      - Signal Subspace: spanned by eigenvectors corresponding to the largest eigenvectors (related to the sources)
+      - Signal Subspace: spanned by eigenvectors corresponding to the largest eigenvalues (related to the sources)
       - Noise Subspace: spanned by eigenvectors with the smallest eigenvalues (related to noise)
     * Spatial Spectrum Search: scans possible source directions
       - for each direction, compute projection of the array's steering vector onto the Noise Subspace
@@ -227,8 +229,9 @@ Below is a overview of some commonly used beamforming algorithms.
     * DoA Estimation: directions corresponding to peaks are the estimated DoAs of the sources
   - can resolve multiple closely-spaced sources
   - provides high accuracy in low-noise and low-reverb environments
+  - *Ref: Schmidt, R.O. (1986). "Multiple emitter location and signal parameter estimation." IEEE Trans. Antennas Propagat. 34(3):276–280. doi:10.1109/TAP.1986.1143830*
 
-### Clear-based on Source Coherence (CLEAR-SC)
+### CLEAN-based on Source Coherence (CLEAN-SC)
   - deconvolution approach to improve spatial resolution of beamformers
     * widely used in noise source localization tasks
     * good robustness and speed
@@ -244,6 +247,7 @@ Below is a overview of some commonly used beamforming algorithms.
     * more accurate localization and quantification of the actual sources
   - iterative deconvolution: iteratively removes sources and refines the map
   - uses sources' spatial coherence to separate overlapping sources
+  - *Ref: Sijtsma, P. (2007). "CLEAN Based on Spatial Source Coherence." Int. J. Aeroacoustics 6(4):357–374. doi:10.1260/147547207783359459*
 
 #### CLEAN-PSF
   - building block to understand CLEAN-SC
@@ -294,6 +298,7 @@ Below is a overview of some commonly used beamforming algorithms.
   - ?
 
 ### Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS)
+  - *Ref: Brooks, T.F. & Humphreys, W.M. (2006). "A deconvolution approach for the mapping of acoustic sources (DAMAS) determined from phased microphone arrays." J. Sound Vib. 294(4-5):856–879. doi:10.1016/j.jsv.2005.12.046*
   - this approach models the CSM considering a distribution of statistically independent sources in the grid
     * modeled CSM is compared to the measured CSM, resulting in a linear system of equations
       - modeled CSM uses a single source placed at each grid location
@@ -340,6 +345,7 @@ Below is a overview of some commonly used beamforming algorithms.
   - dramatically improves dynamic range vs. standard D&S at low computational cost
   - widely used in recent literature as a fast alternative to CLEAN-SC for real-time systems
   - resolution and dynamic range improve with ν, but optimal ν is problem-dependent
+  - *Ref: Dougherty, R.P. (2014). "Functional Beamforming." Berlin Beamforming Conference (BeBeC) 2014, paper BeBeC-2014-01.*
 
 ### Sparse Bayesian Learning (SBL) / Atomic Norm Minimization
   - treats source localization as a sparse recovery (compressed sensing) problem

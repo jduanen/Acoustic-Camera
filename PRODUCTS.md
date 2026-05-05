@@ -47,12 +47,14 @@ To get some ideas of what's possible, existing products and projects are examine
   - data formats: 16b PCM mono, or FP32
   - 187x182x16mm, .24kg
 
-* Eigenmike
-  - https://?
-  - em64: 64x spherical spatial microphone array
-  - records 3D sound field with high-quality capsule mics
-  - supports up to 6th-order spherical harmonic processing
-  - ????
+* Eigenmike (mh Acoustics)
+  - https://mhacoustics.com/products
+  - em32: 32-capsule spherical array, 4th-order Ambisonics
+  - em64: 64-capsule spherical array, 7th-order Ambisonics
+  - records full 3D sound field; outputs raw capsule audio + Ambisonics B-format
+  - gold-plated condenser capsules, 20 Hz – 20 kHz
+  - USB or Dante network audio interface
+  - widely used reference platform for HOA research and spatial audio production
 
 * gfai Tech
   - https://www.gfaitech.com/

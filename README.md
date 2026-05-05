@@ -48,7 +48,25 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 
 ## FPGAs and FPGA Development Boards
 
-* ????
+Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous sampling, GbE packetization. See [DESIGN](./DESIGN.md) for details.
+
+### Candidate Devices
+
+* Lattice ECP5
+  - preferred for open-source toolchain (Yosys / nextpnr / openFPGALoader)
+  - ECP5-85F: 84K LUTs, 3.4Mb BRAM, abundant I/O
+  - low power; actively supported by open-source community
+  - dev boards: OrangeCrab, ULX3S, Versa ECP5
+
+* Xilinx Artix-7
+  - preferred for resource headroom and mature ecosystem (Vivado)
+  - XC7A100T: 101K LUTs, 4.8Mb BRAM, up to 210 user I/O
+  - large library of IP cores (GbE MAC, PCIe, etc.)
+  - dev boards: Digilent Arty A7-100T, Nexys A7
+
+* Intel Cyclone 10 LP
+  - alternative; good balance of cost and I/O count
+  - dev boards: Intel Cyclone 10 LP Evaluation Kit
 
 # Notes
 
@@ -82,10 +100,9 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
     * SNR: 61 dB
     * Sensitivity: -26 dBFS
     * Overload: 120 dBSPL
-    * Max sample-rate: 16kHz [????]
-  - micro USB interface, high-speed USB2.0
-  - ?
-* ?
+    * Max sample-rate: 16 kHz (limited by onboard XMOS firmware, not the mic hardware)
+  - micro USB interface, USB 2.0 (UAC1.0)
+  - Linux/macOS driverless; Windows requires driver
 
 # Docs
 

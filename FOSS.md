@@ -34,6 +34,7 @@
   - data acquisition, data import, time-domain linear/nonlinear filtering, spectrum estimation, array layout and mapping grids definition, spatial filtering (beamforming), time-/frequency-based deconvolution, inverse estimation methods, fixed/moving source data synthesis
   - uses lazy execution (only compute results that are needed, when they are needed)
     * important for pipelined operations on big datasets
+  - *Ref: Sarradj, E. & Herold, G. (2017). "A Python framework for microphone array data processing." Applied Acoustics 116:50–58. doi:10.1016/j.apacoust.2016.09.015*
 
 * AcouPipe: Python toolkit for acoustical source localization and characterization
   - https://github.com/adku1173/acoupipe
@@ -90,18 +91,17 @@
 * Open Embedded Audition System (ODAS)
   - https://github.com/introlab/odas
   - https://github.com/introlab/odas/wiki
-  - https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2022.854444/full
-  - https://arxiv.org/pdf/1812.00115
   - replaces ManyEars
   - C library for sound source localization, tracking, separation, and post-filtering
-  - has GUI for visualization
-  - open source 8x and 16x USB arrays
+  - real-time pipeline: SSL (localization) → SST (tracking) → SSS (separation) → post-filter
+  - designed for embedded deployment (Raspberry Pi, Jetson) as well as desktop
+  - companion ODAS Studio GUI for real-time visualization of tracked sources
+  - designed for use with 8x and 16x USB mic arrays (16SoundsUSB)
     * https://github.com/introlab/16SoundsUSB
-  - ?
+  - *Ref: Grondin, F. et al. (2022). "ODAS: Open and Distributed Audition System." Frontiers in Robotics and AI. doi:10.3389/frobt.2022.854444*
 
 * Pyroomacoustics: python package for room acoustics and audio
   - https://github.com/LCAV/pyroomacoustics
-  - https://www.researchgate.net/publication/320344643_Pyroomacoustics_A_Python_Package_for_Audio_Room_Simulation_and_Array_Processing_Algorithms
   - supports DoA, DSB, simulation
   - package for rapid development and testing of audio array processing algorithms
   - main parts:
@@ -110,12 +110,17 @@
     * reference implementations of popular algorithms for STFT, beamforming, direction finding, adaptive filtering, source separation, and single-channel denoising
   - includes datasets from CMU ARCTIC, TIMIT, Google Speech Commands Dataset
   - includes several examples
+  - *Ref: Scheibler, R., Bezzam, E. & Dokmanić, I. (2018). "Pyroomacoustics: A Python Package for Audio Room Simulation and Array Processing Algorithms." ICASSP 2018. doi:10.1109/ICASSP.2018.8461310*
 
-* SpectAcoular: GUI on top of Acoular
+* SpectAcoular: browser-based GUI on top of Acoular
   - https://github.com/acoular/spectacoular
   - started in 2019
-  - ?
+  - interactive beamforming analysis without writing code; built on Bokeh/Panel
+  - supports live visualization of energy maps, array geometry, and spectral data
+  - runs as a local web server; access from any browser on the same machine or network
 
 * vBeam: fast and differentiable beamformer for optimizing ultrasound imaging
   - https://github.com/magnusdk/vbeam
-  - ?
+  - JAX-based; differentiable end-to-end beamforming pipeline designed for gradient-based optimization
+  - targeted at ultrasound imaging, but the differentiable beamforming approach is transferable to acoustic cameras
+  - useful reference for GPU-accelerated and ML-optimized beamforming implementations

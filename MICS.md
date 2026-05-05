@@ -1,12 +1,15 @@
 # Microphone Elements
 
 * general characteristics
-  - higher SNR mics provide greater directionality than lower SNR ones
-  - ?
+  - higher SNR mics provide greater directionality than lower SNR ones; see: https://audioxpress.com/article/microphone-array-beamforming-with-optical-mems-microphones
+  - close sensitivity and phase matching between mics is critical for array performance
+    * mismatched mics degrade beam pattern and increase side-lobe levels
+    * factory-calibrated mics (e.g., Infineon IM69D120) are preferred for large arrays
+  - PDM interface is dominant for MEMS arrays; I2S supports 2 mics per link; TDM scales to 16 per link
 
 ## Electret
 
-????
+Traditional analog capsule mics with built-in FET buffer. Still used in large professional acoustic cameras (e.g., gfai EVO AC Pro, B&K arrays) where SNR performance exceeds available MEMS options, but less practical for dense arrays due to wiring complexity, phantom power requirements, and cost per channel.
 
 ## MEMS
 
@@ -108,8 +111,8 @@
 ### Infineon IM69D120
   - Digital MEMS
   - Dynamic Range: 95dBA
-  - Distorion: <=1% @ up to 118dBSPL
-  - Freq Range: 28-?
+  - Distortion: <=1% @ up to 118dBSPL
+  - Freq Range: 28 Hz – 20 kHz
   - close matching for arrays
     * phase matching: +/-2deg
     * sensitivity matching: +/-1dB
@@ -142,7 +145,7 @@
     * polarity: increasing sound pressure = increasing density of 1's
   - Sensitivity deviation: +/-1dB
   - Pattern: omni
-  - Freq Range: 50-10Hz?
+  - Freq Range: 50 Hz – 10 kHz
   - Power Supply
     * Vdd: 1.6-3.6V
     * Isb: 550uA @ 1.8V, 850uA @ 3.6V
@@ -228,7 +231,7 @@
   - wakeup time: 20ms
   - Fclk (std): 1-3.3MHz
 
-### INP441
+### INMP441
   - Digital MEMS
   - Interface: I2C
   - Bottom Port

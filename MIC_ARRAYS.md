@@ -12,8 +12,6 @@ Irregular spacing is preferred to avoid spatial aliasing or side-lobe artifacts 
 
 Mics have to be closely matched in sensitivity and frequency response. Mismatched mics can degrade beam performance and reduce the directionality of the array.
 
-**TODO:** look into spherical arrays
-
 ## 2D Array Patterns
 
 ### Regular Grid
@@ -58,7 +56,7 @@ Mics have to be closely matched in sensitivity and frequency response. Mismatche
   - often used to improve main-/side-lobe characteristics for sources near the center of the array
 
 ### Underbrink
-  - patented
+  - patented (US Patent 6,089,671, 2000)
   - multi-arm logarithmic spiral array, several arms radiating from the center
   - each arm is a log-spiral and mics are distributed along each arm
   - parameters: min/max radii (r_0, r_max), spiral angle, number of mics, number of arms
@@ -67,6 +65,7 @@ Mics have to be closely matched in sensitivity and frequency response. Mismatche
   - high spatial resolution and good side-lobe performance across a wide area
     * suitable for both central and off-axis source localization
   - considered best all-around performance among spiral arrays
+  - *Ref: Underbrink, J.R. (2002). "Aeroacoustic phased array testing in low speed wind tunnels." Ch. 3 in Aeroacoustic Measurements, Springer. doi:10.1007/978-3-662-05058-3_3*
 
 ### Bruel&Kjaer Spiral
   - patented
@@ -89,6 +88,7 @@ Mics have to be closely matched in sensitivity and frequency response. Mismatche
     * HOA is the standard framework for processing spherical arrays; used in VR/XR spatial audio, broadcast, and research (Eigenmike em32, mh Acoustics)
   - parameters: sphere radius, SH order N, grid scheme (Lebedev, Gaussian, t-design)
   - radius sets frequency range: smaller radius → higher usable frequency before spatial aliasing
+  - *Ref: Rafaely, B. (2015). Fundamentals of Spherical Array Processing. Springer. doi:10.1007/978-3-662-45664-4*
 
 ### Cylindrical Arrays
   - mics arranged on the surface of a cylinder (rings stacked along the axis)

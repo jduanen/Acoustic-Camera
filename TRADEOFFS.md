@@ -78,8 +78,10 @@
 * appears like many commercial products use arrays with spiral arms
   - many are 20-40cm in diameter
 * processing
-  - algorithm: MUSIC, DAMAS, ?
-  - required resources: compute, memory, ?
+  - target algorithm progression: Delay-and-Sum → MVDR → CLEAN-SC → Functional Beamforming → ML (see [DESIGN](./DESIGN.md))
+  - CLEAN-SC is the primary production target: good balance of resolution, speed, and robustness
+  - Functional Beamforming as a fast real-time alternative (no matrix inversion; single power operation on D&S map)
+  - required resources: GPU-accelerated host for CLEAN-SC and above; D&S/Functional BF can run on CPU
 * video overlay of sound energy
   - the amount of time needed to create the energy map will dictate the effective frame rate of the Acoustic Camera
   - do we need to capture a frame of video at the same time (start/end of block?) that the audio is captured and overlay on that frame?
