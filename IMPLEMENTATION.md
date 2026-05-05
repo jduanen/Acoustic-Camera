@@ -1,5 +1,7 @@
 # Implementation Details
 
+---
+
 ## Hardware
 
 ### Microphone Elements
@@ -31,6 +33,8 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
 * Intel Cyclone 10 LP
   - alternative; good balance of cost and I/O count
   - dev boards: Intel Cyclone 10 LP Evaluation Kit
+
+---
 
 ## Software
 

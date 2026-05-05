@@ -43,6 +43,8 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 ## Implementation Details
 [IMPLEMENTATION](./IMPLEMENTATION.md)
 
+---
+
 # Notes
 
 * Outstanding Questions
@@ -95,6 +97,8 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
     * Max sample-rate: 16 kHz (limited by onboard XMOS firmware, not the mic hardware)
   - micro USB interface, USB 2.0 (UAC1.0)
   - Linux/macOS driverless; Windows requires driver
+
+---
 
 # Docs
 

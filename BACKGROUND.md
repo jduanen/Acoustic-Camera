@@ -1,4 +1,8 @@
-# Use of Beamforming in Acoustic Cameras
+# Background Technical Information
+
+---
+
+## Use of Beamforming in Acoustic Cameras
 
 To create an Acoustic Camera, we want to compute the power map of the sources in the video camera's Field of View (FoV).
 The camera's FoV is partitioned into a grid of rectangles corresponding to a set of one or more adjacent pixels. The grid can be defined in terms of Cartesian or polar coordinates (i.e., (x, y) or (az, el) tuples).
@@ -25,6 +29,8 @@ The choice of beamforming algorithm and mic array define the key characteristics
 For example, the distance at which sounds sources can be localized, the accuracy with which this localization can be done, the number and type of sound sources that can be simultaneously localized, the frequency range in which localization can be done, the dynamic range of sounds over which the localization is possible, etc.
 
 Beamforming is also considered to be a type of spatial filtering, i.e., the effect of beamforming is to increase the gain in a given direction and attenuate signals from all other directions.
+
+---
 
 ## Approaches to Beamforming
 
@@ -121,6 +127,8 @@ Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Ma
 * Training data
   - AcouPipe DatasetSynthetic or DatasetMIRACLE for generating labeled mic array datasets matched to a specific array geometry
   - DCASE 2022–2024 datasets for SELD training and benchmarking
+
+---
 
 ## A Sampling of Beamforming Algorithms
 
@@ -357,6 +365,8 @@ Below is a overview of some commonly used beamforming algorithms.
     * avoids grid quantization error inherent in D&S/MUSIC
     * solved via semi-definite programming (SDP); computationally expensive but exact
   - active research area 2015–present; SBL implementations available in Acoular ecosystem
+
+---
 
 ## Important Beamforming Concepts
 
