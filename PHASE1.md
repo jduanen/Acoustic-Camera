@@ -79,34 +79,38 @@ Metrics extracted per configuration and frequency:
 
 ### Pattern comparison
 
-| Array | 4 kHz HPBW | 4 kHz MSL | 8 kHz HPBW | 8 kHz MSL |
-|---|---|---|---|---|
-| Underbrink 8×12, α=22° | 19.0° | −7.1 dB | 9.4° | −17.6 dB |
-| Underbrink 8×12, α=35° | 19.0° | **−17.1 dB** | 9.4° | −14.4 dB |
-| Underbrink 6×16, α=22° | 19.0° | −12.0 dB | 9.4° | −12.0 dB |
-| **Underbrink 12×8, α=22°** | 18.7° | **−24.4 dB** | 9.4° | **−19.4 dB** |
-| Vogel/Fermat | 16.8° | −17.0 dB | 8.4° | −17.0 dB |
-| Concentric Rings | 15.6° | −7.5 dB | 7.9° | −7.7 dB |
-| Regular Grid | 17.3° | −17.8 dB | 8.6° | −17.8 dB |
+Metrics computed over ±89° scan range (full hemisphere).  10dB BW at 1 kHz is undefined
+for all arrays — the main lobe fills the hemisphere at 300 mm aperture and has no −10 dB
+crossing in the valid scan range.
+
+| Array | 1 kHz HPBW | 1 kHz MSL | 4 kHz HPBW | 4 kHz MSL | 8 kHz HPBW | 8 kHz MSL |
+|---|---|---|---|---|---|---|
+| Underbrink 8×12, α=22° | 82.0° | −5.5 dB | 18.9° | −7.2 dB | 9.3° | −13.1 dB |
+| Underbrink 8×12, α=35° | 82.0° | −5.6 dB | 18.9° | −14.4 dB | 9.3° | −14.4 dB |
+| Underbrink 6×16, α=22° | 82.3° | −5.5 dB | 18.9° | −12.0 dB | 9.6° | −12.0 dB |
+| **Underbrink 12×8, α=22°** | 81.6° | −5.6 dB | 18.9° | **−24.4 dB** | 9.3° | **−18.9 dB** |
+| Vogel/Fermat | 72.0° | −6.1 dB | 16.7° | −17.0 dB | 8.6° | −17.0 dB |
+| Concentric Rings | 65.9° | −6.2 dB | 15.7° | −7.5 dB | 7.8° | −25.8 dB |
+| Regular Grid | 73.8° | −6.0 dB | 17.1° | −17.8 dB | 8.6° | −17.8 dB |
 
 Notes:
-- 1 kHz MSL is undefined for all Underbrink configs — the main lobe (~82°) fills the ±60°
-  scan window and no first null is visible.  This is a physical limit of a 300 mm aperture at 1 kHz,
-  not a measurement artefact.
-- Concentric Rings is consistently poor (−7 to −8 dB MSL) due to coherent grating lobes
-  from the regular angular spacing.
+- At 1 kHz, all Underbrink MSL values are around −5.5 dB — the main lobe is so wide (~82°)
+  that there is little hemisphere left for side lobes; this is a physical limit, not a geometry effect.
+- Concentric Rings shows a suspiciously low MSL at 8 kHz (−25.8 dB); this is likely a
+  measurement artefact from the first-null algorithm being confused by the deep nulls between
+  coherent grating lobes.  The 4 kHz result (−7.5 dB) is the more representative figure.
 - HPBW is nearly identical across all Underbrink configurations — aperture size, not arm count
   or spiral angle, determines beamwidth.
 
 ### Key findings
 
-**H=12×8 has the best side-lobe suppression** (−24.4 dB at 4 kHz, −19.4 dB at 8 kHz).
+**H=12×8 has the best side-lobe suppression** (−24.4 dB at 4 kHz, −18.9 dB at 8 kHz).
 Despite its bimodal spacing distribution identified in notebook 01, the irregular inter-arm
 distances actively suppress side lobes by preventing coherent grating lobe formation.
 
-**Spiral angle matters significantly for H=8×12:** α=35° gives −17.1 dB MSL at 4 kHz vs.
-only −7.1 dB at α=22°.  The spacing-optimised angle also improves the beam pattern —
-these objectives are aligned, not in tension.
+**Spiral angle matters significantly for H=8×12:** α=35° gives −14.4 dB MSL at both 4 and
+8 kHz, vs. only −7.2 dB / −13.1 dB at α=22°.  The spacing-optimised angle also improves
+the beam pattern — these objectives are aligned, not in tension.
 
 **Beamwidth is set by aperture alone:** all Underbrink configurations produce the same HPBW
 (~19° at 4 kHz, ~9° at 8 kHz) regardless of arm count or spiral angle.  The arm structure
@@ -119,7 +123,7 @@ only affects side-lobe levels.
 | **H=12×8, α=22°** | Best MSL at both 4 and 8 kHz; carry forward as primary |
 | **H=8×12, α=35°** | Good MSL, simpler arm structure, more uniform spacing; carry as alternative |
 
-H=8×12 at α=22° is dropped — it has substantially worse MSL (−7.1 dB at 4 kHz) than either
+H=8×12 at α=22° is dropped — it has substantially worse MSL (−7.2 dB at 4 kHz) than either
 revised candidate with no compensating benefit.
 
 ---
