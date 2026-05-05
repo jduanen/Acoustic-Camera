@@ -92,7 +92,22 @@ The PSF of a mic array provides information on the key characteristics of the mi
 
 ### Eigenvector/Eigenvalue methods of beamforming
 
-**TBD**
+Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Matrix (SCM) into signal and noise subspaces via eigenvalue decomposition. They provide higher resolution DoA estimation than Delay-and-Sum, especially for closely spaced sources.
+
+* MUSIC (Multiple Signal Classification) — see "A Sampling of Beamforming Algorithms" below; searches noise subspace for steering vector orthogonality
+* Root-MUSIC — polynomial form of MUSIC; avoids spectral peak search → cheaper computation
+* ESPRIT (Estimation of Signal Parameters via Rotational Invariance Techniques)
+  - exploits rotational invariance in the array signal model between two displaced sub-arrays
+  - returns DoA estimates directly without scanning a spatial spectrum
+  - lower computational cost than MUSIC for the same resolution
+  - requires arrays with specific geometric structure (pairs of displaced sub-arrays)
+* CSSM (Coherent Signal Subspace Method)
+  - extends subspace methods to wideband signals
+  - aligns frequency-bin covariance matrices into a common subspace before eigendecomposition
+* TR-MUSIC (Time-Reversal MUSIC)
+  - exploits time-reversal invariance of the wave equation to build a time-reversal operator
+  - decomposes operator into signal/noise subspaces as in standard MUSIC
+  - improves DoA accuracy in reverberant and multipath environments where standard MUSIC degrades
 
 ### ML-based Beamforming
 
@@ -103,9 +118,18 @@ The PSF of a mic array provides information on the key characteristics of the mi
 * ML models (including CNNs) have high beam tracking accuracy, outperforming other approaches in realtime applications
 * generalize well after training with synthetic data and transfer learning
 
-* Models
-  - ?
-...
+* Models (2019–2025 literature)
+  - CNN / CRNN-based DoA — classifies angular bins from GCC-PHAT or STFT magnitude features; fast inference, good generalization to unseen rooms
+  - Transformer (self-attention) — captures long-range mic-to-mic dependencies; top performer on DCASE SELD benchmarks (e.g., SELD-Conformer, 2022–2024)
+  - EIN-V2 / SELD-Conformer — combined Sound Event Detection + Localization (SELD); joint model for simultaneously answering "what" and "where"; consistent top-3 on DCASE 2022–2024 leaderboard
+  - PILOT (2022) — Physics-Informed Learning for DoA with Transformers; embeds array steering vectors directly into the attention mechanism; strong generalization across array geometries
+  - Deep MUSIC — neural network replaces or augments the eigendecomposition step; end-to-end trainable
+  - NN-MVDR / FasNet — neural network estimates MVDR filter weights directly from raw waveforms; primarily speech enhancement but applicable to source separation in acoustic cameras
+  - Physics-informed NNs — embed steering vector or wave propagation constraints into loss or network structure; improves generalization to out-of-distribution conditions
+  - Note on CBTL/DBTL (referenced above): Classification-Based and Denoising-Based Transfer Learning originate in beam management literature (5G/mmWave); direct application to acoustic cameras is an open research area
+* Training data
+  - AcouPipe DatasetSynthetic or DatasetMIRACLE for generating labeled mic array datasets matched to a specific array geometry
+  - DCASE 2022–2024 datasets for SELD training and benchmarking
 
 
 ## A Sampling of Beamforming Algorithms
@@ -319,6 +343,25 @@ Below is a survey of some commonly used beamforming algorithms.
   - particularly effective when the number of sources is limited and the array is high quality
   - frequently used with regularization techniques like NNLS or LassoLars to improve robustness
 
+* Functional Beamforming (FB)
+  - power map from conventional D&S beamforming is raised to a high integer power ν before computing the map
+    * sharpens peaks and suppresses side-lobes without iterative deconvolution
+  - simple extension of D&S: cost is a single power operation on the map, no matrix inversion
+  - dramatically improves dynamic range vs. standard D&S at low computational cost
+  - widely used in recent literature as a fast alternative to CLEAN-SC for real-time systems
+  - resolution and dynamic range improve with ν, but optimal ν is problem-dependent
+
+* Sparse Bayesian Learning (SBL) / Atomic Norm Minimization
+  - treats source localization as a sparse recovery (compressed sensing) problem
+    * true sources are sparse in the angular/spatial domain
+  - SBL: places sparsity-inducing priors over source powers and infers source locations via EM
+    * automatically estimates source count and noise variance
+    * superior resolution for closely-spaced sources vs. MUSIC/ESPRIT at low SNR
+  - Atomic norm minimization: gridless CS approach; represents source directions as atoms in a continuous dictionary
+    * avoids grid quantization error inherent in D&S/MUSIC
+    * solved via semidefinite programming (SDP); computationally expensive but exact
+  - active research area 2015–present; SBL implementations available in Acoular ecosystem
+
 # Design Tradeoffs
 
 * key characteristics
@@ -412,21 +455,179 @@ Below is a survey of some commonly used beamforming algorithms.
 
 # System Requirements
 
-**TBD**
-
-* Min/Max Distance (m)
-* Resolution (deg/auxel)
-* FOV (+/- horizontal/vertical degs)
-* Size of Mic Array (mm)
-* Frequency Range (Hz)
-* Environment: anechoic, enclosed/reverberant, random/coherent noise, single/multiple sources of interest
-* ?
+| Parameter | Value | Notes |
+|---|---|---|
+| Min Distance | ~0.5 m | Far-field criterion r > 2D²/λ; satisfied at 0.5 m for 400 mm array at ≥1 kHz |
+| Max Distance | ~10 m | Practical limit for compact array at 200 Hz |
+| Resolution | ~5° @ 1 kHz | Dependent on final aperture; improves with frequency |
+| FOV | ±45° H, ±30° V | Matched to co-located video camera field of view |
+| Mic Array Diameter | ~400–500 mm | 96 mics in Underbrink spiral, ~21 mm min spacing (Nyquist at 8 kHz) |
+| Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
+| Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
 # Target Design
 
-**TBD**
+## Microphone Array
 
+* 96× Infineon IM69D120 PDM MEMS mics
+  - 69 dBA SNR, factory-calibrated, ±1 dB sensitivity match, ±2° phase match
+* Underbrink multi-arm logarithmic spiral pattern — 8 arms × 12 mics or 6 arms × 16 mics (to be optimized in Phase 1 simulation)
+* ~21 mm min mic spacing (satisfies Nyquist at 8 kHz: λ/2 = 343/(2×8000) ≈ 21.4 mm)
+* ~400–500 mm diameter aperture
+* Custom PCB(s); mics share PDM clock, paired on data lines via L/R select → 48 DATA + 1 CLK to FPGA
 
+## Interface & Compute
+
+* PDM mics → FPGA hub → GbE → host PC
+* FPGA responsibilities
+  - PDM clock distribution: one shared clock fan-out to all 96 mics (careful layout for skew control)
+  - PDM decimation: CIC + FIR filter chain per channel, 3.072 MHz PDM → 48 kHz 24-bit PCM
+  - Synchronous sampling: all 96 channels share a common WS (word select) derived from the FPGA, guaranteeing sample-aligned capture
+  - GbE packetization: assembled audio frames with sequence numbers and timestamps sent over UDP to host
+  - Pin count: 48 DATA lines (2 mics per line via L/R select) + 1 CLK → manageable on mid-range FPGA
+  - Inspired by Ben Wang's 192-mic FPGA design (50 MHz FPGA, GbE to GPU host)
+* Data rate: 96 ch × 48 kHz × 24 b ≈ 110 Mbps — fits comfortably within 1 GbE
+* FPGA candidates
+  - Lattice ECP5: preferred for open-source toolchain (Yosys/nextpnr)
+  - Xilinx Artix-7 (XC7A100T): preferred for resource headroom and ecosystem maturity (101K LUTs, abundant I/O)
+  - Intel Cyclone 10: alternative
+* Host: Linux PC with GPU for accelerated beamforming (PyTorch/CuPy)
+
+## Software Stack
+
+* Python pipeline: Acoular for beamforming core + custom extensions
+* Algorithm progression: Delay-and-Sum → MVDR → CLEAN-SC → ML exploration
+* GPU acceleration via PyTorch or CuPy for frequency-domain beamforming
+
+## Video
+
+* USB camera co-located at array center
+* Field of view matched to array aperture and target distance range
+* Real-time overlay of energy map on video stream using OpenCV
+
+# Device Functions & Interface
+
+## Core Functions
+
+Every commercial acoustic camera supports these:
+
+* Real-time energy map — beamformed sound field rendered as a 2D heatmap image
+* Video + acoustic overlay — live video with energy map overlaid (colormap on camera image)
+* Selectable frequency range — bandpass filter to focus on frequencies of interest (octave or 1/3 octave bands)
+* Dynamic range control — adjustable display floor and ceiling (analogous to brightness/contrast for the acoustic image)
+* Field of view selection — selectable FoV (e.g., 90° or 60°); must match video camera optics
+* Image persistence / temporal averaging — controls the time window over which energy is averaged
+  - fast = tracks transients; slow = reveals weak stationary sources
+  - range: 10 ms to 10 s
+* Record / playback — capture synchronized audio, video, and energy map sequences; replay offline
+
+## Extended Functions
+
+Features that differentiate higher-end products; implement progressively:
+
+* Algorithm selector — choose beamforming algorithm at runtime: D&S → MVDR → CLEAN-SC (and later ML-based)
+* Frequency-resolved maps — display energy maps at multiple octave bands simultaneously (side-by-side or toggled)
+* Source tracking — lock on and follow the loudest detected source across frames
+* Near-field / far-field mode — toggle assumption about wave curvature; affects steering delay computation
+* Depth / range estimation — estimate distance to source using a co-located depth camera (e.g., Intel RealSense); enables 3D source localization
+* Calibration mode — guided workflow to measure and store mic-to-mic sensitivity, phase, and position corrections
+
+## Interface Design
+
+### Phase 2 / Phase 3 — Host-tethered (USB)
+
+Follow the ACAM_64 (Convergence Instruments) model: USB audio streaming to host PC, open protocol, Python-based desktop GUI.
+
+GUI elements:
+* Live video window with energy map overlay (adjustable colormap, opacity)
+* Frequency band selector (octave / 1/3 octave buttons or slider)
+* Dynamic range sliders (floor / ceiling dB)
+* Algorithm selector dropdown (D&S, MVDR, CLEAN-SC)
+* Persistence / averaging time slider
+* FOV selector (if multiple optics supported)
+* Record / Stop button + session file naming
+* Real-time SPL meter and peak-hold indicator
+* Status bar: sample rate, latency, mic count, connection state
+
+Reference implementations:
+* ACAM_64 open USB CDC protocol (virtual COM port + USB audio streaming)
+* UMA-16 v2: raw 16-ch USB audio, host does all processing — good scaffold for Phase 3
+* SpectAcoular (GUI layer on top of Acoular): open source, Python/Bokeh
+
+### Phase 4 — FPGA + GbE (full custom array)
+
+The FPGA hub sends 96-channel PCM audio over GbE (UDP packets). Host GUI additions:
+* GbE packet ingestion with sequence-number tracking and drop detection
+* Calibration workflow UI (guided mic position / sensitivity estimation)
+* Full algorithm suite (CLEAN-SC, MVDR, Functional Beamforming)
+
+### Phase 4b — Standalone / Field Use
+
+As GbE tethering to a laptop becomes inconvenient for field use, optionally add:
+* Embedded web UI (served from onboard SBC, accessed via phone or tablet browser over WiFi)
+* Or small integrated touchscreen (7" is the commercial standard — HEAD VMA V pattern)
+* Physical record/stop button(s) on the housing
+* Battery-powered operation with charge indicator
+
+# Development Roadmap
+
+Each phase produces a working end-to-end system — just lower performance. Never have a "not yet working" state for more than one phase at a time.
+
+## Phase 1 — Simulation & Algorithm Benchmarking
+*No hardware required*
+
+* Simulate virtual mic arrays and synthetic sound sources using Acoular + Pyroomacoustics
+* Validate D&S, MVDR, and CLEAN-SC against known ground-truth DoA
+* Compare array geometries (Underbrink vs. grid vs. simple ring) before committing to PCB fabrication
+* Tune array parameters: number of mics, spacing, aperture, number of spiral arms
+* Generate labeled datasets for later ML training using AcouPipe (DatasetSynthetic or DatasetMIRACLE)
+* Deliverable: Python notebooks demonstrating energy maps and DoA accuracy for each algorithm
+
+## Phase 2 — Smoke Test with ReSpeaker Mic Array v2.0
+*Hardware already in hand*
+
+* 4-mic circular array, 90 mm diameter, USB interface — limited spatial resolution but immediate availability
+* Goals: validate the full software pipeline end-to-end: audio capture → beamforming → energy map → video overlay
+* Surface real-world issues early: USB latency, clock drift, mic-to-mic sensitivity mismatch, background noise floor
+* Implement calibration workflow (cross-correlation-based, inspired by Ben Wang's approach)
+* Deliverable: live video with overlaid energy map; not high performance, but fully functional pipeline
+
+## Phase 3 — Intermediate Array (16–32 mics)
+*Validate scaling before custom PCB commitment*
+
+Two options:
+* Option A (fast): miniDSP UMA-16 — off-the-shelf, 16-ch, USB, XMOS interface; no PCB work required
+* Option B (more representative): small custom PCB with 16–24 mics in a simplified Underbrink pattern
+
+Goals:
+* Validate PDM/TDM synchronization and data aggregation at scale
+* Evaluate CLEAN-SC and MVDR on real multi-mic data vs. simulation predictions
+* Exercise the calibration workflow at scale
+* Confirm chosen mic (IM69D120) has adequate sensitivity and phase matching in practice
+* Deliverable: calibrated beamforming demo with measurably better spatial resolution than Phase 2
+
+## Phase 4 — Full Custom Array (96 mics, Underbrink spiral, FPGA hub)
+*Only after Phase 3 pipeline is proven*
+
+Hardware sub-tasks (can be parallelized):
+* Mic array PCB(s): 96× Infineon IM69D120 in Underbrink spiral (geometry optimized in Phase 1 simulation); ~400–500 mm aperture, ~21 mm min spacing; careful analog layout and shielding
+* FPGA hub board: PDM clock distribution, 96-channel CIC+FIR decimation (PDM→PCM), synchronous WS, GbE packetization; candidate: Lattice ECP5 or Xilinx Artix-7; open-source HDL (VHDL or SystemVerilog)
+* Co-located video camera: USB camera mounted at array center, field of view matched to array aperture and target distance range
+
+Software sub-tasks:
+* Update host pipeline to ingest GbE audio packets, handle sequence/drop detection
+* Full calibration workflow: cross-correlation-based mic position and sensitivity estimation (PyTorch gradient descent, as in Ben Wang's design)
+* PSF measurement and array characterization
+
+Deliverable: full-performance acoustic camera meeting System Requirements (200 Hz–8 kHz, ±45° FoV, ~5° resolution @ 1 kHz)
+
+## Phase 5 — ML Enhancement
+*After real data is available from Phase 3/4*
+
+* Use AcouPipe to generate synthetic datasets matched to the actual array geometry
+* Train PILOT or CRNN-based DoA model; benchmark against CLEAN-SC
+* Explore real-time inference on GPU; profile latency vs. frame rate tradeoff
+* Deliverable: ML-based beamformer with comparable or better accuracy than CLEAN-SC at lower latency
 
 # Existing Systems
 
@@ -690,6 +891,8 @@ To get some ideas of what's possible, existing products and projects are examine
 * Open Embedded Audition System (ODAS)
   - https://github.com/introlab/odas
   - https://github.com/introlab/odas/wiki
+  - https://www.frontiersin.org/journals/robotics-and-ai/articles/10.3389/frobt.2022.854444/full
+  - https://arxiv.org/pdf/1812.00115
   - replaces ManyEars
   - C library for sound source localization, tracking, separation, and post-filtering
   - has GUI for visualization
@@ -799,6 +1002,35 @@ TBD: look into spherical arrays
 
 ### 3D Array Patterns
 
+* Spherical Arrays
+  - mics distributed uniformly on a sphere surface (e.g., Lebedev grid, t-design points)
+  - provides full 4π steradian coverage — elevation and azimuth simultaneously
+  - mathematical framework: Higher-Order Ambisonics (HOA)
+    * sound field decomposed into Spherical Harmonics (SH) up to order N
+    * order N requires (N+1)² mics minimum: order 4 = 25 mics, order 7 = 64 mics, order 9 = 100 mics
+    * higher order → narrower beams, better spatial resolution
+    * HOA is the standard framework for processing spherical arrays; used in VR/XR spatial audio, broadcast, and research (Eigenmike em32, mh Acoustics)
+  - parameters: sphere radius, SH order N, grid scheme (Lebedev, Gaussian, t-design)
+  - radius sets frequency range: smaller radius → higher usable frequency before spatial aliasing
+
+* Cylindrical Arrays
+  - mics arranged on the surface of a cylinder (rings stacked along the axis)
+  - strong azimuthal resolution; elevation resolution limited by cylinder height
+  - good for horizontal-plane localization in vertically elongated environments
+  - Cylindrical Harmonics analog of HOA exists for cylindrical geometry
+
+* Tetrahedral / Platonic Solid Arrays
+  - minimum of 4 mics required for 3D DoA estimation
+  - tetrahedral geometry (e.g., Soundfield SPS200, Core Sound TetraMic) is the smallest practical 3D array
+    * First-order Ambisonics (FOA / B-format); 4 mics, SH order 1
+  - larger platonic solids (octahedron, icosahedron) support higher-order SH decompositions
+  - dual-layer icosahedral arrays (e.g., Zylia ZM-1, 19 mics) offer 3rd-order Ambisonics at low cost
+
+* Nested / Concentric 3D Arrays
+  - multiple spherical shells at different radii
+  - inner shell handles high frequencies (avoids aliasing); outer shell extends low-frequency range
+  - near-field and far-field source distinction becomes possible via range estimation
+
 # Microphone Elements
 
 * general characteristics
@@ -831,6 +1063,7 @@ TBD: look into spherical arrays
     * 1% THD: 94-110 dBSPL
   - AOP: 10% THD @ 1KHZ, 120dBSPL
   - PSSR: 200mVpp sine @ 1KHz: -86dBA
+  - PCM output, 18b precision, 24b format
 
 ### InvenSense ICS-52000
   - digital MEMS
@@ -1022,6 +1255,29 @@ TBD: look into spherical arrays
   - wakeup time: 20ms
   - Fclk (std): 1-3.3MHz
 
+### INP441
+  - Digital MEMS
+  - Interface: I2C
+  - Bottom Port
+  - PCM output, 18b precision, 24b format
+  - Freq Response: 60Hz-15KHz
+  - Sensitivity: -26dBFS @ 94dBSPL
+  - SNR: 61dBA
+  - AOP: 120 dBSPL
+  - PSRR: -75 dBFS
+
+### MSM261S4030H0
+  - on Xiao ESP32-S3 Sense
+  - Digital MEMS
+  - PCM output, 18b precision, 24b format
+  - Bottom Port
+  - SNR: 63dBA
+  - Sensitivity: -26dBFS @1KHz, 1Pa
+  - Freq Response: 100Hz-10KHz
+  - AOP: 120dBSPL
+  - THD: <1% @ 100dBSPL, <10% @ 120dBSPL
+  - PSR: -72dBFSA
+
 # Notes
 
 * TODOs
@@ -1036,6 +1292,27 @@ TBD: look into spherical arrays
     * 42mm mic spacing for a BW of  4KHz requires 17dB gain @ 100Hz -> min mic SNR = 65dBA
     * 21mm mic spacing for a BW of  8KHz requires 22dB gain @ 100Hz -> min mic SNR = 70dBA
     *  7mm mic spacing for a BW of 24KHz requires 32dB gain @ 100Hz -> min mic SNR = 80dBA
+* I2S PCM MEMS mics comparisons
+  - I have, and tested
+    * INMP441 (441 NEO447)
+    * MSM261S4030H0 (Xiao Sense?)
+  - Amazon
+    * SPH0645LM4H-B (Knowles?)
+    * MSM261S4030H0
+  - others
+    * InvenSense ICS-52000 -- not I2S, TDM
+    * InvenSense ICS-43434
+    * InvenSense ICS-43432
+* reSpeaker
+  - ST MP34DT01TR-M
+    * 4x PDM Omni MEMS mics
+    * 90mm diameter, 33mm inter-mic spacing
+    * SNR: 61 dB
+    * Sensitivity: -26 dBFS
+    * Overload: 120 dBSPL
+    * Max sample-rate: 16kHz [????]
+  - micro USB interface, high-speed USB2.0
+  - ?
 * ?
 
 # Docs
