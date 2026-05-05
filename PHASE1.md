@@ -133,9 +133,10 @@ H=8×12 at α=22° is dropped — it has substantially worse MSL (−7.2dB @ 4kH
 
 ### Method
 
-Synthetic far-field signals generated analytically: steering vectors + additive white Gaussian noise,
-averaged over 256 snapshots to form the Cross-Spectral Matrix (CSM).
-Array: Underbrink H=12×8, α=22° (96 mics).  Evaluation frequency: 4 kHz (HPBW ≈ 19°).
+* Synthetic far-field signals generated analytically:
+  - steering vectors + additive white Gaussian noise, averaged over 256 snapshots to form the Cross-Spectral Matrix (CSM)
+* Array: Underbrink H=12×8, α=22° (96 mics)
+* Evaluation frequency: 4 kHz (HPBW ≈ 19°).
 
 Three algorithms benchmarked:
 - **D&S** — Conventional Delay-and-Sum: `P(θ) = h^H R h`
@@ -153,21 +154,20 @@ Three algorithms benchmarked:
 
 ### Key findings
 
-**All algorithms achieve sub-0.1° DoA accuracy** on a single isolated source at SNR=20 dB.
-The limiting factor for accuracy is scan-grid resolution, not algorithm quality.
+**All algorithms achieve sub-0.1° DoA accuracy** on a single isolated source at SNR=20dB
+  * the limiting factor for accuracy is scan-grid resolution, not algorithm quality
 
-**Resolution limit is at the HPBW:** sources separated by 0.5×HPBW (9° at 4 kHz) are not
-resolved by any algorithm at 256 snapshots / SNR=20 dB.  D&S is a matched filter so cannot
-exceed the Rayleigh limit; MVDR's super-resolution advantage appears only at high SNR and
-large snapshot counts (not demonstrated here).
+**Resolution limit is at the HPBW:**
+  * sources separated by 0.5×HPBW (9° @ 4kHz) are not resolved by any algorithm at 256 snapshots / SNR=20dB
+  * D&S is a matched filter so cannot exceed the Rayleigh limit
+  * MVDR's super-resolution advantage appears only at high SNR and large snapshot counts (not demonstrated here)
 
-**MVDR has the best dynamic range:** only MVDR successfully detected the −20 dB weak source
-(25° from the strong source) at SNR=30 dB.  D&S fails because the strong source's side lobes
-mask the valley between the two sources.  CLEAN-SC fails because the residual after
-subtracting the dominant source is not clean enough for the weak peak to emerge at this
-iteration depth (30 iterations, loop gain 0.5).
+**MVDR has the best dynamic range:**
+  * only MVDR successfully detected the −20 dB weak source (25° from the strong source) @ SNR=30dB
+  * D&S fails because the strong source's side lobes mask the valley between the two sources
+  * CLEAN-SC fails because the residual after subtracting the dominant source is not clean enough for the weak peak to emerge at this iteration depth (30 iterations, loop gain 0.5)
 
-**Practical implication for Phase 2/3:** two-source resolution requires at least 1×HPBW
-separation (~19° at 4 kHz, ~9° at 8 kHz) for reliable detection at typical SNR.  CLEAN-SC
-is preferred for clean single-source maps (suppresses diffuse clutter); MVDR is preferred
-when dynamic range and source separation matter.
+**Practical implication for Phase 2/3:**
+  * two-source resolution requires at least 1×HPBW separation (~19° @ 4kHz, ~9° @ 8kHz) for reliable detection at typical SNR
+  * CLEAN-SC is preferred for clean single-source maps (suppresses diffuse clutter)
+  * MVDR is preferred when dynamic range and source separation matter
