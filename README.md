@@ -49,6 +49,12 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
   - what camera/optics are needed to match the mic array's FOV and resolution?
   - ?
 
+* Phase 1
+  - Tasks
+    * array geometry visualization
+    * a D&S beamforming demo
+    * Underbrink vs. other patterns comparison
+
 * TODOs
   - match camera and mic array resolution
   - match audio input path dynamic range to ADCs

@@ -36,3 +36,17 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
 
 ## Open-Source Acoustic Beamforming Software
 [FOSS](./FOSS.md)
+
+## Python Packages
+
+* acoular: Beamforming core (D&S, MVDR, CLEAN-SC, array geometry)
+* pyroomacoustics: Room acoustics simulation, synthetic source data
+* acoupipe: ML training dataset generation (from GitHub) 
+* numpy: Array math
+* scipy: Signal processing
+* matplotlib: Plotting
+* h5py: HDF5 I/O (Acoular data format)
+* jupyterlab: Notebooks (Phase 1 deliverable) 
+* pandas: Results tabulation
+* seaborn: Visualization
+* tqdm: Progress bars
