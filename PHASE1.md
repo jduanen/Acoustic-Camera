@@ -176,6 +176,24 @@ Four algorithms benchmarked:
   * CLEAN-SC is preferred for clean single-source maps (suppresses diffuse clutter)
   * D&S remains the baseline reference — simplest, most robust at all SNR
 
+### SNR sensitivity (single source at 10°, 4kHz, 256x snapshots)
+
+| SNR (dB) | D&S (°) | MVDR (°) | MUSIC (°) |
+|---|---|---|---|
+| 0 | 0.69 | 0.03 | 1.29 |
+| 4 | 0.33 | 0.15 | 0.45 |
+| 8 | 0.15 | 0.03 | 0.15 |
+| 12 | 0.15 | 0.27 | 0.15 |
+| 14 | 0.03 | 0.09 | 0.03 |
+| 20+ | 0.03 | 0.03 | 0.03 |
+
+* All three algorithms reach the scan-grid floor (0.03°) by SNR ≈ 14dB and remain there
+* Below 10dB errors increase, but 256x snapshots produces high variance
+  - individual values at low SNR are dominated by noise, rather than algorithm behaviour
+* The 0.03° floor is a scan resolution artefact (1000-point grid over ±60°), not a true accuracy limit
+
+**Practical floor:** plan for SNR ≥ 10 dB at the array for reliable DoA estimation
+
 ---
 
 ## 04 — Near-Field (Focused) Beamforming (`notebooks/04_nearfield.ipynb`)
@@ -247,6 +265,51 @@ does not affect the subspace structure, only the steering delays.
   * Sub-centimetre range error at 1.5m (0.8cm) in simulation
   * Resolves two sources at different ranges even when they share the same angular direction
 
+**CLEAN-SC is excluded from the near-field comparison:**
+  * CLEAN-SC subtracts source contributions from the working CSM using the steering vector at the peak
+  * In the near-field formulation, that subtraction requires spherical-wave steering
+    - a straightforward port of the far-field version would use mismatched vectors and produce an incorrect residual
+  * Near-field CLEAN-SC is a known extension in the literature and should be added in a later notebook
+
 **Phase 2 (ReSpeaker, 90mm aperture) does not need near-field correction:**
   * r_FF for 90mm at 4kHz ≈ 0.19m, it is always far field at any practical distance
   * Near-field formulation is the correct baseline for Phase 4 (300mm array)
+
+---
+
+## Phase 1 Summary
+
+### Array geometry decision
+
+**Primary candidate: Underbrink H=12×8, α=22°** (96x mics, 300mm aperture)
+- Best side-lobe suppression (−24.4dB @ 4kHz, −18.9dB @ 8kHz)
+- Min spacing 12.9mm → alias-free up to ~13kHz (target: 8kHz)
+- Bimodal spacing distribution is acceptable
+  * the irregular arm spacing is what suppresses side lobes
+
+**Alternative: Underbrink H=8×12, α=35°**
+- More uniform spacing (12.2mm, nearly perfectly equal arc-length)
+- −14.4dB MSL @ 4 and 8kHz is adequate, but ~10dB worse than the primary choice
+- Simpler layout is easier to route if PCB space is tight
+
+### Algorithm selection by use case
+
+| Use case | Recommended algorithm |
+|---|---|
+| Real-time display, single dominant source | CLEAN-SC |
+| Multiple sources or weak source detection | MVDR |
+| Closely-spaced sources, source count known | MUSIC |
+| Lowest latency / embedded compute | D&S |
+| Near-field, range + angle estimation | Focused D&S (or MVDR/MUSIC with NF steering) |
+
+### What Phase 1 does NOT cover
+
+The following remain for Phase 2 (or later) simulation:
+- **MUSIC robustness to wrong source count**: practical systems cannot assume n_sources is known
+- **Broadband / frequency-swept maps**: all work here is single-frequency
+  * real output is octave-band averaged
+- **Snapshot count sweep**: real-time update rate vs. algorithm quality tradeoff
+- **Calibration sensitivity**: effect of ±1dB gain and ±2° phase mismatch (from the IM69D120 specs)
+- **Near-field CLEAN-SC**: spherical-wave extension not yet implemented
+- **2D elevation × azimuth maps**: all simulations are 1D azimuth scans
+- **Reverberant/multipath environments**: free-field assumption is made throughout this phase
