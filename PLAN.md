@@ -40,7 +40,7 @@ Goals:
 *Only after Phase 3 pipeline is proven*
 
 Hardware sub-tasks (can be parallelized):
-* Mic array PCB(s): 96× Infineon IM69D120 in Underbrink spiral (geometry optimized in Phase 1 simulation); ~400–500 mm aperture, ~21 mm min spacing; careful analog layout and shielding
+* Mic array PCB(s): 96× Infineon IM69D120 in Underbrink spiral (geometry optimized in Phase 1 simulation); ~300 mm aperture, ~21 mm min spacing; careful analog layout and shielding
 * FPGA hub board: PDM clock distribution, 96-channel CIC+FIR decimation (PDM→PCM), synchronous WS, GbE packetization; candidate: Lattice ECP5 or Xilinx Artix-7; open-source HDL (VHDL or SystemVerilog)
 * Co-located video camera: USB camera mounted at array center, field of view matched to array aperture and target distance range
 
@@ -49,7 +49,7 @@ Software sub-tasks:
 * Full calibration workflow: cross-correlation-based mic position and sensitivity estimation (PyTorch gradient descent, as in Ben Wang's design)
 * PSF measurement and array characterization
 
-Deliverable: full-performance acoustic camera meeting System Requirements (200 Hz–8 kHz, ±45° FoV, ~5° resolution @ 1 kHz)
+Deliverable: full-performance acoustic camera meeting System Requirements (200 Hz–8 kHz, ±45° FoV, ~8° @ 8 kHz, ~17° @ 4 kHz)
 
 ## Phase 5 — ML Enhancement
 *After real data is available from Phase 3/4*
