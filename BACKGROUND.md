@@ -237,6 +237,10 @@ Below is a overview of some commonly used beamforming algorithms.
     * DoA Estimation: directions corresponding to peaks are the estimated DoAs of the sources
   - can resolve multiple closely-spaced sources
   - provides high accuracy in low-noise and low-reverb environments
+  - need to provide an estimate of the number of sources -- could be problematic
+  - Root-MUSIC has lower search costs
+  - reports vary on comparisons with ESPRIT
+    * ESPRIT depends on rotational-invariance, but is a fast and search-free estimation technique
   - *Ref: Schmidt, R.O. (1986). "Multiple emitter location and signal parameter estimation." IEEE Trans. Antennas Propagat. 34(3):276–280. doi:10.1109/TAP.1986.1143830*
 
 ### CLEAN-based on Source Coherence (CLEAN-SC)
