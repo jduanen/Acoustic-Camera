@@ -130,4 +130,43 @@ revised candidate with no compensating benefit.
 
 ## 03 — Algorithm Benchmarking (`notebooks/03_algorithms.ipynb`)
 
-*Planned.*
+### Method
+
+Synthetic far-field signals generated analytically: steering vectors + additive white Gaussian noise,
+averaged over 256 snapshots to form the Cross-Spectral Matrix (CSM).
+Array: Underbrink H=12×8, α=22° (96 mics).  Evaluation frequency: 4 kHz (HPBW ≈ 19°).
+
+Three algorithms benchmarked:
+- **D&S** — Conventional Delay-and-Sum: `P(θ) = h^H R h`
+- **MVDR** — Minimum Variance Distortionless Response (Capon): `P(θ) = 1 / (h^H R⁻¹ h)`
+- **CLEAN-SC** — Iterative source-coherence deconvolution (Sijtsma 2007)
+
+### Scenario results
+
+| Scenario | D&S | MVDR | CLEAN-SC |
+|---|---|---|---|
+| 1: single source at 0°, SNR=20 dB | 0.1° error | 0.1° error | 0.1° error |
+| 2: two equal sources ±15° (30° sep), SNR=20 dB | Resolved | Resolved | Resolved |
+| 3: two equal sources ±4.5° (9° sep ≈ 0.5×HPBW), SNR=20 dB | Not resolved | Not resolved | Not resolved |
+| 4: strong (−15°) / weak (−20 dB, +10°), SNR=30 dB | Not resolved | **Resolved** | Not resolved |
+
+### Key findings
+
+**All algorithms achieve sub-0.1° DoA accuracy** on a single isolated source at SNR=20 dB.
+The limiting factor for accuracy is scan-grid resolution, not algorithm quality.
+
+**Resolution limit is at the HPBW:** sources separated by 0.5×HPBW (9° at 4 kHz) are not
+resolved by any algorithm at 256 snapshots / SNR=20 dB.  D&S is a matched filter so cannot
+exceed the Rayleigh limit; MVDR's super-resolution advantage appears only at high SNR and
+large snapshot counts (not demonstrated here).
+
+**MVDR has the best dynamic range:** only MVDR successfully detected the −20 dB weak source
+(25° from the strong source) at SNR=30 dB.  D&S fails because the strong source's side lobes
+mask the valley between the two sources.  CLEAN-SC fails because the residual after
+subtracting the dominant source is not clean enough for the weak peak to emerge at this
+iteration depth (30 iterations, loop gain 0.5).
+
+**Practical implication for Phase 2/3:** two-source resolution requires at least 1×HPBW
+separation (~19° at 4 kHz, ~9° at 8 kHz) for reliable detection at typical SNR.  CLEAN-SC
+is preferred for clean single-source maps (suppresses diffuse clutter); MVDR is preferred
+when dynamic range and source separation matter.
