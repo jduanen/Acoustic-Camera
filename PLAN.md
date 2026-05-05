@@ -16,8 +16,8 @@ My goal is to never have a "not yet working" state for more than one phase at a 
 ## Phase 2 — Smoke Test with ReSpeaker Mic Array v2.0
 *Hardware already in hand*
 
-* 4-mic circular array, 90 mm diameter, USB interface — limited spatial resolution but immediate availability
-* Goals: validate the full software pipeline end-to-end: audio capture → beamforming → energy map → video overlay
+* 4-mic circular array, 90mm diameter, USB interface -- limited spatial resolution but immediate availability
+* Goals: validate the full software pipeline end-to-end -- audio capture → beamforming → energy map → video overlay
 * Surface real-world issues early: USB latency, clock drift, mic-to-mic sensitivity mismatch, background noise floor
 * Implement calibration workflow (cross-correlation-based, inspired by Ben Wang's approach)
 * Deliverable: live video with overlaid energy map; not high performance, but fully functional pipeline
@@ -40,16 +40,23 @@ Goals:
 *Only after Phase 3 pipeline is proven*
 
 Hardware sub-tasks (can be parallelized):
-* Mic array PCB(s): 96× Infineon IM69D120 in Underbrink spiral (geometry optimized in Phase 1 simulation); ~300 mm aperture, ~21 mm min spacing; careful analog layout and shielding
-* FPGA hub board: PDM clock distribution, 96-channel CIC+FIR decimation (PDM→PCM), synchronous WS, GbE packetization; candidate: Lattice ECP5 or Xilinx Artix-7; open-source HDL (VHDL or SystemVerilog)
-* Co-located video camera: USB camera mounted at array center, field of view matched to array aperture and target distance range
+* Mic array PCB(s)
+  - 96× Infineon IM69D120 in Underbrink spiral (geometry optimized in Phase 1 simulation)
+  - ~300mm aperture, ~21 mm min spacing
+  - careful analog layout and shielding
+* FPGA hub board
+  - PDM clock distribution, 96-channel CIC+FIR decimation (PDM→PCM), synchronous WS, GbE packetization
+  - candidate: Lattice ECP5 or Xilinx Artix-7; open-source HDL (VHDL or SystemVerilog)
+* Co-located video camera
+  - USB camera mounted at array center
+  - field of view matched to array aperture and target distance range
 
 Software sub-tasks:
 * Update host pipeline to ingest GbE audio packets, handle sequence/drop detection
 * Full calibration workflow: cross-correlation-based mic position and sensitivity estimation (PyTorch gradient descent, as in Ben Wang's design)
 * PSF measurement and array characterization
 
-Deliverable: full-performance acoustic camera meeting System Requirements (200 Hz–8 kHz, ±45° FoV, ~8° @ 8 kHz, ~17° @ 4 kHz)
+Deliverable: full-performance acoustic camera meeting System Requirements (200Hz-8kHz, ±45° FoV, ~8° @ 8kHz, ~17° @ 4kHz)
 
 ## Phase 5 — ML Enhancement
 *After real data is available from Phase 3/4*

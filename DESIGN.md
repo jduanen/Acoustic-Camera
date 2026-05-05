@@ -16,13 +16,13 @@
 
 * PDM mics → FPGA hub → GbE → host PC
 * FPGA responsibilities
-  - PDM clock distribution: one shared clock fan-out to all 96 mics (careful layout for skew control)
+  - PDM clock distribution: one shared clock fan-out to all 96x mics (careful layout for skew control)
   - PDM decimation: CIC + FIR filter chain per channel, 3.072 MHz PDM → 48 kHz 24-bit PCM
-  - Synchronous sampling: all 96 channels share a common WS (word select) derived from the FPGA, guaranteeing sample-aligned capture
+  - Synchronous sampling: all 96x channels share a common WS (word select) derived from the FPGA, guaranteeing sample-aligned capture
   - GbE packetization: assembled audio frames with sequence numbers and timestamps sent over UDP to host
-  - Pin count: 48 DATA lines (2 mics per line via L/R select) + 1 CLK → manageable on mid-range FPGA
+  - Pin count: 48x DATA lines (2x mics per line via L/R select) + 1x CLK (manageable on mid-range FPGA)
   - Inspired by Ben Wang's 192-mic FPGA design (50 MHz FPGA, GbE to GPU host)
-* Data rate: 96 ch × 48 kHz × 24 b ≈ 110 Mbps, which fits comfortably within 1 GbE
+* Data rate: 96ch × 48kHz × 24b ≈ 110 Mbps (which fits comfortably within 1 GbE)
 * FPGA candidates
   - Lattice ECP5: preferred for open-source toolchain (Yosys/nextpnr)
   - Xilinx Artix-7 (XC7A100T): preferred for resource headroom and ecosystem maturity (101K LUTs, abundant I/O)
@@ -80,31 +80,33 @@ Follow the ACAM_64 (Convergence Instruments) model: USB audio streaming to host 
 
 GUI elements:
 * Live video window with energy map overlay (adjustable colormap, opacity)
-* Frequency band selector (octave / 1/3 octave buttons or slider)
-* Dynamic range sliders (floor / ceiling dB)
+* Frequency band selector (octave and 1/3 octave buttons or slider)
+* Dynamic range sliders (floor/ceiling dB)
 * Algorithm selector dropdown (D&S, MVDR, CLEAN-SC)
-* Persistence / averaging time slider
+* Persistence/averaging time slider
 * FOV selector (if multiple optics supported)
-* Record / Stop button + session file naming
+* Record/Stop button and session file naming
 * Real-time SPL meter and peak-hold indicator
 * Status bar: sample rate, latency, mic count, connection state
 
 Reference implementations:
 * ACAM_64 open USB CDC protocol (virtual COM port + USB audio streaming)
-* UMA-16 v2: raw 16-ch USB audio, host does all processing, which is a good scaffold for Phase 3 work
+* UMA-16 v2: raw 16-ch USB audio, host does all processing (which is a good scaffold for Phase 3 work)
 * SpectAcoular (GUI layer on top of Acoular): open source, Python/Bokeh
 
 #### Phase 4: FPGA + GbE (full custom array)
 
-The FPGA hub sends 96-channel PCM audio over GbE (UDP packets). Host GUI additions:
+The FPGA hub sends 96-channel PCM audio over GbE (UDP packets)
+
+Host GUI additions:
 * GbE packet ingestion with sequence-number tracking and drop detection
-* Calibration workflow UI (guided mic position / sensitivity estimation)
+* Calibration workflow UI (guided mic position/sensitivity estimation)
 * Full algorithm suite (CLEAN-SC, MVDR, Functional Beamforming)
 
-#### Phase 4b: Standalone / Field Use
+#### Phase 4b: Standalone/Field Use
 
 As GbE tethering to a laptop becomes inconvenient for field use, optionally add:
 * Embedded web UI (served from onboard SBC, accessed via phone or tablet browser over WiFi)
-* Or small integrated touchscreen (7" is the commercial standard: HEAD VMA V pattern)
+* Small integrated touchscreen (7" is the commercial standard: HEAD VMA V pattern)
 * Physical record/stop button(s) on the housing
 * Battery-powered operation with charge indicator
