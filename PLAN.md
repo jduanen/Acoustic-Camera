@@ -8,6 +8,7 @@ My goal is to never have a "not yet working" state for more than one phase at a 
 
 * Simulate virtual mic arrays and synthetic sound sources using Acoular + Pyroomacoustics
 * Validate D&S, MVDR, and CLEAN-SC against known ground-truth DoA
+  - also compare these algorithms with MUSIC (at least to some extent)
 * Compare array geometries (Underbrink vs. grid vs. simple ring) before committing to PCB fabrication
 * Tune array parameters: number of mics, spacing, aperture, number of spiral arms
 * Generate labeled datasets for later ML training using AcouPipe (DatasetSynthetic or DatasetMIRACLE)
