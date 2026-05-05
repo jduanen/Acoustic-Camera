@@ -1,6 +1,7 @@
 # Phased Development Plan
 
-Each phase produces a working end-to-end system — just lower performance. Never have a "not yet working" state for more than one phase at a time.
+Each phase produces a working end-to-end system, just with reduced features or performance.
+My goal is to never have a "not yet working" state for more than one phase at a time.
 
 ## Phase 1 — Simulation & Algorithm Benchmarking
 *No hardware required*
@@ -55,5 +56,5 @@ Deliverable: full-performance acoustic camera meeting System Requirements (200 H
 
 * Use AcouPipe to generate synthetic datasets matched to the actual array geometry
 * Train PILOT or CRNN-based DoA model; benchmark against CLEAN-SC
-* Explore real-time inference on GPU; profile latency vs. frame rate tradeoff
+* Explore real-time inference on GPU; profile latency vs. frame rate trade-off
 * Deliverable: ML-based beamformer with comparable or better accuracy than CLEAN-SC at lower latency

@@ -12,7 +12,7 @@ Irregular spacing is preferred to avoid spatial aliasing or side-lobe artifacts 
 
 Mics have to be closely matched in sensitivity and frequency response. Mismatched mics can degrade beam performance and reduce the directionality of the array.
 
-TBD: look into spherical arrays
+**TODO:** look into spherical arrays
 
 ## 2D Array Patterns
 
@@ -33,7 +33,7 @@ TBD: look into spherical arrays
   - radius increases linearly with angle
     * 'r(theta) = a + b*theta'
   - parameters: min radius, max radius, number of turns, number of mics
-  - mics are spaced so angular positions are evenly distributed along the whole spirale angle, and their radii increase linearly from the center outward
+  - mics are spaced so angular positions are evenly distributed along the whole spiral angle, and their radii increase linearly from the center outward
   - simple, single-arm spiral layout, relatively even distribution of mics from center outward
 
 ### Dougherty log-Spiral

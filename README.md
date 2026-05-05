@@ -1,5 +1,5 @@
 # Acoustic-Camera
-Low-cost, High-performance, Acoustic Camera
+The design and implementation of a low-cost, high-performance, acoustic camera
 
 **WIP**
 
@@ -10,7 +10,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 ## Technical Background
 [BACKGROUND](./BACKGROUND.md)
 
-## Design Tradeoffs
+## Design Trade-offs
 [TRADEOFFS](./TRADEOFFS.md)
 
 ## Microphone Array Configurations
@@ -97,7 +97,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
     * Infineon’s IM69D130 digital MEMS mic
 * 000468.pdf: Optimal planar microphone array arrangements [2015]
   - simulated lots of array arrangements for Vogel's Spiral with different H and V values
-  - showed Underbrink Spiral is best tradeoff between beam width and side-lobe levels
+  - showed Underbrink Spiral is best trade-off between beam width and side-lobe levels
 * 0080015889.pdf
 * 20080015889.pdf: A Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS) Determined from Phased Microphone Arrays [2004]
   - ?
@@ -142,7 +142,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 * Sound_Localization_and_Speech_Enhancement_Algorith.pdf
 * time-domain-beamforming-3d-micarray-doebler-heilmann-meyer-2008-bebec.pdf
 * TP-2007-345.pdf
-* Wang_2023_J._Phys.__Conf._Ser._2479_012026.pdf: 
+* Wang_2023_J._Phys. Conf._Ser._2479_012026.pdf: 
 Research on multi-sound source localization performance
 based on leaf-shaped microphone array [2022]
   - ?

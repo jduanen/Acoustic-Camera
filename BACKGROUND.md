@@ -92,7 +92,7 @@ Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Ma
   - requires arrays with specific geometric structure (pairs of displaced sub-arrays)
 * CSSM (Coherent Signal Subspace Method)
   - extends subspace methods to wideband signals
-  - aligns frequency-bin covariance matrices into a common subspace before eigendecomposition
+  - aligns frequency-bin covariance matrices into a common subspace before eigen decomposition
 * TR-MUSIC (Time-Reversal MUSIC)
   - exploits time-reversal invariance of the wave equation to build a time-reversal operator
   - decomposes operator into signal/noise subspaces as in standard MUSIC
@@ -100,12 +100,13 @@ Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Ma
 
 ### ML-based Beamforming
 
-* shown to be better than conventional SVD-based methods, particularly in dynamic or complex environments
-* more adaptable to varying signal environments
-* Classification-Based Transfer Learning (CBTL) and Denoising-Based Transfer Learning (DBTL) are better than or equal to traditional blind beamforming across diverse conditions
-* ML methods like RL can speed up beam selection and reduce computational overhead
-* ML models (including CNNs) have high beam tracking accuracy, outperforming other approaches in realtime applications
-* generalize well after training with synthetic data and transfer learning
+* overview
+  - shown to be better than conventional SVD-based methods, particularly in dynamic or complex environments
+  - more adaptable to varying signal environments
+  - Classification-Based Transfer Learning (CBTL) and Denoising-Based Transfer Learning (DBTL) are better than or equal to traditional blind beamforming across diverse conditions
+  - ML methods like RL can speed up beam selection and reduce computational overhead
+  - ML models (including CNNs) have high beam tracking accuracy, outperforming other approaches in realtime applications
+  - generalize well after training with synthetic data and transfer learning
 
 * Models (2019–2025 literature)
   - CNN / CRNN-based DoA — classifies angular bins from GCC-PHAT or STFT magnitude features; fast inference, good generalization to unseen rooms
@@ -203,7 +204,7 @@ Below is a overview of some commonly used beamforming algorithms.
   - flexible and robust in dynamic noise environments
 
 ### Frost Beamforming
-  - adaptive beamforming technique to enhance signal in the "look directions", whil minimizing noise and interference from other directions
+  - adaptive beamforming technique to enhance signal in the "look directions", while minimizing noise and interference from other directions
   - filter-and-sum: each mic has a delay stage (to steer the beam) followed by an FIR filter
   - outputs of all FIR filters is summed to create the output
   - adaptive FIR filters' weights are updated using a Constrained Least Mean Squares (CLMS) approach
@@ -348,5 +349,5 @@ Below is a overview of some commonly used beamforming algorithms.
     * superior resolution for closely-spaced sources vs. MUSIC/ESPRIT at low SNR
   - Atomic norm minimization: gridless CS approach; represents source directions as atoms in a continuous dictionary
     * avoids grid quantization error inherent in D&S/MUSIC
-    * solved via semidefinite programming (SDP); computationally expensive but exact
+    * solved via semi-definite programming (SDP); computationally expensive but exact
   - active research area 2015–present; SBL implementations available in Acoular ecosystem

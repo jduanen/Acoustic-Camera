@@ -9,7 +9,7 @@ To get some ideas of what's possible, existing products and projects are examine
   - also 8x mic version
   - open HW, based on XMOS xCORE-200
   - 2x Cirrus Logic CS5368 ADC
-  - CS2100 clock generator and clock muliplier/jitter-reduced freq synthesizer
+  - CS2100 clock generator and clock multiplier/jitter-reduced freq synthesizer
   - 8-96KHz sampling rates
   - USB powered
   - electret and MEMS mics connected to shielded RJ11 connectors
