@@ -10,21 +10,21 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 ## Technical Background
 [BACKGROUND](./BACKGROUND.md)
 
-## Design Trade-offs
-[TRADEOFFS](./TRADEOFFS.md)
-
 ## Microphone Array Configurations
 [MIC_ARRAYS](./MIC_ARRAYS.md)
+
+## Design Trade-offs
+[TRADEOFFS](./TRADEOFFS.md)
 
 ## System Requirements
 
 | Parameter | Value | Notes |
 |---|---|---|
-| Min Distance | ~0.5 m | Far-field criterion r > 2D²/λ; satisfied at 0.5 m for 400 mm array at ≥1 kHz |
+| Min Distance | ~0.5 m | Far-field criterion r > 2D²/λ; 2×0.3²/0.343 ≈ 0.5 m for 300 mm array at 1 kHz |
 | Max Distance | ~10 m | Practical limit for compact array at 200 Hz |
-| Resolution | ~5° @ 8 kHz, ~10° @ 4 kHz, ~40° @ 1 kHz | Scales as λ/D; 400–500 mm aperture cannot achieve 5° below ~6 kHz |
+| Resolution | ~8° @ 8 kHz, ~17° @ 4 kHz, ~66° @ 1 kHz | Scales as λ/D; HPBW ≈ 58° × λ/D for 300 mm aperture |
 | FOV | ±45° H, ±30° V | Matched to co-located video camera field of view |
-| Mic Array Diameter | ~400–500 mm | 96 mics in Underbrink spiral, ~21 mm min spacing (Nyquist at 8 kHz) |
+| Mic Array Diameter | ~300 mm | 96 mics in Underbrink spiral, ~21 mm min spacing (Nyquist at 8 kHz) |
 | Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
 | Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
@@ -71,9 +71,7 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
 # Notes
 
 * Outstanding Questions
-  - what is the best aperture size and number of mics?
   - what camera/optics are needed to match the mic array's FOV and resolution?
-  - 
 
 * TODOs
   - match camera and mic array resolution

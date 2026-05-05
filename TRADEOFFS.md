@@ -106,11 +106,10 @@ For a circular aperture, HPBW ≈ 58° × λ/D (degrees):
 | 300mm | ~66° | ~17° | ~8° |
 | 250mm | ~80° | ~20° | ~10° |
 | 200mm | ~100° | ~25° | ~12° |
-| 150mm | >90° | ~33° | ~17° |
+| 150mm | >100° | ~33° | ~17° |
 
 * 5° resolution is achievable at 6–8kHz with a 400–500mm aperture (but not at 1kHz as one might initially assume)
-  - achieving 5° @ 1kHz requires D ≈ 58° × 343mm / 5° ≈ 4 m
-    * which is impractical for a hand-held device
+  - achieving 5° @ 1kHz requires D ≈ 58° × 343mm / 5° ≈ 4m, which is impractical for a hand-held device
 * low-frequency performance suffers most when aperture is reduced
   - 200Hz is where a compact array is weakest regardless; reducing D makes this worse proportionally
 * deconvolution methods (e.g., CLEAN-SC, Functional BF, DAMAS) can recover some resolution beyond the physical aperture limit
@@ -134,7 +133,8 @@ For a circular aperture, HPBW ≈ 58° × λ/D (degrees):
 
 * far-field criterion: r > 2D²/λ
 * smaller D → far-field condition met at shorter distances
-  - D=400mm @ 1 kHz: far-field beyond ~0.9m
+  - D=500mm @ 1 kHz: far-field beyond ~1.5m
+  - D=300mm @ 1 kHz: far-field beyond ~0.5m
   - D=200mm @ 1 kHz: far-field beyond ~0.2m
 * beneficial if sources need to be localized at close range (< 1 m)
 
@@ -145,19 +145,12 @@ For a circular aperture, HPBW ≈ 58° × λ/D (degrees):
 
 ### Summary
 
-* the current system requirements target an aperture of 400–500mm
-  - for increased portability, 350mm is the defensible minimum without fundamentally compromising the design goals
-* there are benefits to having a smaller array, but the biggest issue drawback is lower spatial resolution
-* size overview
-  - 400–500mm is the sweet spot for resolution
-    * ~5° @ 8kHz, ~10° @ 4kHz, ~40° @ 1kHz
-  - 300–350mm is a reasonable compromise
-    * loses ~1.5–2× resolution but gains portability, better side-lobe levels, and aliasing headroom well above 8 kHz
-  - 350mm gets you to ~7° at 8 kHz with only a modest reduction in size
-  - 300mm gives ~8° at 8 kHz and ~17° at 4 kHz, which is a reasonable compromise trading resolution for portability
-  - below 300mm, the low-frequency performance (200–500Hz) degrades to the point where the array is mostly useful only above ~2–3 kHz
-  - 200mm starts to look marginal
-    * ~100° at 1kHz means essentially no directional discrimination at low frequencies
+* **chosen aperture: 300mm** — balances portability against resolution across the 200Hz–8kHz target band
+* resolution at 300mm: ~8° @ 8kHz, ~17° @ 4kHz, ~66° @ 1kHz
+* tradeoff accepted: 400–500mm would give ~5° @ 8kHz and ~40° @ 1kHz, but the portability cost is not worth it for this application
+* 300mm fits 96 mics with 21mm min spacing at 47% packing — comfortable; average spacing ~27mm
+* below 300mm, the low-frequency performance (200–500Hz) degrades to the point where the array is mostly useful only above ~2–3 kHz
+* 200mm would be marginal: ~100° at 1kHz means essentially no directional discrimination at low frequencies
 
 ## Array Pattern Selection (assuming 96 mics, 300mm aperture)
 
