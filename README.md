@@ -8,10 +8,10 @@ Capturing, visualizing, and tracking the position of sound sources is useful in 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
 ## Technical Background
-[BACKGROUND][BACKGROUND.md]
+[BACKGROUND](./BACKGROUND.md)
 
 ## Design Tradeoffs
-[TRADEOFFS][TRADEOFFS.md]
+[TRADEOFFS](./TRADEOFFS.md)
 
 ## System Requirements
 
@@ -25,23 +25,27 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 | Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
 | Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
-# Target Design
-[DESIGN][DESIGN.md]
+## Target Design
+[DESIGN](./DESIGN.md)
 
-# Development Plan
-[PLAN][PLAN.md]
+## Development Plan
+[PLAN](./PLAN.md)
 
-# Overview of Existing Systems
-[PRODUCTS][PRODUCTS.md]
+## Overview of Existing Systems
+[PRODUCTS](./PRODUCTS.md)
 
 ## Beamforming Projects
-[PROJECTS][PROJECTS.md]
+[PROJECTS](./PROJECTS.md)
 
-# Open-Source Acoustic Beamforming Software
-[FOSS][FOSS.md]
+## Open-Source Acoustic Beamforming Software
+[FOSS](./FOSS.md)
 
-# Microphone Elements
-[MICS][MICS.md]
+## Microphone Elements
+[MICS](./MICS.md)
+
+## FPGAs and FPGA Development Boards
+
+* ????
 
 # Notes
 
