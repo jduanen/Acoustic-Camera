@@ -6,9 +6,11 @@
   - 69 dBA SNR, factory-calibrated, ±1 dB sensitivity match, ±2° phase match
 * Underbrink multi-arm logarithmic spiral pattern
   - 8x arms with 12x mics or 6x arms with 16x mics (to be optimized in Phase 1 simulation)
-* ~21 mm min mic spacing (satisfies Nyquist at 8 kHz: λ/2 = 343/(2×8000) ≈ 21.4 mm)
+* ~21 mm min mic spacing
+  - satisfies Nyquist at 8 kHz: λ/2 = 343/(2×8000) ≈ 21.4 mm
 * ~400–500 mm diameter aperture
-* Custom PCB(s); mics share PDM clock, paired on data lines via L/R select → 48 DATA + 1 CLK to FPGA
+* Custom PCB(s), FPGA
+  - mics share PDM clock, paired on data lines via L/R select → 48 DATA + 1 CLK to FPGA
 
 ## Interface & Compute
 

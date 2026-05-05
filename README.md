@@ -22,7 +22,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 |---|---|---|
 | Min Distance | ~0.5 m | Far-field criterion r > 2D²/λ; satisfied at 0.5 m for 400 mm array at ≥1 kHz |
 | Max Distance | ~10 m | Practical limit for compact array at 200 Hz |
-| Resolution | ~5° @ 1 kHz | Dependent on final aperture; improves with frequency |
+| Resolution | ~5° @ 8 kHz, ~10° @ 4 kHz, ~40° @ 1 kHz | Scales as λ/D; 400–500 mm aperture cannot achieve 5° below ~6 kHz |
 | FOV | ±45° H, ±30° V | Matched to co-located video camera field of view |
 | Mic Array Diameter | ~400–500 mm | 96 mics in Underbrink spiral, ~21 mm min spacing (Nyquist at 8 kHz) |
 | Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
@@ -69,6 +69,11 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
   - dev boards: Intel Cyclone 10 LP Evaluation Kit
 
 # Notes
+
+* Outstanding Questions
+  - what is the best aperture size and number of mics?
+  - what camera/optics are needed to match the mic array's FOV and resolution?
+  - 
 
 * TODOs
   - match camera and mic array resolution
