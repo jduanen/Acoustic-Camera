@@ -13,6 +13,9 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 ## Design Tradeoffs
 [TRADEOFFS](./TRADEOFFS.md)
 
+## Microphone Array Configurations
+[MIC_ARRAYS](./MIC_ARRAYS.md)
+
 ## System Requirements
 
 | Parameter | Value | Notes |
