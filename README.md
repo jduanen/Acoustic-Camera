@@ -72,6 +72,7 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
 
 * Outstanding Questions
   - what camera/optics are needed to match the mic array's FOV and resolution?
+  - ?
 
 * TODOs
   - match camera and mic array resolution
@@ -119,6 +120,7 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
   - simulated lots of array arrangements for Vogel's Spiral with different H and V values
   - showed Underbrink Spiral is best trade-off between beam width and side-lobe levels
 * 0080015889.pdf
+  - ?
 * 20080015889.pdf: A Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS) Determined from Phased Microphone Arrays [2004]
   - ?
 * 2021_12_De+Lucia.pdf: Implementation of a low-cost acoustic camera using arrays of MEMS microphones [2020]
@@ -130,10 +132,13 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
 * BeBeC-2016-S4.pdf: A Generic Approach to Synthesize Optimal Array Microphone Arrangements [2016]
   - same material as 000468.pdf
 * BeBeC-2022-D06.pdf
+  - ?
 * BeBeC-2022-S07.pdf
+  - ?
 * bp2144.pdf
+  - ?
 * Chakravarthula_Seeing_With_Sound_Long-range_Acoustic_Beamforming_for_Multimodal_Scene_Understanding_CVPR_2023_paper.pdf [2023]
-  - 
+  - ?
 * EN-AVT-287-04.pdf: Fundamentals of Acoustic Beamforming [?]
   - ?
 * GB2438259A.pdf: Audio recording system utilising a logarithmic spiral array [2006]
@@ -153,15 +158,21 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
   - ?
 * Mon-1-2-5.pdf
 * noise-and-vibration-image-brochure-2024-gfaitech.pdf
+  - ?
 * p453.pdf: Design and Calibration of a Small Aeroacoustic Beamformer [2010]
   - ?
 * p5.pdf: A comparison of popular beamforming arrays [2013]
   - ?
 * s13272-019-00383-4.pdf
+  - ?
 * 'Schumacher - 2022 - Evaluation of microphone array methods for aircraf.pdf'
+  - ?
 * Sound_Localization_and_Speech_Enhancement_Algorith.pdf
+  - ?
 * time-domain-beamforming-3d-micarray-doebler-heilmann-meyer-2008-bebec.pdf
+  - ?
 * TP-2007-345.pdf
+  - ?
 * Wang_2023_J._Phys. Conf._Ser._2479_012026.pdf: 
 Research on multi-sound source localization performance
 based on leaf-shaped microphone array [2022]
