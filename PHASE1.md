@@ -175,3 +175,78 @@ Four algorithms benchmarked:
   * MVDR is preferred when source count is unknown but dynamic range is important
   * CLEAN-SC is preferred for clean single-source maps (suppresses diffuse clutter)
   * D&S remains the baseline reference — simplest, most robust at all SNR
+
+---
+
+## 04 — Near-Field (Focused) Beamforming (`notebooks/04_nearfield.ipynb`)
+
+### Far-field validity criterion
+
+Fraunhofer distance for the 300mm aperture: `r_FF = 2D²/λ`
+
+| Freq (Hz) | λ (mm) | r_FF (m) |
+|---|---|---|
+| 200 | 1715 | 0.10 |
+| 500 | 686 | 0.26 |
+| 1000 | 343 | 0.52 |
+| 2000 | 172 | 1.05 |
+| 4000 | 86 | 2.10 |
+| 8000 | 43 | 4.20 |
+
+At typical operating distances (0.5–2m), the 300mm array is in the near field above ~500Hz
+
+### Near-field steering vector
+
+Spherical-wave steering:
+`d_n = |(r·sinθ − x_n, −y_n, r·cosθ)|`,  `h_n ∝ exp(−j·2πf/c·d_n) / d_n`, normalised
+
+The far-field formulation ignores both the quadratic phase curvature (`x_n²/(2r)`) and the
+cross-term from the y-axis mic positions (`y_n²/(2r)`) (both grow as the source moves closer)
+
+### 1D comparison (r = 1m, az = 20°, f = 4kHz)
+
+| Beamformer | HPBW (°) | DoA error (°) |
+|---|---|---|
+| Far-field D&S (mismatched) | 20.3 | 0.12 |
+| Near-field D&S (focused) | 20.3 | 0.00 |
+
+The 1D azimuth slice shows only a small DoA improvement because the near-field correction
+primarily affects the range axis.  The compelling benefit appears in the 2D map.
+
+### 2D focused map
+
+Near-field D&S scanned over a (range × azimuth) grid localises a source in both dimensions:
+
+| Name | Value |
+|---|---|
+| True position | r = 1.50m, az = 25.0° |
+| Estimated position | r = 1.49m, az = 25.0° |
+| Range error | 0.8cm |
+| Az error | 0.0° |
+
+### Algorithm comparison (near-field steering, r = 1 m)
+
+| Scenario | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| 1: single @ 0° | 0.1° | 0.1° | 0.1° |
+| 2: ±15° (30° sep) | Resolved | Resolved | Resolved |
+| 3: ±4.5° (9° sep, 0.5×HPBW) | No | No | **Yes** |
+| 4: −20dB weak source | No | **Yes** | **Yes** |
+
+Algorithm relative performance is unchanged from the far-field study — near-field steering
+does not affect the subspace structure, only the steering delays.
+
+### Key findings
+
+**Near-field correction primarily benefits range estimation, not azimuth accuracy:**
+  * 1D azimuth HPBW is identical for far-field and near-field D&S at r = 1m
+  * DoA accuracy improves modestly (0.12° → 0.00°)
+  * The real benefit is enabling 2D (range, azimuth) localisation
+
+**2D focused beamforming recovers range with high accuracy:**
+  * Sub-centimetre range error at 1.5m (0.8cm) in simulation
+  * Resolves two sources at different ranges even when they share the same angular direction
+
+**Phase 2 (ReSpeaker, 90mm aperture) does not need near-field correction:**
+  * r_FF for 90mm at 4kHz ≈ 0.19m, it is always far field at any practical distance
+  * Near-field formulation is the correct baseline for Phase 4 (300mm array)

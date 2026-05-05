@@ -387,3 +387,26 @@ A common approach combines the CSM with a steering model to form a map of likely
 The CSM is the input snapshot that an adaptive beamformer reads to decide how to steer, focus, and suppress unwanted signals.
 
 The CSM reflects the current sound field and so adaptive beamformers can respond to changing conditions better than when using fixed weights.
+
+### Subspace Decomposition Techniques
+
+Subspace decomposition is a way of splitting a data space into parts that represent different underlying structures -- in signal processing, this typically means separating the signal subspace from the noise subspace.
+
+For mic arrays (or antennae) the received data's Covariance Matrix is decomposed into eigenvectors and eigenvalues.
+The largest eigenvalues typically correspond to the signal subspace, while the smaller ones correspond to noise.
+Beamforming algorithms like MUSIC use this separation to find directions where a steering vector matches the signal subspace, and is orthogonal to the noise subspace.
+
+This decomposition reduces a messy high-dimensional measurement into a smaller set of structured parts. This makes it easier to detect sources, estimate directions of arrival, and suppress noise or interference.
+
+### Near-Field vs. Far-Field (Frauenhofer Distance)
+
+In beamforming, far-field is when the source is far enough away that the wavefront across the mic array is approximately linear -- i.e., all mics see essentially the same DoA.
+In contrast, near-field is when the source's wavefront is curved, which case both direction and distance to the source affect the phase seen by each mic.
+
+The far-field assumption simplifies computations and only requires steering the beam by an angle, whereas near-field processing often requires a model that focuses on a point in three-space (i.e., it requires both an angle and a distance).
+
+The larger the array and the shorter the wavelength (i.e., the higher the frequency), the farther away the far-field starts.
+
+The Frauenhofer Distance is the boundary beyond which a mic array can be treated as operating in the far-field.
+
+TODO: add the (approximate) equation here
