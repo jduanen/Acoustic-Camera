@@ -34,6 +34,73 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 | Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
 | Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
+## Phase 1 Simulation Findings
+
+Full results and methodology: [PHASE1](./PHASE1.md)
+
+### Recommended array configuration
+
+**Underbrink H=12×8, α=22°** — 96 mics, 300 mm aperture, 12.9 mm min spacing
+
+- Best side-lobe suppression of all patterns tested: −24.4 dB @ 4 kHz, −18.9 dB @ 8 kHz
+- Alias-free to ~13 kHz (target ceiling: 8 kHz, 1.7× margin)
+- Perfect circular symmetry — azimuth and elevation HPBW are identical at all frequencies
+
+Alternative: H=8×12, α=35° (−14.4 dB MSL, simpler layout, more uniform spacing — good if PCB routing is constrained)
+
+### Beamwidth vs frequency
+
+| Frequency | HPBW | Practical meaning |
+|---|---|---|
+| 200–500 Hz | > 180° | Omnidirectional — no spatial selectivity |
+| 1 kHz | ~82° | Barely directional; cannot resolve sources within ~80° |
+| 2 kHz | ~37° | Minimum frequency for useful imaging |
+| 4 kHz | ~19° | Clear maps; commercial acoustic cameras primarily operate here |
+| 8 kHz | ~9° | High-resolution; closely-spaced sources resolvable |
+
+### Algorithm selection
+
+| Use case | Recommended |
+|---|---|
+| Real-time display, single dominant source | CLEAN-SC |
+| Multiple sources or weak source detection | MVDR |
+| Closely-spaced sources, source count known | MUSIC |
+| Lowest latency / embedded compute | D&S |
+| Near-field range + angle estimation | Focused D&S or MVDR/MUSIC with NF steering |
+
+Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms converge at N_SNAP = 16
+(0.3 ms); 256 provides 16× margin while remaining below the ~10 ms perceptual latency threshold.
+
+### Where this system works well
+
+- **Mechanical/industrial source hunting at 2–8 kHz** — the primary sweet spot. Fan noise, gear mesh,
+  bearing defect harmonics, structural resonances. MVDR/MUSIC resolve sources separated by 10–15° that
+  D&S cannot.
+- **Multi-source scenes** — MVDR and MUSIC maintain 100% resolution reliability down to DRR = −3 dB
+  (reverb exceeding direct power). MUSIC handles sub-HPBW separations when source count is known.
+- **Typical indoor rooms and labs (DRR ≥ 10 dB)** — 96 channels provide ~20 dB array gain; DoA error
+  at typical office DRR is indistinguishable from anechoic (~0.035°). Mild reverberation is essentially free.
+- **Near-field operation at 0.5–3 m** — spherical-wave steering recovers range to within ~10 cm and
+  azimuth within grid quantization. Sub-centimetre range error at 1.5 m in simulation.
+- **Outdoors or in treated spaces** — consistent strong performance; no special mitigation needed.
+
+### Where this system is NOT well-suited
+
+- **Below 1 kHz** — the array is omnidirectional at 200–500 Hz and barely directional at 1 kHz.
+  A dedicated low-frequency array would need ~1.7 m aperture for 10° resolution at 1 kHz.
+- **Highly reverberant industrial environments (DRR < 3 dB)** — concrete rooms, large metal enclosures,
+  live rooms. Spatial pre-filtering (WPE) is needed before beamforming.
+- **Same-azimuth, different-range source separation** — range resolution along a single bearing at
+  4 kHz / 300 mm aperture is ~1 m. Co-azimutal sources closer than ~1 m merge into a single peak.
+  A co-located depth camera is the practical solution.
+- **Low SNR (< 10 dB) with MUSIC** — overcounting n_sources produces 93–100% false alarm rate below
+  10 dB SNR. D&S and MVDR degrade more gracefully; use AIC/MDL model-order selection or conservative
+  n_sources at low SNR.
+- **High dynamic range (weak source near a strong source) with D&S or CLEAN-SC** — a −20 dB weak source
+  25° from a strong source is reliably detected only by MVDR and MUSIC.
+- **Sources beyond ~3–4 m** — range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
+  at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable.
+
 ## Target Design
 [DESIGN](./DESIGN.md)
 
