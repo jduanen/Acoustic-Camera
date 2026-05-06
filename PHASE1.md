@@ -420,6 +420,83 @@ D&S never reliably resolves ±15° sources at 4 kHz — this is consistent with 
 
 ---
 
+## 07 — MUSIC Robustness to Source Count Mismatch (`notebooks/07_music_robustness.ipynb`)
+
+### Setup
+- Array: Underbrink H=12×8, α=22° (96 mics)
+- Frequency: 4 kHz, N_SNAP=256 (except the N_SNAP sweep)
+- Scenarios: 1 source at 20° (overcount study); 2 sources at ±15° (undercount study)
+- N_TRIALS: 20–30 per sweep point
+- Peak detector: local maxima above 5% of global max, separated by ≥5°
+
+### Peak count table (SNR=20 dB, N_SNAP=256)
+
+| True k | n_sources spec | Mismatch | Mean peaks | Std |
+|---|---|---|---|---|
+| 1 | 1 | 0 | 1.0 | 0.00 |
+| 1 | 2 | +1 | 1.0 | 0.00 |
+| 1 | 3 | +2 | 1.0 | 0.00 |
+| 1 | 4 | +3 | 1.0 | 0.00 |
+| 2 | 1 | −1 | **3.0** | **0.89** |
+| 2 | 2 | 0 | 2.0 | 0.00 |
+| 2 | 3 | +1 | 2.0 | 0.00 |
+| 2 | 4 | +2 | 2.0 | 0.00 |
+
+### Undercount (n_sources < true k) — detection rate vs SNR
+
+Two sources at ±15°, n_sources=1 (undercount by 1):
+
+| SNR (dB) | Undercount (n=1) | Correct (n=2) |
+|---|---|---|
+| 0 | 0.90 | 1.00 |
+| 5 | 0.90 | 1.00 |
+| 10 | 1.00 | 1.00 |
+| 15 | 1.00 | 1.00 |
+| 20 | 0.87 | 1.00 |
+| 25 | 0.90 | 1.00 |
+| 30 | 0.93 | 1.00 |
+
+### Overcount (n_sources > true k) — false alarm rate vs SNR
+
+One source at 20°, n_sources=2 or 3 (overcount):
+
+| SNR (dB) | FA rate (n=2, +1) | FA rate (n=3, +2) |
+|---|---|---|
+| 0 | 0.93 | 1.00 |
+| 5 | 1.00 | 0.97 |
+| 10 | **0.00** | **0.00** |
+| 15 | 0.00 | 0.00 |
+| 20+ | 0.00 | 0.00 |
+
+### N_SNAP effect on undercount robustness
+
+Two sources at ±15°, n_sources=1, SNR=20 dB:
+- Detection rate is ~90–100% at all N_SNAP values from 16 to 2048
+- N_SNAP does not rescue undercount — the robustness is already near-ceiling due to source separation
+
+### Key findings
+
+**Undercount is surprisingly robust for well-separated sources (30° at 4 kHz):**
+  * n_sources=1 with 2 true sources at ±15° detects both 87–100% of the time across all tested SNR
+  * At 30° separation (≈1.6× the HPBW at 4 kHz), the two signal eigenvectors are nearly orthogonal; shrinking the noise subspace by one dimension still leaves both source directions "nulled"
+  * Undercount does NOT prevent detection — but it DOES create extra spurious peaks (mean 3.0 vs 2.0 for correct specification)
+
+**Overcount is benign above 10 dB SNR:**
+  * At SNR ≥ 10 dB: specifying n_sources=2 or 3 with only 1 true source produces zero false alarms
+  * At SNR < 10 dB: noise eigenvectors look like signals; FA rate rises to 93–100% with overcount
+  * Overcount with multiple true sources is completely safe: 2 true sources + n_sources=3 still gives exactly 2 detected peaks (std=0.00) — the extra dimension is absorbed cleanly
+
+**N_SNAP does not change the mismatch behaviour:**
+  * Undercount robustness is geometrically determined (source separation vs noise subspace dimensionality), not noise-limited
+  * More snapshots do not rescue an undercounted MUSIC specification
+
+**Practical guidance for MUSIC source count specification:**
+  * Above 10 dB SNR: **slightly overcount** (set n_sources to the expected maximum + 1) — safe, no false alarms, full detection rate, no risk from undercounting
+  * Below 10 dB SNR: overcounting is dangerous (high FA); prefer n_sources=1 or use information-theoretic model order selection (AIC/MDL applied to the eigenvalue spectrum) to estimate source count automatically
+  * The `eigh` eigenvalue spectrum itself is the diagnostic: the gap between the k-th and (k+1)-th eigenvalue indicates where signal ends and noise begins; a flat noise floor indicates the correct threshold
+
+---
+
 ## Phase 1 Summary
 
 ### Array geometry decision
@@ -456,7 +533,7 @@ D&S never reliably resolves ±15° sources at 4 kHz — this is consistent with 
 ### What Phase 1 does NOT cover
 
 The following remain for Phase 2 (or later) simulation:
-- **MUSIC robustness to wrong source count**: practical systems cannot assume n_sources is known
+- ~~**MUSIC robustness to wrong source count**~~ — covered in notebook 07
 - ~~**Broadband / frequency-swept maps**~~ — covered in notebook 05
 - ~~**Snapshot count sweep**~~ — covered in notebook 06
 - **Calibration sensitivity**: effect of ±1dB gain and ±2° phase mismatch (from the IM69D120 specs)
