@@ -410,3 +410,25 @@ The larger the array and the shorter the wavelength (i.e., the higher the freque
 The Frauenhofer Distance is the boundary beyond which a mic array can be treated as operating in the far-field.
 
 TODO: add the (approximate) equation here
+
+### Incoherent Octave-Band Averaging
+
+First, split the incoming signal into (fractional) octave bands, and then average the power (or RMS level) in each band, without preserving the phase relationships between measurements.
+
+The measurement is incoherent because the energy is being combined, not complex values or phase-aligned waveforms.
+While coherent averaging can reinforce a stable tone (due to combining of phase-aligned complex spectra), incoherent averaging smooths out variability without preserving phase information.
+
+This approach is common when all that is of interest is the overall level in each band and not details of the exact waveform. For example, this is used for noise monitoring, vibration analysis, and other acoustic measurements. It is especially useful when the sources are not synchronized or when phase information is not reliable.
+
+This is a standard output mode for commercial acoustic cameras.
+Real cameras produce one map per octave (or 1/3-octive) band, not a single frequency map.
+This is done by splitting the incoming audio into frequency bins (via FFT), estimating the CSM for each bin, then running the beamformer on each bin, and (incoherently) averaging the power across the band.
+Incoherent averaging suppresses noise (by sqrt(K), for K bins) and produces a PSF that is the average of the frequency-dependent PSFs.
+
+There is an ISO standard for octave bands' center frequencies.
+
+### Video Overlay Issues
+
+We want to match the optics and resolution of the video camera with the mic array's resolution and effective field of view.
+
+????see pixels.py
