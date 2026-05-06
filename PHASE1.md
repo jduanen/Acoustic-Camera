@@ -721,6 +721,81 @@ All errors are within the grid quantization limit (half-step = 0.75°). Both alg
 
 ---
 
+## 11 — Reverberant / Multipath Environments (`notebooks/11_reverberation.ipynb`)
+
+### Setup
+- Array: Underbrink H=12×8, α=22° (96 mics, 300mm aperture)
+- Frequency: 4 kHz, SNR=20 dB, N_SNAP=256, N_TRIALS=20
+- Diffuse model: `R = outer(h,h*) + (1/DRR)·R_diffuse + noise·I` where R_diffuse is the average outer-product over 120 uniformly-spaced azimuth directions
+- Sampled via Cholesky factorisation of R_true (statistically exact Wishart samples)
+- Coherent model: `h_eff = h_direct + amp·h_reflect` at a fixed reflection direction
+
+### DoA error vs DRR (single source at 25°)
+
+| DRR (dB) | D&S | MVDR | MUSIC | Practical context |
+|---|---|---|---|---|
+| 30 | 0.045° | 0.045° | 0.045° | Near-anechoic |
+| 20 | 0.045° | 0.040° | 0.045° | Lightly treated room |
+| 15 | 0.035° | 0.050° | 0.035° | Good office, 1–2 m |
+| 10 | 0.035° | 0.045° | 0.035° | **Typical office/lab** |
+| 6 | 0.065° | 0.070° | 0.065° | Moderately reverberant |
+| 3 | 0.150° | 0.140° | 0.150° | Large reverberant room |
+| 0 | 0.180° | 0.140° | 0.200° | Very reverberant |
+| −3 | 0.260° | 0.200° | 0.290° | Reverb exceeds direct |
+
+Errors at DRR ≥ 10 dB are indistinguishable from the anechoic baseline (~0.035°).
+Meaningful degradation begins below DRR ≈ 6 dB.
+
+### Resolution reliability vs DRR (two sources at ±15°)
+
+| DRR (dB) | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| 30 → −3 | 0.00 | **1.00** | **1.00** |
+
+D&S cannot resolve ±15° at 4 kHz regardless of DRR — this is the aperture limit
+(HPBW ≈ 19°), not a reverberation issue.  MVDR and MUSIC maintain 100% resolution
+reliability at **all tested DRR values including −3 dB** (reverb > direct power).
+
+### Coherent specular reflection (source at 25°, reflection at −35°)
+
+| Reflection amplitude | D&S peak | MVDR peak | MUSIC peak |
+|---|---|---|---|
+| 0 (none) | +25.0° | +25.0° | +25.0° |
+| 0.3 (−10.5 dB) | +24.8° | +24.9° | +24.8° |
+| 0.5 (−6 dB) | +24.7° | +24.9° | +24.7° |
+| 0.7 (−3 dB) | +24.5° | +24.8° | +24.5° |
+
+All algorithms shift by ≤0.5° even with a reflection at −3 dB relative power.
+The reflection is 60° (≈3.2 HPBW) from the source, so its steering vector is
+nearly orthogonal to the direct path — the effective direction barely moves.
+
+### Key findings
+
+**The 96-mic Underbrink array is remarkably robust to reverberation:**
+  * All algorithms perform at or near the anechoic floor for DRR ≥ 10 dB — the typical office/lab range
+  * DoA accuracy degrades meaningfully only below DRR ≈ 6 dB (heavily reverberant spaces)
+  * 96 spatial channels provide ~20 dB array gain, suppressing diffuse noise the same way they suppress sensor noise
+
+**MVDR is the most robust algorithm at extreme reverb (DRR ≤ 0 dB):**
+  * At DRR = −3 dB: MVDR err = 0.20° vs D&S = 0.26° and MUSIC = 0.29°
+  * MVDR's adaptive null-steering partially rejects the diffuse field; D&S and MUSIC do not
+  * Resolution reliability: MVDR and MUSIC both stay at 1.00 even at DRR = −3 dB
+
+**Specular reflections separated by >1 HPBW cause negligible DoA bias:**
+  * 60° separation → ~0° shift at 0.3 amplitude, ≤0.5° at 0.7 amplitude (−3 dB)
+  * The Underbrink array's narrow 19° HPBW at 4 kHz means most practical reflections
+    (which come from walls, floor, ceiling at varied angles) are well-separated from
+    the source and do not significantly bias the peak estimate
+
+**Practical operating range:**
+  * **DRR ≥ 10 dB**: full performance — no reverberation mitigation needed
+  * **DRR 3–10 dB**: mild degradation (~0.1–0.15° DoA error) — usable for most applications
+  * **DRR < 3 dB**: noticeable degradation (>0.15°); consider pre-processing (WPE, beamforming-then-denoising) before applying MVDR/MUSIC
+  * The acoustic camera is well-suited for outdoor / moderately-treated indoor use;
+    for highly reverberant industrial environments, spatial pre-filtering is advisable
+
+---
+
 ## Phase 1 Summary
 
 ### Array geometry decision
@@ -753,14 +828,3 @@ All errors are within the grid quantization limit (half-step = 0.75°). Both alg
 - 256 provides a comfortable 16× margin and keeps latency below the 10 ms perceptual threshold
 - 50% window overlap (standard in practice) brings effective update rate to ~375 fps if needed
 - D&S resolution is aperture-limited, not snapshot-limited — adding snapshots does not help D&S resolve below its HPBW
-
-### What Phase 1 does NOT cover
-
-The following remain for Phase 2 (or later) simulation:
-- ~~**MUSIC robustness to wrong source count**~~ — covered in notebook 07
-- ~~**Broadband / frequency-swept maps**~~ — covered in notebook 05
-- ~~**Snapshot count sweep**~~ — covered in notebook 06
-- ~~**Calibration sensitivity**~~ — covered in notebook 08
-- ~~**Near-field CLEAN-SC**~~ — covered in notebook 09
-- ~~**2D elevation × azimuth maps**~~ — covered in notebook 10
-- **Reverberant/multipath environments**: free-field assumption is made throughout this phase
