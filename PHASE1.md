@@ -277,6 +277,82 @@ does not affect the subspace structure, only the steering delays.
 
 ---
 
+## 05 — Broadband / Frequency-Swept Beamforming (`notebooks/05_broadband.ipynb`)
+
+### Setup
+- Array: Underbrink H=12×8, α=22° (96 mics, 300mm aperture, d_min=12.9mm)
+- SNR: 20 dB, N_SNAP=256, rng seed fixed
+- Octave bands: 250 / 500 / 1k / 2k / 4k / 8k Hz
+- Per-band map: 5 log-spaced frequency bins incoherently averaged
+
+### HPBW vs frequency (D&S, single source at 0°)
+
+| Freq (Hz) | HPBW measured | Theory (0.886 λ/D) |
+|---|---|---|
+| 200 | >180° (omnidirectional) | 290° |
+| 500 | >180° (omnidirectional) | 116° |
+| 1000 | 81.7° | 58.0° |
+| 2000 | 38.2° | 29.0° |
+| 4000 | 18.8° | 14.5° |
+| 8000 | 9.3° | 7.3° |
+
+Theory assumes a uniform circular aperture; the Underbrink array has a lower fill factor,
+so measured HPBW is ~1.3× wider than theory.  Below ~1 kHz the array is effectively
+omnidirectional.
+
+### Two-source resolution vs frequency (sources at ±15°, 30° separation)
+
+Resolution criterion: −6 dB valley between peaks.
+
+| Band (Hz) | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| 250 | No | No | No |
+| 500 | No | No | No |
+| 1000 | No | No | No |
+| 2000 | No | **Yes** | **Yes** |
+| 4000 | No | **Yes** | **Yes** |
+| 8000 | **Yes** | **Yes** | **Yes** |
+
+- Below 2 kHz: no algorithm resolves 30°-separated sources with a 300mm aperture
+- At 2–4 kHz: MVDR and MUSIC resolve; D&S does not (super-resolution advantage)
+- At 8 kHz: all algorithms resolve (HPBW ≈ 9.3°, well below 30° separation)
+
+### Spatial aliasing
+
+| Parameter | Value |
+|---|---|
+| Min mic spacing d_min | 12.9 mm |
+| Spatial Nyquist | 13,253 Hz |
+| Operating max | 8,000 Hz |
+| Margin | 1.7× |
+
+No aliasing within the operating range.  Above Nyquist the Underbrink geometry spreads
+alias energy across many weak irregular lobes (rather than a single strong grating lobe),
+a benefit of the non-uniform spacing.
+
+### Key findings
+
+**The 300mm array has no useful directionality below ~1 kHz:**
+  * At 200–500 Hz, HPBW exceeds 180°; the array is omnidirectional
+  * At 1 kHz, HPBW ≈ 82°; source pairs within 80° cannot be separated by any algorithm
+  * Below 2 kHz, the aperture is the bottleneck — not the algorithm
+
+**MVDR/MUSIC provide super-resolution in the 2–4 kHz band:**
+  * D&S fails to resolve ±15° sources at 2 and 4 kHz (HPBW > 30° separation)
+  * MVDR and MUSIC resolve at 2 kHz — roughly 2× below the D&S resolution limit
+
+**Incoherent octave-band averaging is effective:**
+  * Averaging 5 frequency bins per band suppresses noise and stabilises DoA estimates
+  * Localisation accuracy matches the single-frequency results from notebook 03
+  * The broadband map HPBW is approximately that of the band's upper edge
+
+**Spatial aliasing is not a concern for the target hardware:**
+  * 1.7× margin at 8 kHz with the chosen d_min = 12.9 mm
+  * The irregular Underbrink geometry distributes alias energy across multiple weak lobes
+    rather than a single grating lobe — confirmed visually in the PSF plots
+
+---
+
 ## Phase 1 Summary
 
 ### Array geometry decision
@@ -306,8 +382,7 @@ does not affect the subspace structure, only the steering delays.
 
 The following remain for Phase 2 (or later) simulation:
 - **MUSIC robustness to wrong source count**: practical systems cannot assume n_sources is known
-- **Broadband / frequency-swept maps**: all work here is single-frequency
-  * real output is octave-band averaged
+- ~~**Broadband / frequency-swept maps**~~ — covered in notebook 05
 - **Snapshot count sweep**: real-time update rate vs. algorithm quality tradeoff
 - **Calibration sensitivity**: effect of ±1dB gain and ±2° phase mismatch (from the IM69D120 specs)
 - **Near-field CLEAN-SC**: spherical-wave extension not yet implemented
