@@ -497,6 +497,78 @@ Two sources at ±15°, n_sources=1, SNR=20 dB:
 
 ---
 
+## 08 — Calibration Sensitivity (`notebooks/08_calibration_sensitivity.ipynb`)
+
+### Setup
+- Array: Underbrink H=12×8, α=22° (96 mics)
+- Frequency: 4 kHz, SNR=20 dB, N_SNAP=512 (large — to isolate mismatch from CSM noise)
+- Mismatch model: `e_n = g_n · exp(j·φ_n)`, `g_n ~ Uniform(−G, +G)` dB, `φ_n ~ Uniform(−Φ, +Φ)°`
+- IM69D120 spec: G=1 dB, Φ=2°
+- N_TRIALS=30 independent mismatch realisations per condition
+
+### DoA error at IM69D120 spec (single source at 25°)
+
+| Algorithm | Mean error (°) | Std (°) |
+|---|---|---|
+| D&S | 0.030 | 0.046 |
+| MVDR | 0.027 | 0.044 |
+| MUSIC | 0.030 | 0.046 |
+
+These values are at the scan-grid floor (~0.017° baseline with no mismatch). Mismatch increases mean error by ~0.010° — negligible in practice.
+
+### Gain vs phase contribution (at IM69D120 spec level)
+
+| Condition | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| No mismatch | 0.017° | 0.023° | 0.017° |
+| Gain only ±1 dB | 0.017° | 0.030° | 0.017° |
+| Phase only ±2° | 0.027° | 0.027° | 0.027° |
+| Combined (spec) | 0.030° | 0.027° | 0.030° |
+
+Phase mismatch has slightly more effect than gain mismatch; both are negligible.
+
+### Resolution reliability (two sources at ±15°, N_SNAP=256)
+
+| Condition | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| No mismatch | 0.0 | 1.0 | 1.0 |
+| IM69D120 spec (1 dB, 2°) | 0.0 | 1.0 | 1.0 |
+
+Resolution reliability is **completely unaffected** by IM69D120-spec mismatch.
+
+### Calibration correction effect
+
+| Condition | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| No mismatch | 0.017° | 0.023° | 0.017° |
+| Uncorrected | 0.023° | 0.023° | 0.027° |
+| Perfect calibration | 0.017° | 0.023° | 0.017° |
+| Imperfect cal (±0.2 dB, ±0.5°) | 0.017° | 0.023° | 0.017° |
+
+Perfect calibration fully restores the no-mismatch floor. A residual estimation error of ±0.2 dB / ±0.5° is small enough to make imperfect calibration indistinguishable from perfect.
+
+### Key findings
+
+**IM69D120-spec mismatch causes essentially zero degradation:**
+  * 96-mic spatial averaging suppresses individual mic gain/phase errors — the array is robust by design
+  * DoA error increase is ≤0.013° at spec; resolution reliability is unchanged
+  * This is a direct consequence of array gain: 10·log10(96) ≈ 20 dB of spatial averaging suppresses per-mic errors by roughly 10× in amplitude
+
+**Phase mismatch dominates over gain mismatch:**
+  * Gain ±1 dB: DoA error increase is unmeasurable (D&S, MUSIC) or 0.007° (MVDR)
+  * Phase ±2°: all algorithms show ~0.010° increase — still negligible
+  * Conclusion: keep the shared PDM clock low-jitter; gain matching is not critical
+
+**Calibration is not required for basic DoA operation with IM69D120 mics:**
+  * Uncorrected IM69D120-spec mismatch keeps all algorithms at or near the scan-grid floor
+  * Calibration would matter for high dynamic range scenarios (weak source detection near a strong source) — not tested here, but not the primary concern for the initial system
+
+**Imperfect calibration with ±0.2 dB / ±0.5° residual is fully effective:**
+  * The residual error at that level is already below the noise floor of the mismatch effect
+  * Cross-correlation-based calibration methods typically achieve <0.2 dB / <0.5° residual — sufficient for full restoration
+
+---
+
 ## Phase 1 Summary
 
 ### Array geometry decision
@@ -536,7 +608,7 @@ The following remain for Phase 2 (or later) simulation:
 - ~~**MUSIC robustness to wrong source count**~~ — covered in notebook 07
 - ~~**Broadband / frequency-swept maps**~~ — covered in notebook 05
 - ~~**Snapshot count sweep**~~ — covered in notebook 06
-- **Calibration sensitivity**: effect of ±1dB gain and ±2° phase mismatch (from the IM69D120 specs)
+- ~~**Calibration sensitivity**~~ — covered in notebook 08
 - **Near-field CLEAN-SC**: spherical-wave extension not yet implemented
 - **2D elevation × azimuth maps**: all simulations are 1D azimuth scans
 - **Reverberant/multipath environments**: free-field assumption is made throughout this phase
