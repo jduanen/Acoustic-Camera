@@ -353,6 +353,73 @@ a benefit of the non-uniform spacing.
 
 ---
 
+## 06 — Snapshot Count Sweep (`notebooks/06_snapshot_sweep.ipynb`)
+
+### Setup
+- Array: Underbrink H=12×8, α=22° (96 mics, N_MICS=96)
+- Frequency: 4 kHz, SNR: 20 dB (also 10 dB for sensitivity)
+- Source: single at 25° (DoA error sweep); two at ±15° (resolution reliability sweep)
+- N_SNAP sweep: [16, 32, 64, 128, 256, 512, 1024, 2048, 4096]
+- N_TRIALS: 15 independent CSM realisations per N_SNAP value
+- Resolution criterion: −6 dB valley between two peaks
+
+### Latency table
+
+| N_SNAP | Latency (ms) | Update rate (fps) | N_SNAP / N_MICS |
+|---|---|---|---|
+| 16 | 0.3 | 3000 | 0.17 |
+| 32 | 0.7 | 1500 | 0.33 |
+| 64 | 1.3 | 750 | 0.67 |
+| 128 | 2.7 | 375 | 1.33 |
+| 256 | 5.3 | 188 | 2.67 |
+| 512 | 10.7 | 94 | 5.33 |
+| 1024 | 21.3 | 47 | 10.67 |
+| 2048 | 42.7 | 23 | 21.33 |
+| 4096 | 85.3 | 12 | 42.67 |
+
+CSM becomes theoretically full-rank only at N_SNAP ≥ N_MICS=96; diagonal loading allows MVDR/MUSIC to operate below this.
+
+### DoA error convergence (single source, 20 dB SNR)
+
+| Algorithm | N_SNAP for <0.5° error | Latency at convergence |
+|---|---|---|
+| D&S | 16 | 0.3 ms |
+| MVDR | 16 | 0.3 ms |
+| MUSIC | 16 | 0.3 ms |
+
+All three algorithms converge to <0.5° DoA error at the minimum tested N_SNAP (16) with 20 dB SNR at 4 kHz.  The 96-mic array with diagonal-loaded MVDR is robust even at N_SNAP ≪ N_MICS.
+
+### Resolution reliability (two sources at ±15°, 20 dB SNR)
+
+| Algorithm | N_SNAP for 90% resolution |
+|---|---|
+| D&S | >4096 (never) |
+| MVDR | 16 |
+| MUSIC | 16 |
+
+D&S never reliably resolves ±15° sources at 4 kHz — this is consistent with the notebook 05 finding that D&S HPBW ≈ 19° at 4 kHz, making 30° separation marginal for D&S even with infinite snapshots.  MVDR and MUSIC achieve 90% resolution reliability at N_SNAP=16 regardless.
+
+### Key findings
+
+**Snapshot count is not a bottleneck for this array at moderate SNR:**
+  * All algorithms reach <0.5° DoA accuracy at N_SNAP=16 (0.3 ms latency) at 20 dB SNR
+  * The 96-mic array oversamples spatially; even a rank-deficient CSM (N_SNAP=16 ≪ 96) carries enough information for reliable DoA
+
+**D&S resolution limit is aperture-driven, not snapshot-driven:**
+  * D&S cannot resolve ±15° at 4 kHz regardless of N_SNAP — the HPBW (~19°) is larger than the source separation (30°)
+  * Adding more snapshots does not help D&S below its physical resolution limit
+  * MVDR and MUSIC super-resolve from the very first snapshot count tested
+
+**Practical N_SNAP recommendation: 256 (5.3 ms, 188 fps)**
+  * Provides 16× margin above the convergence point
+  * Latency is below human perception (~10ms perceptual threshold)
+  * 50% overlap brings effective update rate to ~375 fps if latency is critical
+  * Going below N_SNAP=128 (2.7ms) offers no accuracy improvement at 20 dB SNR
+
+**At 10 dB SNR:** convergence shifts to higher N_SNAP (visible in the side-by-side SNR comparison plot); D&S and MVDR degraded more gracefully than MUSIC below N_SNAP=96.
+
+---
+
 ## Phase 1 Summary
 
 ### Array geometry decision
@@ -378,12 +445,20 @@ a benefit of the non-uniform spacing.
 | Lowest latency / embedded compute | D&S |
 | Near-field, range + angle estimation | Focused D&S (or MVDR/MUSIC with NF steering) |
 
+### Snapshot count recommendation
+
+**N_SNAP = 256** (5.3 ms latency, 188 fps) is the practical baseline:
+- All algorithms converge to <0.5° DoA accuracy at N_SNAP=16 at 20 dB SNR / 4 kHz — snapshot count is not a bottleneck
+- 256 provides a comfortable 16× margin and keeps latency below the 10 ms perceptual threshold
+- 50% window overlap (standard in practice) brings effective update rate to ~375 fps if needed
+- D&S resolution is aperture-limited, not snapshot-limited — adding snapshots does not help D&S resolve below its HPBW
+
 ### What Phase 1 does NOT cover
 
 The following remain for Phase 2 (or later) simulation:
 - **MUSIC robustness to wrong source count**: practical systems cannot assume n_sources is known
 - ~~**Broadband / frequency-swept maps**~~ — covered in notebook 05
-- **Snapshot count sweep**: real-time update rate vs. algorithm quality tradeoff
+- ~~**Snapshot count sweep**~~ — covered in notebook 06
 - **Calibration sensitivity**: effect of ±1dB gain and ±2° phase mismatch (from the IM69D120 specs)
 - **Near-field CLEAN-SC**: spherical-wave extension not yet implemented
 - **2D elevation × azimuth maps**: all simulations are 1D azimuth scans
