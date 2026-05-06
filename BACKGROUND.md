@@ -225,6 +225,11 @@ Below is a overview of some commonly used beamforming algorithms.
 
 ### Multi-Signal Classification (MUSIC)
   - subspace-based beamforming approach
+  - partitions the N-dimensional signal space into:
+    * signal subspace, spanned by the K largest eigenvectors
+    * noise subspace, consisting of the remaining N-K eigenvectors
+  - the spectrum is the inverse projection of each steering vector onto the noise subspace
+    * ?
   - used primarily for estimating Direction-of-Arrival (DoA) of multiple signal sources
   - approach
     * Signal Model: create Spatial Covariance Matrix from input signals
@@ -237,7 +242,14 @@ Below is a overview of some commonly used beamforming algorithms.
     * DoA Estimation: directions corresponding to peaks are the estimated DoAs of the sources
   - can resolve multiple closely-spaced sources
   - provides high accuracy in low-noise and low-reverb environments
-  - need to provide an estimate of the number of sources -- could be problematic
+  - need to provide an estimate of the number of sources -- could be problematic in practice
+    * undercount: n_sources < true value of K
+      - signal subspace is too small, some signal energy leaks into the noise subspace
+      - the true source peaks may weaken or merge, making it hard to detect them
+    * overcount: n_sources > true value of K
+      - signal subspace is too large, some noise eigenvectors are absorbed into the signal subspace
+      - reduces the noise subspace
+      - spurious peaks can appear at directions corresponding to the excluded noise eigenvectors
   - Root-MUSIC has lower search costs
   - reports vary on comparisons with ESPRIT
     * ESPRIT depends on rotational-invariance, but is a fast and search-free estimation technique

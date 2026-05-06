@@ -69,6 +69,9 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
   - match audio input path dynamic range to ADCs
   - careful layout of audio front-end to ensure low noise
   - get ADCs that share common clock and (if multiple in a package) sample at the same point
+  - look at creating add-on arms to increase the aperture to improve resolution at low frequencies
+
+
 * Advantages of low SNR mic in beamforming applications
   - https://audioxpress.com/article/microphone-array-beamforming-with-optical-mems-microphones
   - a better SNR mic can do better than multiple lesser SNR mics
