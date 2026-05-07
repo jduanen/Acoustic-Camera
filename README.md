@@ -101,6 +101,45 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Sources beyond ~3–4 m** — range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
   at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable.
 
+## Phase 2 Smoke Test — ReSpeaker 4-Mic Array
+
+Full results and methodology: [PHASE2](./PHASE2.md)
+
+End-to-end pipeline validation on real hardware: audio capture → beamforming → energy map → video overlay.
+Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (4 mics, 90mm aperture, 16 kHz, driverless USB).
+
+### Hardware findings
+
+- USB device index 12; 6 channels at 16 kHz; 23.9 ms latency
+- Channel mapping: ch0 = Conference processed, ch1 = ASR processed, **ch2–5 = Mic 0–3 raw**
+- Mic gain imbalance up to ~3.6× across raw channels (Mic 1 consistently lower); motivates calibration
+
+### Pipeline validation (nb13)
+
+Welch-style CSM from 3 s ambient recording (~373 blocks at 256-sample blocks, 128-sample hop):
+
+| Algorithm | Peak (°) | Notes |
+|---|---|---|
+| D&S | 2.7° | Near boresight; consistent with dominant frontal source |
+| MVDR | 7.5° | Near boresight |
+| CLEAN-SC | 2.7° | Near boresight |
+
+All three agree within 5° — **PASS**. Peaks stable 500–1750 Hz; scatter increases at 2000–2250 Hz as expected near the 2695 Hz spatial Nyquist.
+
+### Calibration (nb14)
+
+Cross-correlation-based gain and phase calibration. Run `notebooks/14_respeaker_calibration.ipynb` while playing a 1 kHz sine tone from boresight at 0.5–1 m to obtain valid calibration. Calibration vector saved to `test/ReSpeaker/cal.npy`.
+
+### Live script
+
+```bash
+python src/acoustic_camera_p2.py                          # D&S, 1000 Hz
+python src/acoustic_camera_p2.py --algo mvdr --freq 1500
+python src/acoustic_camera_p2.py --algo ds --freq 1000 --cal test/ReSpeaker/cal.npy
+```
+
+Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → beamform → COLORMAP_INFERNO energy strip overlaid on webcam frame. Peak direction shown as a green vertical line.
+
 ## Target Design
 [DESIGN](./DESIGN.md)
 
