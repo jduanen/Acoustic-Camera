@@ -23,17 +23,19 @@ Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (already in hand)
 | Far-field distance | ~0.19m @ 4kHz | r_FF = 2D²/λ; always far field in practice |
 | Expected HPBW | ~3.3× Phase 4 | Scales as aperture ratio: 300/90 |
 
-Estimated HPBW vs frequency (derived from Phase 1 scaling):
+HPBW vs frequency (from nb12 simulation):
 
-| Freq (Hz) | Expected HPBW | Phase 4 HPBW (ref) |
+| Freq (Hz) | Phase 2 HPBW (4-mic) | Phase 4 HPBW (96-mic) |
 |---|---|---|
-| 500 | >180° (omni) | >180° |
-| 1000 | >180° (omni) | 82° |
-| 2000 | ~125° | 38° |
-| 2500 | ~100° | 30° |
+| 500 | 180° (omni) | >180° |
+| 1000 | 180° (omni) | 82° |
+| 1500 | 135° | — |
+| 2000 | 88° | 38° |
+| 2500 | 67° | — |
 
-At 2–2.5kHz the array has barely useful directionality. This is acceptable for a smoke test where 
-the goal is pipeline validation, not spatial resolution.
+At ≤1 kHz the array is omnidirectional. At 2–2.5 kHz there is enough directionality to be
+useful for smoke-test purposes. This is acceptable — the goal is pipeline validation, not
+spatial resolution.
 
 **No near-field correction needed:** r_FF < 0.2m at all frequencies in the target range.
 Far-field steering vectors are correct for all practical operating distances.
@@ -59,7 +61,42 @@ Establishes quantitative expectations before any hardware experiments:
 - Expected DoA accuracy and minimum resolvable source separation
 - Comparison table: Phase 2 (4-mic, 90mm) vs Phase 4 (96-mic, 300mm) expected performance
 
-*Results will be documented below after nb12 runs.*
+### nb12 Results
+
+**Spatial Nyquist:** 2695 Hz (chord = 63.6 mm). Effective ceiling ~2425 Hz (10% margin).
+
+**HPBW:**
+
+| Freq (Hz) | HPBW |
+|---|---|
+| ≤ 1000 | 180° (omni) |
+| 1500 | 135° |
+| 2000 | 88° |
+| 2500 | 67° |
+
+**Algorithm comparison:** D&S, MVDR, and MUSIC produce nearly identical DoA accuracy with N=4
+mics. The super-resolution benefit of MVDR/MUSIC requires many more mics than signal subspace
+dimensions; with N=4 there is too little diversity. D&S is as accurate as MVDR here.
+
+**SNR sensitivity:** at SNR=20 dB, mean DoA error ≈ 0.2° for all algorithms. SNR floor for
+reliable DoA (error < 1°) is approximately 15 dB — 5 dB higher than the 96-mic Phase 4 array,
+consistent with ~6 dB array gain (10·log10(4)) vs ~20 dB for 96 mics.
+
+**Snapshot convergence:**
+
+| N_SNAP | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| 4 | 1.33° | 2.38° | 1.33° |
+| 16 | 0.71° | 0.71° | 0.71° |
+| 64 | 0.28° | 0.28° | 0.28° |
+| 256 | 0.22° | 0.21° | 0.22° |
+| 512 | 0.12° | 0.11° | 0.12° |
+
+Full-rank CSM at N_SNAP=4; convergence continues improving beyond that because each snapshot
+adds noise-averaging benefit. Recommend N_SNAP=256 (same as Phase 1) for consistency.
+
+**Spatial aliasing:** at regular 90° spacing, aliasing above Nyquist produces a single strong
+grating lobe (vs many weak lobes for Underbrink). Stay below ~2400 Hz to avoid ambiguity.
 
 ---
 
