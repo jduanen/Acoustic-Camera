@@ -166,24 +166,37 @@ Expected: calibration matters more with 4 mics than with 96 (less spatial averag
 per-mic errors). Per Phase 1 nb08: 96-mic spatial averaging suppresses mic errors by ~20 dB;
 4-mic array provides only ~6 dB of spatial averaging → calibration has measurable benefit.
 
-*Results will be documented below after nb14 runs.*
+### nb14 Results
+
+**Generated and code-verified.** Requires deliberate 1 kHz tone from boresight for meaningful
+calibration. When run with ambient audio only (no tone), delays of +125µs are measured on mic1 and
+mic2 vs mic0/mic3, and gain ratios are within ±1 dB (0.57 dB max). Calibration file
+`test/ReSpeaker/cal.npy` is saved on every run.
+
+**To get valid calibration results**, run the notebook while playing a 1 kHz sine tone from directly
+in front of the array at 0.5–1 m. After calibration, re-run the off-axis test section
+(`TRUE_ANGLE = <measured angle>`) to quantify DoA error improvement.
 
 ---
 
 ## Live Script (`src/acoustic_camera_p2.py`)
 
 Real-time two-thread pipeline:
-- **Audio thread**: `sounddevice.InputStream` (4-ch, 16 kHz) → `collections.deque`
-- **Main thread**: accumulate sliding-window CSM → beamform → OpenCV heatmap overlay → display
+- **Audio thread**: `sounddevice.InputStream` (6-ch, 16 kHz) → `collections.deque`, mic channels 2–5 extracted
+- **Main thread**: deque → sliding CSM (Welch-style) → beamform → energy strip → OpenCV overlay → imshow
+
+Energy map: beamformer output (dB, normalized) rendered as a color strip across the bottom of the
+webcam frame using COLORMAP_INFERNO. Peak direction shown as a green vertical line.
 
 Usage:
 ```
+python src/acoustic_camera_p2.py
 python src/acoustic_camera_p2.py --algo ds --freq 1000
 python src/acoustic_camera_p2.py --algo mvdr --freq 2000 --cal test/ReSpeaker/cal.npy
 ```
 
-Key CLI options: `--algo {ds,mvdr,clean}`, `--freq Hz`, `--snap N` (default 256),
-`--device idx`, `--cal path`, `--fov deg` (default 180)
+Key CLI options: `--algo {ds,mvdr,clean}`, `--freq Hz`, `--snap N` (default 64 blocks),
+`--device idx`, `--cal path`, `--fov deg` (default 90)
 
 ---
 
@@ -200,19 +213,30 @@ libusb-package   # pyusb backend
 
 ## Phase 2 Summary
 
-*To be filled in after all three notebooks complete.*
-
 ### Hardware findings
-*TBD*
+
+- ReSpeaker at USB device index 12, 6 channels, 16 kHz, 16-bit, 23.9 ms latency
+- Channel mapping: ch0=Conference (processed, ~6-10× higher power), ch1=ASR processed, ch2–5=Mic 0–3 raw
+- Gain imbalance across raw mic channels up to ~3.6× (motivates nb14 calibration)
+- USB control (AEC_MIC_ARRAY_GEO, DOA_VALUE) requires udev rule for non-root access
 
 ### Pipeline validation
-*TBD*
+
+- `sounddevice.rec()` captures 6-channel audio reliably at 16 kHz
+- Welch-style CSM from 3s ambient recording converges with ~373 blocks
+- D&S, MVDR, CLEAN-SC all agree within 5° for ambient audio (peaks near boresight)
+- Beamformer peaks stable 500–1750 Hz; scatter increases at 2000–2250 Hz as expected near Nyquist
 
 ### Calibration results
-*TBD*
+
+*Run nb14 with a deliberate 1 kHz boresight tone to populate this section.*
 
 ### Issues surfaced
-*TBD*
+
+- Channel 5 (Mic 3) showed zero output in pre-recorded `output.wav` but live correctly; likely a
+  recording artifact rather than hardware fault
+- Mic1 (ch3) consistently lower power than others; hardware sensitivity variation or cabling
+- USB control interface needs udev rule: `echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2886", ATTR{idProduct}=="001a", MODE="0666"' | sudo tee /etc/udev/rules.d/99-respeaker.rules && sudo udevadm control --reload-rules && sudo udevadm trigger`
 
 ### What Phase 2 does NOT cover
 
