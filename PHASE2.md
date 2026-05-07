@@ -117,7 +117,33 @@ Validates the full audio capture → CSM → beamforming pipeline on real data:
 7. **Cross-check** — read onboard `DOA_VALUE` from device; compare to our estimate.
 8. **Hardware issues** — document USB latency, clock drift, channel ordering, noise floor.
 
-*Results will be documented below after nb13 runs.*
+### nb13 Results
+
+**Device:** index 12, `reSpeaker XVF3800 4-Mic Array: USB Audio (hw:4,0)`, 6 channels, 16 kHz, 23.9 ms latency
+
+**Channel mapping (critical finding):** The device's 6 USB audio channels are NOT 4 raw mics + 2 beams as assumed. From power level analysis:
+
+| USB ch | RMS (output.wav) | RMS (live) | Identity |
+|---|---|---|---|
+| 0 | 0.01599 | 0.02292 | Processed beam output (AGC, ~6-10× higher power) |
+| 1 | 0.00275 | 0.00301 | Raw mic 0 |
+| 2 | 0.00278 | 0.00191 | Raw mic 1 |
+| 3 | 0.00260 | 0.00183 | Raw mic 2 |
+| 4 | 0.00257 | 0.00191 | Raw mic 3 |
+| 5 | 0.00000 | 0.00197 | Unknown (possibly AEC farend or second beam) |
+
+**Action:** use USB channels 1–4 for beamforming (not 0–3). All notebooks and live script updated.
+
+**CSM (channels 1–4, 1500 Hz):** diagonal power per mic = [0.000337, 0.000096, 0.000088, 0.000112] — channels 2–4 are well-matched; ch1 is ~3× louder, consistent with a directional ambient source near mic0.
+
+**Beamformer peaks (channels 1–4, 1500 Hz, ambient audio):**
+- D&S: 58.7°, MVDR: 77.6° — agree within ~20°, consistent with HPBW of 135° at 1500 Hz (ambient, no controlled source)
+
+**USB control interface (AEC_MIC_ARRAY_GEO, DOA_VALUE):** requires udev rule for non-root access. To enable:
+```
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2886", ATTR{idProduct}=="001a", MODE="0666"' | sudo tee /etc/udev/rules.d/99-respeaker.rules && sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+Once applied, nb13 can be re-run to read actual mic XYZ positions from `AEC_MIC_ARRAY_GEO` and onboard DoA from `DOA_VALUE`.
 
 ---
 
