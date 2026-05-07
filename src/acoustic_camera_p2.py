@@ -146,8 +146,13 @@ def main():
           f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}')
     print('Press q to quit.')
 
-    label = f'Filling buffer...'
+    label = 'Filling buffer...'
     P = None
+    t_last = time.monotonic()
+    fps = 0.0
+
+    win = 'Acoustic Camera — Phase 2'
+    cv2.namedWindow(win, getattr(cv2, 'WINDOW_GUI_NORMAL', cv2.WINDOW_NORMAL))
 
     with stream:
         while True:
@@ -188,9 +193,13 @@ def main():
                 px = max(1, min(w - 2, px))
                 cv2.line(frame, (px, 0), (px, h - strip_h), (0, 255, 0), 2)
 
-            cv2.putText(frame, label, (10, 28),
+            now = time.monotonic()
+            fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
+            t_last = now
+
+            cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            cv2.imshow('Acoustic Camera — Phase 2', frame)
+            cv2.imshow(win, frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
