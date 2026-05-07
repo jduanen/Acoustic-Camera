@@ -54,9 +54,10 @@ def beamform_clean(R, freq, az_grid, n_iter=20, loop_gain=0.5):
     for _ in range(n_iter):
         P = np.real(np.sum(H.conj() * (R_w @ H), axis=0))
         k = np.argmax(P)
-        g = R_w @ H[:, k]
-        R_w -= loop_gain * np.outer(g, g.conj())
-        clean[k] += loop_gain * np.real(g.conj() @ g)
+        h = H[:, k]
+        P_src = np.real(h.conj() @ (R_w @ h))  # scalar source power at peak
+        R_w -= loop_gain * P_src * np.outer(h, h.conj())
+        clean[k] += loop_gain * P_src
     return clean
 
 
