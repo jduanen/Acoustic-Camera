@@ -1,12 +1,12 @@
 # Phase 2 — ReSpeaker Smoke Test
 
-End-to-end pipeline validation on real hardware. The goal is not high performance — it is a
-fully functional pipeline: audio capture → beamforming → energy map → video overlay.
+End-to-end pipeline validation on real hardware. The goal to create a fully functional (not high performance) pipeline: audio capture → beamforming → energy map → video overlay.
 
 Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (already in hand)
 - 4-mic circular array, 90mm diameter, XMOS XVF3800 onboard DSP
 - USB interface, driverless on Linux/macOS (UAC)
 - Onboard: AEC, AGC, DoA, beamforming, VAD, noise suppression, de-reverberation
+  * not planning on using these features, just use it as a simple mic array
 - USB control: `python_control/xvf_host.py` (pyusb)
 
 ---
@@ -16,11 +16,11 @@ Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (already in hand)
 | Parameter | Value | Notes |
 |---|---|---|
 | Mic count | 4 | Circular, equal 90° spacing |
-| Aperture | 90 mm | vs. 300 mm for Phase 4 target |
-| Radius | ~45 mm | Exact positions from `AEC_MIC_ARRAY_GEO` |
-| Min chord spacing | ~63.6 mm | 2×45×sin(45°); adjacent mics at 90° |
-| Spatial Nyquist | ~2.7 kHz | c/(2×0.0636); effective range ≤ ~2.5 kHz |
-| Far-field distance | ~0.19 m @ 4 kHz | r_FF = 2D²/λ; always far field in practice |
+| Aperture | 90mm | vs. 300mm for Phase 4 target |
+| Radius | ~45mm | Exact positions from `AEC_MIC_ARRAY_GEO` |
+| Min chord spacing | ~63.6mm | 2×45×sin(45°); adjacent mics at 90° |
+| Spatial Nyquist | ~2.7kHz | c/(2×0.0636); effective range ≤ ~2.5kHz |
+| Far-field distance | ~0.19m @ 4kHz | r_FF = 2D²/λ; always far field in practice |
 | Expected HPBW | ~3.3× Phase 4 | Scales as aperture ratio: 300/90 |
 
 Estimated HPBW vs frequency (derived from Phase 1 scaling):
@@ -32,10 +32,10 @@ Estimated HPBW vs frequency (derived from Phase 1 scaling):
 | 2000 | ~125° | 38° |
 | 2500 | ~100° | 30° |
 
-At 2–2.5 kHz the array has barely useful directionality. This is acceptable for a smoke test —
+At 2–2.5kHz the array has barely useful directionality. This is acceptable for a smoke test where 
 the goal is pipeline validation, not spatial resolution.
 
-**No near-field correction needed:** r_FF < 0.2 m at all frequencies in the target range.
+**No near-field correction needed:** r_FF < 0.2m at all frequencies in the target range.
 Far-field steering vectors are correct for all practical operating distances.
 
 ---
@@ -50,7 +50,7 @@ signatures (`beamform_ds`, `beamform_mvdr`, `clean_sc`, `steering_matrix`), same
 
 Establishes quantitative expectations before any hardware experiments:
 - 4-mic circular array geometry definition and visualization
-- PSF / HPBW sweep 500 Hz – 2.5 kHz
+- PSF/HPBW sweep 500Hz – 2.5kHz
 - Spatial Nyquist verification
 - Algorithm comparison (D&S, MVDR, CLEAN-SC, MUSIC) — note reduced benefit of MUSIC with N=4
   (noise subspace dimension = N−k = 3 at best; eigenvalue gap is small relative to noise)
@@ -153,8 +153,8 @@ libusb-package   # pyusb backend
 
 ### What Phase 2 does NOT cover
 
-- Multi-source resolution (4 mics, wide HPBW — not the goal of this phase)
-- Frequency range above ~2.5 kHz (spatial aliasing above Nyquist)
+- Multi-source resolution (4x mics, wide HPBW — not the goal of this phase)
+- Frequency range above ~2.5kHz (spatial aliasing above Nyquist)
 - Near-field range estimation (not needed; r_FF < 0.2 m)
 - GPU acceleration (CPU is sufficient for 4-mic real-time pipeline)
 - 2D azimuth × elevation maps (1D azimuth sweep is sufficient for smoke test)
