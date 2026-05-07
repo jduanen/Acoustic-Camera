@@ -5,6 +5,7 @@ Usage:
     python src/acoustic_camera_p2.py
     python src/acoustic_camera_p2.py --algo mvdr --freq 2000
     python src/acoustic_camera_p2.py --algo ds --freq 1000 --cal test/ReSpeaker/cal.npy
+    python src/acoustic_camera_p2.py --video 2
 """
 import argparse
 import collections
@@ -104,6 +105,7 @@ def main():
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
     ap.add_argument('--fov',    type=float, default=90.0,    help='display FOV (deg)')
+    ap.add_argument('--video',  type=int,   default=0,       help='cv2.VideoCapture device index')
     args = ap.parse_args()
 
     cal_e = np.load(args.cal) if args.cal else None
@@ -131,11 +133,10 @@ def main():
         device=dev_idx, blocksize=256, callback=audio_cb,
     )
 
-    cam = cv2.VideoCapture('/dev/video4')
+    cam = cv2.VideoCapture(args.video)
     if not cam.isOpened():
         print('No webcam — showing audio-only overlay on black frame')
         cam = None
-    cam = None  #### TMP TMP TMP
 
     print(f'algo={args.algo}  freq={args.freq:.0f}Hz  fov=±{args.fov/2:.0f}°  '
           f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}')
