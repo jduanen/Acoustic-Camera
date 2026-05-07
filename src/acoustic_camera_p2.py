@@ -61,6 +61,16 @@ def beamform_clean(R, freq, az_grid, n_iter=20, loop_gain=0.5):
     return clean
 
 
+def beamform_music(R, freq, az_grid, n_src=1):
+    N = R.shape[0]
+    _, V = np.linalg.eigh(R)       # eigenvalues ascending; V[:,i] = i-th eigenvector
+    En = V[:, :N - n_src]          # noise subspace: smallest N-n_src eigenvectors
+    H = _sm(az_grid, freq)
+    proj = En.conj().T @ H         # (N-n_src, n_az)
+    denom = np.real(np.sum(proj.conj() * proj, axis=0))
+    return 1.0 / np.maximum(denom, 1e-300)
+
+
 def compute_csm(audio, freq, block_size=256, hop=128):
     n_samp, n_ch = audio.shape
     freqs = np.fft.rfftfreq(block_size, 1 / 16000)
@@ -100,10 +110,11 @@ def find_device():
 
 def main():
     ap = argparse.ArgumentParser(description='Phase 2 acoustic camera live demo')
-    ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean'], default='ds')
+    ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds')
     ap.add_argument('--freq',   type=float, default=1000.0,  help='beamforming frequency (Hz)')
     ap.add_argument('--snap',   type=int,   default=64,      help='CSM blocks to average')
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
+    ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
     ap.add_argument('--fov',    type=float, default=90.0,    help='display FOV (deg)')
     ap.add_argument('--video',  type=int,   default=0,       help='cv2.VideoCapture device index')
@@ -116,7 +127,12 @@ def main():
     if dev_idx is None:
         raise RuntimeError('ReSpeaker not found — use --device IDX to specify')
 
-    ALGO = {'ds': beamform_ds, 'mvdr': beamform_mvdr, 'clean': beamform_clean}[args.algo]
+    ALGO = {
+        'ds':    beamform_ds,
+        'mvdr':  beamform_mvdr,
+        'clean': beamform_clean,
+        'music': lambda R, f, az: beamform_music(R, f, az, args.nsrc),
+    }[args.algo]
 
     # Audio circular buffer: holds enough samples for args.snap CSM blocks
     n_buf = args.snap * 128 + 256
