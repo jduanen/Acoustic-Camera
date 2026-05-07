@@ -121,23 +121,23 @@ Validates the full audio capture → CSM → beamforming pipeline on real data:
 
 **Device:** index 12, `reSpeaker XVF3800 4-Mic Array: USB Audio (hw:4,0)`, 6 channels, 16 kHz, 23.9 ms latency
 
-**Channel mapping (critical finding):** The device's 6 USB audio channels are NOT 4 raw mics + 2 beams as assumed. From power level analysis:
+**Channel mapping (confirmed from SeeedStudio documentation + power level analysis):**
 
 | USB ch | RMS (output.wav) | RMS (live) | Identity |
 |---|---|---|---|
-| 0 | 0.01599 | 0.02292 | Processed beam output (AGC, ~6-10× higher power) |
-| 1 | 0.00275 | 0.00301 | Raw mic 0 |
-| 2 | 0.00278 | 0.00191 | Raw mic 1 |
-| 3 | 0.00260 | 0.00183 | Raw mic 2 |
-| 4 | 0.00257 | 0.00191 | Raw mic 3 |
-| 5 | 0.00000 | 0.00197 | Unknown (possibly AEC farend or second beam) |
+| 0 | 0.01599 | 0.02292 | Conference processed audio (AGC, ~6-10× higher power) |
+| 1 | 0.00275 | 0.00301 | ASR processed audio |
+| 2 | 0.00278 | 0.00191 | **Mic 0 raw** |
+| 3 | 0.00260 | 0.00183 | **Mic 1 raw** |
+| 4 | 0.00257 | 0.00191 | **Mic 2 raw** |
+| 5 | 0.00000 | 0.00197 | **Mic 3 raw** |
 
-**Action:** use USB channels 1–4 for beamforming (not 0–3). All notebooks and live script updated.
+**Action:** use USB channels 2–5 for beamforming. Notebooks and live script updated accordingly.
 
-**CSM (channels 1–4, 1500 Hz):** diagonal power per mic = [0.000337, 0.000096, 0.000088, 0.000112] — channels 2–4 are well-matched; ch1 is ~3× louder, consistent with a directional ambient source near mic0.
+**CSM (channels 2–5, 1500 Hz, live recording):** diagonal = [0.000665, 0.000250, 0.000544, 0.000893] — mic1 (ch3) is ~3.6× lower than mic3; coherence matrix 0.734–0.949 for all off-diagonal pairs (higher than ambient-only prior run, consistent with a more coherent scene). Mic1 imbalance motivates nb14 calibration.
 
-**Beamformer peaks (channels 1–4, 1500 Hz, ambient audio):**
-- D&S: 58.7°, MVDR: 77.6° — agree within ~20°, consistent with HPBW of 135° at 1500 Hz (ambient, no controlled source)
+**Beamformer peaks (channels 2–5, 1500 Hz, ambient audio):**
+- D&S: 2.7°, MVDR: 7.5°, CLEAN-SC: 2.7° — all near boresight (~0°), consistent with dominant frontal source. All three agree within 5° (PASS), well within the 135° HPBW at 1500 Hz.
 
 **USB control interface (AEC_MIC_ARRAY_GEO, DOA_VALUE):** requires udev rule for non-root access. To enable:
 ```
