@@ -79,8 +79,12 @@ def compute_csm(audio, freq, block_size=256, hop=128):
 
 def energy_strip(P, frame_w, strip_h, db_range=20):
     """1D power map → BGR color strip of shape (strip_h, frame_w, 3)."""
-    P_db = 10 * np.log10(np.maximum(P / P.max(), 1e-10))
-    norm = np.clip((P_db + db_range) / db_range, 0, 1)
+    p_max = P.max()
+    if p_max > 0:
+        P_db = 10 * np.log10(np.maximum(P / p_max, 1e-10))
+        norm = np.clip((P_db + db_range) / db_range, 0, 1)
+    else:
+        norm = np.zeros(len(P))
     row = (norm * 255).astype(np.uint8).reshape(1, -1)
     row_w = cv2.resize(row, (frame_w, 1), interpolation=cv2.INTER_LINEAR)
     strip = cv2.applyColorMap(row_w, cv2.COLORMAP_INFERNO)
@@ -142,25 +146,12 @@ def main():
           f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}')
     print('Press q to quit.')
 
+    label = f'Filling buffer...'
+    P = None
+
     with stream:
         while True:
             time.sleep(0.05)
-
-            with buf_lock:
-                n_avail = len(audio_buf)
-            if n_avail < n_buf:
-                continue
-
-            with buf_lock:
-                arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 4)
-
-            R = compute_csm(arr, args.freq)
-            if cal_e is not None:
-                c = 1.0 / cal_e
-                R = np.outer(c, c.conj()) * R
-
-            P = ALGO(R, args.freq, az_grid)
-            az_peak = az_grid[np.argmax(P)]
 
             if cam is not None:
                 ret, frame = cam.read()
@@ -171,18 +162,34 @@ def main():
 
             h, w = frame.shape[:2]
             strip_h = max(40, h // 8)
-            strip = energy_strip(P, w, strip_h)
-            frame[-strip_h:] = cv2.addWeighted(frame[-strip_h:], 0.4, strip, 0.6, 0)
 
-            # Peak marker
-            px = int((az_peak + args.fov / 2) / args.fov * w)
-            px = max(1, min(w - 2, px))
-            cv2.line(frame, (px, 0), (px, h - strip_h), (0, 255, 0), 2)
+            with buf_lock:
+                n_avail = len(audio_buf)
 
-            label = f'{args.algo.upper()}  {args.freq:.0f}Hz  peak={az_peak:.1f}'
+            if n_avail >= n_buf:
+                with buf_lock:
+                    arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 4)
+
+                R = compute_csm(arr, args.freq)
+                if cal_e is not None:
+                    c = 1.0 / cal_e
+                    R = np.outer(c, c.conj()) * R
+
+                P = ALGO(R, args.freq, az_grid)
+                az_peak = az_grid[np.argmax(P)]
+                label = f'{args.algo.upper()}  {args.freq:.0f}Hz  peak={az_peak:.1f}'
+
+            if P is not None:
+                strip = energy_strip(P, w, strip_h)
+                frame[-strip_h:] = cv2.addWeighted(frame[-strip_h:], 0.4, strip, 0.6, 0)
+
+                # Peak marker
+                px = int((az_peak + args.fov / 2) / args.fov * w)
+                px = max(1, min(w - 2, px))
+                cv2.line(frame, (px, 0), (px, h - strip_h), (0, 255, 0), 2)
+
             cv2.putText(frame, label, (10, 28),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-
             cv2.imshow('Acoustic Camera — Phase 2', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
