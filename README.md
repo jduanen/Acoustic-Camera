@@ -133,12 +133,15 @@ Cross-correlation-based gain and phase calibration. Run `notebooks/14_respeaker_
 ### Live script
 
 ```bash
-python src/acoustic_camera_p2.py                          # D&S, 1000 Hz
-python src/acoustic_camera_p2.py --algo mvdr --freq 1500
-python src/acoustic_camera_p2.py --algo ds --freq 1000 --cal test/ReSpeaker/cal.npy
+python src/acoustic_camera_p2.py                              # D&S, 1000 Hz
+python src/acoustic_camera_p2.py --algo music --freq 2000     # MUSIC, 1 source
+python src/acoustic_camera_p2.py --algo music --freq 2000 --nsrc 2 --video 4
+python src/acoustic_camera_p2.py --algo mvdr --freq 1500 --cal test/ReSpeaker/cal.npy
 ```
 
-Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → beamform → COLORMAP_INFERNO energy strip overlaid on webcam frame. Peak direction shown as a green vertical line.
+Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → beamform → COLORMAP_INFERNO energy strip overlaid on webcam frame. Strip brightness reflects absolute audio level (running peak reference, ~10 s decay). Peak direction shown as a green vertical line. FPS displayed in overlay.
+
+Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
 ## Target Design
 [DESIGN](./DESIGN.md)

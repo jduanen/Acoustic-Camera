@@ -185,18 +185,38 @@ Real-time two-thread pipeline:
 - **Audio thread**: `sounddevice.InputStream` (6-ch, 16 kHz) → `collections.deque`, mic channels 2–5 extracted
 - **Main thread**: deque → sliding CSM (Welch-style) → beamform → energy strip → OpenCV overlay → imshow
 
-Energy map: beamformer output (dB, normalized) rendered as a color strip across the bottom of the
-webcam frame using COLORMAP_INFERNO. Peak direction shown as a green vertical line.
+Energy map: beamformer output normalized against a running peak reference (0.98 decay per frame,
+~10 s half-life) and rendered as COLORMAP_INFERNO across the bottom of the video frame. Brightness
+reflects absolute audio level — quiet = dark, loud = bright. Peak direction shown as a green
+vertical line. FPS displayed in the label.
+
+Window is created with `cv2.WINDOW_GUI_NORMAL` to bypass the Qt font subsystem (required on
+systems where the pip opencv-python package is missing its bundled font directory).
 
 Usage:
 ```
 python src/acoustic_camera_p2.py
-python src/acoustic_camera_p2.py --algo ds --freq 1000
+python src/acoustic_camera_p2.py --algo ds --freq 1500
+python src/acoustic_camera_p2.py --algo music --freq 2000 --nsrc 2
 python src/acoustic_camera_p2.py --algo mvdr --freq 2000 --cal test/ReSpeaker/cal.npy
 ```
 
-Key CLI options: `--algo {ds,mvdr,clean}`, `--freq Hz`, `--snap N` (default 64 blocks),
-`--device idx`, `--cal path`, `--fov deg` (default 90)
+Key CLI options: `--algo {ds,mvdr,clean,music}`, `--freq Hz`, `--snap N` (default 64 blocks),
+`--nsrc N` (default 1, MUSIC only), `--device idx`, `--video idx` (default 0), `--cal path`,
+`--fov deg` (default 90)
+
+### CLEAN-SC bug fix
+
+The original CLEAN-SC subtraction used `outer(g, g^H)` where `g = R_w h`, which is `R_w h h^H R_w^H`
+— magnitude O(‖R‖²) and grows with each iteration, causing overflow. Correct formula: subtract
+`P_src · outer(h, h^H)` where `P_src = Re(h^H R_w h)` is the bounded scalar source power.
+
+### MUSIC algorithm
+
+`beamform_music(R, freq, az_grid, n_src)` — eigendecompose R via `np.linalg.eigh` (ascending
+order), take the N−n_src smallest eigenvectors as the noise subspace E_n, return
+`1 / ‖E_n^H h‖²` for each steering direction. With N=4 mics and n_src=1, noise subspace has
+3 columns. Best used at 1500–2000 Hz where the array has meaningful directionality (HPBW 135°–88°).
 
 ---
 
@@ -237,6 +257,9 @@ libusb-package   # pyusb backend
   recording artifact rather than hardware fault
 - Mic1 (ch3) consistently lower power than others; hardware sensitivity variation or cabling
 - USB control interface needs udev rule: `echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="2886", ATTR{idProduct}=="001a", MODE="0666"' | sudo tee /etc/udev/rules.d/99-respeaker.rules && sudo udevadm control --reload-rules && sudo udevadm trigger`
+- OpenCV pip package (Qt backend) missing font directory causes blank display window; fixed in code
+  with `cv2.WINDOW_GUI_NORMAL`. Permanent fix: `sudo apt install fonts-dejavu-core && cp /usr/share/fonts/truetype/dejavu/DejaVuSans.ttf ~/.virtualenvs/ACOUSTIC_CAMERA/lib/python3.12/site-packages/cv2/qt/fonts/`
+- CLEAN-SC had overflow bug (wrong subtraction term); fixed to use `P_src · outer(h, h^H)`
 
 ### What Phase 2 does NOT cover
 
