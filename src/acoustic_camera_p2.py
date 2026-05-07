@@ -77,14 +77,10 @@ def compute_csm(audio, freq, block_size=256, hop=128):
 
 # --- Overlay rendering ---
 
-def energy_strip(P, frame_w, strip_h, db_range=20):
+def energy_strip(P, frame_w, strip_h, ref, db_range=30):
     """1D power map → BGR color strip of shape (strip_h, frame_w, 3)."""
-    p_max = P.max()
-    if p_max > 0:
-        P_db = 10 * np.log10(np.maximum(P / p_max, 1e-10))
-        norm = np.clip((P_db + db_range) / db_range, 0, 1)
-    else:
-        norm = np.zeros(len(P))
+    P_db = 10 * np.log10(np.maximum(P / max(ref, 1e-30), 1e-10))
+    norm = np.clip((P_db + db_range) / db_range, 0, 1)
     row = (norm * 255).astype(np.uint8).reshape(1, -1)
     row_w = cv2.resize(row, (frame_w, 1), interpolation=cv2.INTER_LINEAR)
     strip = cv2.applyColorMap(row_w, cv2.COLORMAP_INFERNO)
@@ -148,6 +144,7 @@ def main():
 
     label = 'Filling buffer...'
     P = None
+    ref_power = 1e-10   # running peak reference; decays toward current level
     t_last = time.monotonic()
     fps = 0.0
 
@@ -181,11 +178,12 @@ def main():
                     R = np.outer(c, c.conj()) * R
 
                 P = ALGO(R, args.freq, az_grid)
+                ref_power = max(ref_power * 0.98, P.max())
                 az_peak = az_grid[np.argmax(P)]
                 label = f'{args.algo.upper()}  {args.freq:.0f}Hz  peak={az_peak:.1f}'
 
             if P is not None:
-                strip = energy_strip(P, w, strip_h)
+                strip = energy_strip(P, w, strip_h, ref_power)
                 frame[-strip_h:] = cv2.addWeighted(frame[-strip_h:], 0.4, strip, 0.6, 0)
 
                 # Peak marker
