@@ -99,7 +99,7 @@ cells.append(code(
     "    (+1, -3),   # ch15 MIC16\n"
     "], dtype=float) * (d / 2)\n"
     "\n"
-    "MIC_X = _xy[:, 0]\n"
+    "MIC_X = -_xy[:, 0]  # negated: Figure 1 is sound-source side; camera side is x-mirrored\n"
     "MIC_Y = _xy[:, 1]\n"
     "\n"
     "fig, ax = plt.subplots(figsize=(5, 5))\n"

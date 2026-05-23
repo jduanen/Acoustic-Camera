@@ -46,7 +46,7 @@ _xy = np.array([
     (+1, -3),   # ch15 MIC16
 ], dtype=float) * (_d / 2)
 
-MIC_X = _xy[:, 0]   # (16,) meters
+MIC_X = -_xy[:, 0]  # negated: Figure 1 is sound-source side; camera side is x-mirrored
 MIC_Y = _xy[:, 1]   # (16,) meters
 
 
@@ -144,14 +144,15 @@ def find_device():
 def main():
     ap = argparse.ArgumentParser(description='Phase 3 acoustic camera — UMA-16 v2')
     ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds')
-    ap.add_argument('--freq',   type=float, default=2000.0,  help='beamforming frequency (Hz)')
-    ap.add_argument('--snap',   type=int,   default=64,      help='CSM blocks to average')
+    ap.add_argument('--freq',   type=float, default=3000.0,  help='beamforming frequency (Hz)')
+    ap.add_argument('--snap',   type=int,   default=128,     help='CSM blocks to average')
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
     ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
     ap.add_argument('--az_fov', type=float, default=90.0,    help='azimuth display FOV (deg)')
     ap.add_argument('--el_fov', type=float, default=60.0,    help='elevation display FOV (deg)')
     ap.add_argument('--alpha',  type=float, default=0.5,     help='acoustic overlay opacity (0–1)')
+    ap.add_argument('--smooth', type=float, default=0.7,     help='temporal smoothing factor (0=none, 0.9=heavy)')
     ap.add_argument('--video',  type=int,   default=4,       help='cv2.VideoCapture device index')
     args = ap.parse_args()
 
@@ -196,6 +197,7 @@ def main():
     print('Press q to quit.')
 
     P = None
+    P_smooth = None
     ref_power = 1e-10
     az_peak = el_peak = 0.0
     label = 'Filling buffer...'
@@ -229,16 +231,21 @@ def main():
                     R = np.outer(c, c.conj()) * R
 
                 P = ALGO(R, args.freq)
-                ref_power = max(ref_power * 0.98, P.max())
+                # Temporal smoothing: reduces frame-to-frame jitter
+                if P_smooth is None:
+                    P_smooth = P.copy()
+                else:
+                    P_smooth = args.smooth * P_smooth + (1 - args.smooth) * P
+                ref_power = max(ref_power * 0.98, P_smooth.max())
 
-                k = np.argmax(P)
+                k = np.argmax(P_smooth)
                 az_peak = az_grid[k // N_el]
                 el_peak = el_grid[k % N_el]
                 label = (f'{args.algo.upper()}  {args.freq:.0f}Hz  '
                          f'az={az_peak:.1f}°  el={el_peak:.1f}°')
 
-            if P is not None:
-                frame = acoustic_overlay(P, frame, N_az, N_el, ref_power, alpha=args.alpha)
+            if P_smooth is not None:
+                frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
 
                 # Cross-hair at peak direction
                 h, w = frame.shape[:2]
