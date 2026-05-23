@@ -122,12 +122,15 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30):
     """Blend 2D power map onto video frame as full-frame overlay."""
     h, w = frame.shape[:2]
     P_db = 10 * np.log10(np.maximum(P_flat.reshape(N_az, N_el) / max(ref, 1e-30), 1e-10))
-    norm = np.clip((P_db + db_range) / db_range, 0, 1)
+    # Percentile stretch: maps 10th–100th percentile to full colormap range
+    p_lo = np.percentile(P_db, 10)
+    p_hi = P_db.max()
+    norm = np.clip((P_db - p_lo) / max(p_hi - p_lo, 1e-6), 0, 1)
     # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
     img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
     colored = cv2.applyColorMap(
         cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
-        cv2.COLORMAP_INFERNO,
+        cv2.COLORMAP_JET,
     )
     return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
 
