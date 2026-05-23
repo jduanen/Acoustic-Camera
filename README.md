@@ -143,6 +143,37 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
+## Phase 3 Smoke Test — miniDSP UMA-16 v2
+
+Full results and methodology: [PHASE3](./PHASE3.md)
+
+16-mic 4×4 URA pipeline validation: audio capture → 2D beamforming (az × el) → full-frame overlay.
+Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
+
+### Hardware findings
+
+- USB device index 12; 16 channels at 48 kHz; Knowles SPH1668LM4H-1 MEMS mics (65.5 dB SNR)
+- All 16 USB channels are raw mic data (no processed channels as in Phase 2)
+- RMS levels balanced across channels (~5e-5 ambient noise floor)
+- Channel ordering: PDM L/R pairs per data line (see PHASE3.md for mapping)
+
+### Live script
+
+```bash
+python src/acoustic_camera_p3.py                                  # D&S, 2000 Hz
+python src/acoustic_camera_p3.py --algo mvdr --freq 3000          # MVDR, 3 kHz
+python src/acoustic_camera_p3.py --algo music --nsrc 2            # MUSIC, 2 sources
+python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy         # with calibration
+```
+
+Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sliding CSM →
+2D beamform (azimuth × elevation grid) → COLORMAP_INFERNO full-frame overlay blended onto
+webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
+
+Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz; operate at
+2000–3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
+super-resolution benefit over D&S.
+
 ## Target Design
 [DESIGN](./DESIGN.md)
 
