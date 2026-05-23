@@ -44,7 +44,10 @@ Mic positions (center-referenced, USB channel → MIC label → (x, y) in mm):
 | 15 | MIC16 | +21 | −63 |
 
 Channel ordering follows PDM L/R multiplexing pairs (each pair shares one data line).
-**Verify empirically**: play a 1 kHz tone from boresight — peak should appear at az≈0°, el≈0°.
+
+**Coordinate system note (verified):** Manual Figure 1 is drawn from the sound-source side.
+The beamformer and camera use the observer-side (camera-side) frame, which is x-mirrored.
+Fix: `MIC_X = -_xy[:, 0]` (negate x). Confirmed on hardware — cross-hair tracks correctly.
 
 Expected HPBW vs frequency (horizontal axis, 126 mm aperture):
 
@@ -137,11 +140,13 @@ Same as Phase 2: `sounddevice`, `opencv-python`, `scipy`. No new packages requir
 ### Hardware findings
 
 - USB device index 12; 16 channels; 48 kHz; `UMA16v2: USB Audio (hw:4,0)`
-- Channel ordering: PDM L/R pairs; needs empirical verification
+- All 16 USB channels are raw mic data; RMS levels balanced (~5e-5 ambient noise floor)
+- Channel ordering: PDM L/R pairs per data line; mapping derived from manual Figure 1
+- **x-axis mirror confirmed**: Figure 1 is drawn from sound-source side → negate MIC_X for camera frame; `MIC_X = -_xy[:, 0]`
 
 ### Pipeline validation
 
-*TBD*
+- Cross-hair tracks sound source correctly after x-axis fix — **PASS**
 
 ### Calibration results
 
