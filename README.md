@@ -8,19 +8,135 @@ Capturing, visualizing, and tracking the position of sound sources is useful in 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
 ## Acoustic Camera Products Overview
-[PRODUCTS](./PRODUCTS.md)
+
+| Vendor | Product | Mics | Aperture | Freq range | Interface | Notes |
+|---|---|---|---|---|---|---|
+| miniDSP | UMA-16 v2 | 16 (4×4 URA) | 42×42 mm | 8–48 kHz SR | USB | Phase 3 hardware; XMOS Xcore200 PDM→PCM |
+| Convergence Instruments | ACAM-64 | 64 (32×32) | ~187×182 mm | 20 Hz–8 kHz | USB | $2,100; open protocol; 16 kHz audio |
+| Sorama | CAM64 | 64 MEMS PDM | 160×160 mm | 1.2–15 kHz (FF) | PoE | Pyramid form factor with handle |
+| Sorama | CAM1K | 1024 MEMS | 640×640 mm | 300 Hz–15 kHz (FF) | PoE | Integrated HD camera; 5.5 kg |
+| gfai Tech | Mikado | 96 MEMS | hexagon | — | — | Also Ring32/48/72 and large wind-tunnel arrays |
+| Head acoustics | Visor VMA V | 60 or 120 MEMS | 0.3 m or 1 m disk | — | — | Depth camera at center; paired/irregular spacing |
+| mh Acoustics | Eigenmike em32/em64 | 32 or 64 | spherical | 20 Hz–20 kHz | USB/Dante | HOA reference platform; up to 7th-order Ambisonics |
+| Brüel & Kjær | various | — | spherical/wheel/grid | — | — | Research-grade; many geometries |
+| Clockworks SP | A²B array | 8 | 100 mm ring | — | A²B bus | Infineon IM68D130 PDM mics; twisted-pair daisy-chain |
+| introlab | 16SoundsUSB | 8 or 16 | configurable | 8–96 kHz SR | USB | Open hardware; XMOS xCORE-200; electret or MEMS |
+
+Key observations from the survey:
+- **64–96 mics** is the commercial sweet spot for handheld far-field use (1–8 kHz, ~0.16–0.64 m aperture)
+- **USB** dominates for portable/desktop use; **PoE** for fixed installations; **A²B/Dante** for multi-node
+- **PDM MEMS mics** are standard; electret arrays appear only in large wind-tunnel configurations
+- **Integrated video camera** is universal in commercial products — always co-located at array center
+- **Near-field acoustic holography** (25 Hz–) requires much closer source distances and a separate processing path from far-field beamforming
+
+See [PRODUCTS.md](./PRODUCTS.md) for full details.
 
 ## Beamforming Projects
-[PROJECTS](./PROJECTS.md)
+
+| Project | Scale | Interface | Notable technique |
+|---|---|---|---|
+| Ben Wang (2023) | 192-mic MEMS, 24 radial arms, exponential spacing | FPGA → GbE → GPU host | GPU-fused cross-correlation calibration; PyTorch gradient descent for mic positions + speed of sound |
+| Sonicam / CMU ECE (2020) | 96-mic, 6× 4×4 MEMS panels | FPGA → Ethernet | TDK InvenSense mics; large-format panel array |
+| Kickstarter handheld (2018) | 64-mic, 3 concentric rings | ARM Cortex-A53, Linux | Battery-powered; 7" touchscreen; 10–24 kHz; 100 fps acoustic |
+| 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | — | Early large-format MEMS grid demo |
+| acoular (Python library) | reference 64-mic demo | — | Open-source beamforming framework; used in this project |
+
+Key takeaways:
+- **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) — offloads PDM decimation and keeps the host pipeline simple
+- **Calibration via cross-correlation** (Ben Wang's approach) is practical at scale: GPU-fused FFT pairs + gradient descent converges in seconds and recovers both mic positions and speed of sound simultaneously
+- **Concentric-ring and spiral geometries** appear in handheld products; rectangular grids appear in panel/tile designs
+- **Standalone operation** (ARM + touchscreen + battery) is achievable at 64 mics; larger arrays require tethered compute
+
+See [PROJECTS.md](./PROJECTS.md) for full details.
 
 ## Technical Background
-[BACKGROUND](./BACKGROUND.md)
+
+### How it works
+
+The mic array captures the sound field simultaneously at all microphones. A **steering matrix** encodes the expected inter-mic phase pattern for each candidate direction (az, el). A beamformer correlates the received signals against each steering vector and assigns a power value to each grid cell, producing an **energy map** that is overlaid on the video frame.
+
+The key parameters are: **aperture** (sets beam width — larger = sharper), **mic spacing** (sets the spatial Nyquist ceiling — closer = higher frequency limit), and **snapshot count** (sets CSM estimation quality — more = lower noise floor).
+
+### Algorithm family tree
+
+| Family | Algorithms | Characteristic |
+|---|---|---|
+| **Delay-and-Sum** | D&S (time or freq domain), Differential, Functional Beamforming | Simple; robust; wide beam; sidelobes mask weak sources |
+| **Adaptive / data-dependent** | MVDR (Capon), LCMV, GSC, Frost | Null interferers; sensitive to CSM quality and steering errors |
+| **Deconvolution** | CLEAN-SC, CLEAN-PSF, DAMAS, DAMAS2, CMF, COMET2 | Remove PSF artifacts iteratively; reveal secondary sources |
+| **Subspace** | MUSIC, Root-MUSIC, ESPRIT, CSSM, TR-MUSIC | Decompose CSM into signal + noise subspaces; super-resolution; require source count estimate |
+| **Sparse / Bayesian** | SBL, Atomic Norm Minimization | Gridless; auto-estimates source count; expensive |
+| **Spherical-harmonic** | PWD, CroPaC | For spherical arrays; Ambisonics / HOA domain |
+| **ML-based** | CNN/CRNN DoA, Transformer (SELD-Conformer), PILOT, Deep MUSIC, NN-MVDR | Learned models; top DCASE benchmarks; need training data matched to array geometry |
+
+### Key concepts
+
+- **Cross-Spectral Matrix (CSM)** — frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
+- **Point Spread Function (PSF)** — how the array smears a true point source; deconvolution methods subtract it out
+- **Far-field vs. near-field** — far-field (beyond Fraunhofer distance r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
+- **Spatial Nyquist** — upper frequency limit set by mic spacing: f_max = c / (2 × d_min); above this, grating lobes appear
+- **Low-frequency limit** — usable directionality requires roughly f > c / D (aperture-limited); below this HPBW exceeds ~57° and the array is near-omni
+- **Incoherent octave-band averaging** — commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; suppresses noise by √K and produces a band-averaged PSF
+
+See [BACKGROUND.md](./BACKGROUND.md) for full algorithm descriptions and references.
 
 ## Microphone Array Configurations
-[MIC_ARRAYS](./MIC_ARRAYS.md)
+
+Array geometry controls two things: **beam width** (set by aperture — larger = sharper) and **maximum side-lobe level / MSL** (set by mic distribution — irregular spacing suppresses aliasing artifacts). More mics improve both, but with diminishing returns and linear cost growth.
+
+### 2D patterns
+
+| Pattern | Spacing | Strengths | Weaknesses |
+|---|---|---|---|
+| **Regular grid** | Uniform | Easy to build; predictable PSF | High, periodic sidelobes; spatial aliasing above Nyquist |
+| **Archimedean spiral** | Linear increase with angle | Simple single-arm; even radial coverage | Worse MSL than multi-arm variants |
+| **Dougherty log-spiral** | Equal arc-length | Denser center; >10 dB sidelobe suppression at high freq | Single arm — less uniform outer coverage |
+| **Arcondoulis** | Adjustable squash | Elliptical or non-circular shapes; tunable center density | More design parameters to optimize |
+| **Underbrink** ★ | Multi-arm log-spiral | Best all-around: high resolution + good MSL over wide area; circular symmetry | Patented (US 6,089,671); more complex layout |
+| **Brüel & Kjær spiral** | Non-uniform along spokes | Easily disassembled; two concentric hoops | Proprietary geometry |
+
+★ Underbrink is the recommended pattern for this project (see Phase 1 findings). Literature confirms it outperforms other patterns in both resolution and MSL across tested frequencies.
+
+### 3D patterns
+
+| Pattern | Coverage | Framework | Notes |
+|---|---|---|---|
+| **Spherical** | Full 4π sr | Higher-Order Ambisonics (HOA) | Order N needs (N+1)² mics; order 7 = 64 mics; radius sets freq ceiling |
+| **Cylindrical** | 360° az; limited el | Cylindrical Harmonics | Good for horizontal-plane localization in tall spaces |
+| **Tetrahedral / Platonic solid** | 3D DoA | First-order Ambisonics (4 mics) up to HOA | Smallest 3D array; Zylia ZM-1 (19 mics) = 3rd-order |
+| **Nested / concentric spheres** | Full 4π sr | Multi-shell HOA | Inner shell = high freq; outer shell = low freq; enables range estimation |
+
+See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 
 ## Design Trade-offs
-[TRADEOFFS](./TRADEOFFS.md)
+Full details: [TRADEOFFS](./TRADEOFFS.md)
+
+### Core tensions
+
+| Parameter | Larger/More | Smaller/Fewer | Sweet spot |
+|---|---|---|---|
+| **Aperture** | Narrower beam, better low-freq | Portable, cheaper, closer far-field | **300 mm** (8°@8kHz, 66°@1kHz) |
+| **Mic count** | Lower sidelobes, better SNR | Less compute and cost | **96 mics** (47% packing at 300 mm) |
+| **Mic spacing** | Better directionality at low freq | Aliasing-free to higher freq | **21 mm min** (Nyquist at 8 kHz) |
+| **Density** | Better high-freq detail | Lower cost | 96 mics at ~27 mm avg spacing |
+
+### Resolution vs. aperture (HPBW ≈ 58° × λ/D)
+
+| Aperture | @ 1 kHz | @ 4 kHz | @ 8 kHz |
+|---|---|---|---|
+| 500 mm | ~40° | ~10° | ~5° |
+| **300 mm** | **~66°** | **~17°** | **~8°** |
+| 200 mm | ~100° | ~25° | ~12° |
+
+5° resolution at 1 kHz requires D ≈ 4 m — impractical. Deconvolution (CLEAN-SC, Functional BF)
+can recover some resolution beyond the physical aperture limit but cannot overcome the hard floor.
+
+### Array pattern: Underbrink multi-arm log-spiral (chosen)
+
+Outperforms concentric rings, cross arms, and simple spirals on both sidelobe level and spatial
+aliasing. The gfai Mikado commercial product uses exactly 96 mics in this pattern. Logarithmic
+radial spacing naturally covers multiple spatial scales — well-suited for the 200 Hz–8 kHz target.
+**8 arms × 12 mics** (will simulate 6 × 16 as alternative in Phase 1).
 
 ## System Requirements
 
@@ -173,6 +289,44 @@ webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in o
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz; operate at
 2000–3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
 super-resolution benefit over D&S.
+
+### Lessons from the UMA-16 Experiments
+
+* Key Intuition
+  - mic arrays figure out locations based on direction of arrival
+    * figure out direction of arrival based on the input signal's phase differences at different mics
+    * at high frequency, a 10deg shift in angle of arrival results in a large, easily measureable phase difference 
+  - phase differences grow with frequency
+    * low frequency sound waves are hard to localize
+    * at low frequency, the phase shift that results from a 10deg shift in angle of arrival is lost in the noise
+  - min spacing of mics defines Spatial Nyquist
+    * can't go to higher frequency than this to get better localization
+
+* Rule of Thumb
+  - useful directionality requires roughly λ < D, i.e.:
+  - f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
+  - below that frequency, the HPBW exceeds ~57° and degrades fast
+
+  ┌─────────┬──────┬───────────────────┐
+  │  Freq   │ HPBW │     Character     │
+  ├─────────┼──────┼───────────────────┤
+  │ 3000 Hz │ 43°  │ Good localization │
+  ├─────────┼──────┼───────────────────┤
+  │ 2000 Hz │ 73°  │ Marginal          │
+  ├─────────┼──────┼───────────────────┤
+  │ 1000 Hz │ 116° │ Poor              │
+  ├─────────┼──────┼───────────────────┤
+  │ 500 Hz  │ 180° │ Fully omni        │
+  └─────────┴──────┴───────────────────┘
+
+* UMA-16 Usable Frequency Range
+  - for the UMA-16, the usable window is roughly 2–4 kHz
+    * bounded below by aperture-limited directionality and above by spatial Nyquist aliasing
+    * this happens to overlap well with speech consonants and many mechanical tones
+      - this is why a 126 mm array is a practical choice for a desktop acoustic camera
+
+
+
 
 ## Target Design
 [DESIGN](./DESIGN.md)
