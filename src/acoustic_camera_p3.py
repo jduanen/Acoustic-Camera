@@ -48,6 +48,7 @@ _xy = np.array([
 
 MIC_X = -_xy[:, 0]  # negated: Figure 1 is sound-source side; camera side is x-mirrored
 MIC_Y = _xy[:, 1]   # (16,) meters
+NYQUIST = C / (2 * _d)  # spatial Nyquist ~4082 Hz
 
 
 # --- Beamforming ---
@@ -135,6 +136,45 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30):
     return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
 
 
+def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmax=6000):
+    """Draw real-time per-band power spectrum as a strip at the bottom of the frame."""
+    h, w = frame.shape[:2]
+    block = 2048
+    if audio_arr.shape[0] < block:
+        return frame
+    seg = audio_arr[-block:] * np.hanning(block)[:, np.newaxis]
+    F = np.fft.rfft(seg, axis=0)
+    psd = np.mean(np.abs(F) ** 2, axis=1)
+    bin_freqs = np.fft.rfftfreq(block, 1.0 / FS)
+
+    edges = np.linspace(0, fmax, n_bars + 1)
+    bar_power = np.array([
+        psd[(bin_freqs >= edges[k]) & (bin_freqs < edges[k + 1])].mean()
+        if np.any((bin_freqs >= edges[k]) & (bin_freqs < edges[k + 1])) else 0.0
+        for k in range(n_bars)
+    ])
+    bar_db = 10 * np.log10(bar_power + 1e-30)
+    norm = np.clip((bar_db - bar_db.max() + 40) / 40, 0, 1)
+
+    y0 = h - height
+    strip = cv2.addWeighted(frame[y0:].copy(), 0.3,
+                            np.zeros((height, w, 3), dtype=np.uint8), 0.7, 0)
+    for k, v in enumerate(norm):
+        x0 = int(k * w / n_bars)
+        x1 = max(x0 + 1, int((k + 1) * w / n_bars))
+        bar_h = int(v * (height - 6))
+        if bar_h > 0:
+            cv2.rectangle(strip, (x0, height - bar_h), (x1 - 1, height - 1), (0, 200, 80), -1)
+
+    xf = max(1, min(w - 2, int(freq_mark / fmax * w)))
+    cv2.line(strip, (xf, 0), (xf, height), (255, 255, 255), 2)
+    xn = max(1, min(w - 2, int(NYQUIST / fmax * w)))
+    cv2.line(strip, (xn, 0), (xn, height), (255, 100, 0), 1)
+
+    frame[y0:] = strip
+    return frame
+
+
 # --- Main ---
 
 def find_device():
@@ -201,6 +241,7 @@ def main():
 
     P = None
     P_smooth = None
+    latest_arr = None
     ref_power = 1e-10
     az_peak = el_peak = 0.0
     label = 'Filling buffer...'
@@ -227,6 +268,7 @@ def main():
             if n_avail >= n_buf:
                 with buf_lock:
                     arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
+                latest_arr = arr
 
                 R = compute_csm(arr, args.freq)
                 if cal_e is not None:
@@ -249,6 +291,7 @@ def main():
 
             if P_smooth is not None:
                 frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
+                frame = spectrum_overlay(latest_arr, frame, args.freq)
 
                 # Cross-hair at peak direction
                 h, w = frame.shape[:2]

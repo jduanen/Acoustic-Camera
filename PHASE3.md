@@ -112,18 +112,32 @@ Real-time two-thread pipeline identical in structure to Phase 2, but with:
 - 2D azimuth × elevation beamforming (vs 1D azimuth strip)
 - Full-frame acoustic overlay (vs bottom-strip only)
 - Cross-hair peak marker (az, el)
+- Real-time frequency spectrum strip at the bottom of the frame
 
 ```bash
-python src/acoustic_camera_p3.py                              # D&S, 2000 Hz
+python src/acoustic_camera_p3.py                              # D&S, 3000 Hz
 python src/acoustic_camera_p3.py --algo mvdr --freq 3000      # MVDR, 3 kHz
 python src/acoustic_camera_p3.py --algo music --nsrc 2        # MUSIC, 2 sources
 python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy     # with calibration
 python src/acoustic_camera_p3.py --alpha 0.7 --video 4        # higher opacity, camera 4
 ```
 
-Key CLI options: `--algo {ds,mvdr,clean,music}`, `--freq Hz` (default 2000), `--snap N` (default 64),
-`--nsrc N` (MUSIC only), `--device idx`, `--video idx` (default 4), `--cal path`,
-`--az_fov deg` (default 90), `--el_fov deg` (default 60), `--alpha 0-1` (default 0.5)
+Key CLI options: `--algo {ds,mvdr,clean,music}`, `--freq Hz` (default 3000), `--snap N` (default 128),
+`--smooth 0-1` (default 0.7), `--nsrc N` (MUSIC only), `--device idx`, `--video idx` (default 4),
+`--cal path`, `--az_fov deg` (default 90), `--el_fov deg` (default 60), `--alpha 0-1` (default 0.5)
+
+### Frequency spectrum strip
+
+A 90-pixel strip at the bottom of the frame shows the incoherent average power spectrum
+(mean across all 16 channels) updated every frame:
+
+- **Green bars** — per-band power, 64 bars spanning 0–6 kHz, normalized over a 40 dB window
+- **White line** — current beamforming frequency (`--freq`)
+- **Blue line** — spatial Nyquist (~4.1 kHz); above this the heatmap aliases
+
+The strip uses a per-frame max-relative normalization (40 dB window) so it always fills the
+display regardless of absolute level. Use it to pick an effective `--freq` — the beamformer
+works best where the spectrum has a clear peak below the blue Nyquist line.
 
 ---
 
@@ -154,4 +168,8 @@ Same as Phase 2: `sounddevice`, `opencv-python`, `scipy`. No new packages requir
 
 ### Issues surfaced
 
-*TBD*
+- **Overlay color indistinct** with fixed 30 dB window + INFERNO: D&S sidelobes are within ~5–10 dB
+  of the peak, so most pixels mapped to the bright end of the scale and looked uniform.
+  Fix: per-frame percentile stretch (10th–100th percentile → full colormap range) + `COLORMAP_JET`.
+  This ensures background collapses to blue and the hot spot always appears red/yellow regardless of
+  absolute dynamic range.

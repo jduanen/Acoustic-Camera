@@ -238,6 +238,56 @@ cells.append(code(
 ))
 
 # ---------------------------------------------------------------------------
+# Section 3b: Frequency spectrum
+# ---------------------------------------------------------------------------
+cells.append(md(
+    "## 3b  Frequency Spectrum\n"
+    "\n"
+    "Sweep frequency from 200 Hz to 8 kHz and record (1) peak beamformed power and\n"
+    "(2) estimated DoA at each bin.  Below the spatial Nyquist (~4.1 kHz) the peak\n"
+    "should sit at the true source angle; above it, aliasing causes the peak to wander.",
+    "ab15003b",
+))
+
+cells.append(code(
+    "freqs_spec = np.linspace(200, 8000, 80)\n"
+    "az_scan    = np.linspace(-90, 90, 361)\n"
+    "nyq        = C / (2 * d)\n"
+    "\n"
+    "peak_power, peak_az_est = [], []\n"
+    "for f in freqs_spec:\n"
+    "    R_f = make_csm(AZ_SRC, 0.0, f, n_snap=128)\n"
+    "    H_f = steering_matrix(az_scan, el_fix, f)\n"
+    "    P_f = beamform_ds(R_f, H_f)\n"
+    "    peak_power.append(P_f.max())\n"
+    "    peak_az_est.append(az_scan[np.argmax(P_f)])\n"
+    "\n"
+    "peak_db_norm = 10 * np.log10(np.array(peak_power) / max(peak_power) + 1e-10)\n"
+    "\n"
+    "fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(9, 6), sharex=True)\n"
+    "\n"
+    "ax1.plot(freqs_spec / 1000, peak_db_norm, color='steelblue', lw=1.5)\n"
+    "ax1.axvline(nyq / 1000, color='red', ls='--', lw=1, label=f'Spatial Nyquist {nyq:.0f} Hz')\n"
+    "ax1.set_ylabel('Peak power (dB, normalized)')\n"
+    "ax1.set_title(f'D&S frequency response — source at {AZ_SRC}°')\n"
+    "ax1.legend()\n"
+    "ax1.grid(True, alpha=0.3)\n"
+    "\n"
+    "ax2.plot(freqs_spec / 1000, peak_az_est, color='darkorange', lw=1.5)\n"
+    "ax2.axvline(nyq / 1000, color='red', ls='--', lw=1)\n"
+    "ax2.axhline(AZ_SRC, color='k', ls=':', lw=0.8, label=f'True DoA {AZ_SRC}°')\n"
+    "ax2.set_ylabel('Estimated DoA (deg)')\n"
+    "ax2.set_xlabel('Frequency (kHz)')\n"
+    "ax2.legend()\n"
+    "ax2.grid(True, alpha=0.3)\n"
+    "\n"
+    "plt.tight_layout()\n"
+    "plt.savefig('uma16_freq_response.png', dpi=150)\n"
+    "plt.show()\n",
+    "ab15003c",
+))
+
+# ---------------------------------------------------------------------------
 # Section 4: Algorithm comparison
 # ---------------------------------------------------------------------------
 cells.append(md(
