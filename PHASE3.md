@@ -77,7 +77,46 @@ Analogous to nb12 for Phase 2. Establishes quantitative expectations:
 
 ### nb15 Results
 
-*Run nb15 and populate this section.*
+**Array geometry (verified)**
+
+| Parameter | Simulated value |
+|---|---|
+| Aperture | 126 mm × 126 mm |
+| Spatial Nyquist | 4083 Hz |
+| Far-field distance @ 4 kHz | 0.37 m |
+
+**D&S HPBW vs frequency** (1D azimuth PSF, source at 30°, N_SNAP = 512)
+
+| Freq (Hz) | HPBW |
+|---|---|
+| 500 | 180° (near-omni) |
+| 1000 | 115.6° |
+| 2000 | 73.2° |
+| 3000 | 43.3° |
+| 4000 | 31.6° |
+| 4500 | 28.0° (above Nyquist — aliases present) |
+
+Practical operating ceiling: **3000–3700 Hz** gives 43–37° HPBW with good localization
+and no aliasing.
+
+**Snapshot convergence** (D&S / MVDR / MUSIC, 3000 Hz, SNR = 20 dB, 50 trials — mean DoA error in degrees)
+
+| N_SNAP | D&S | MVDR | MUSIC |
+|---|---|---|---|
+| 4 | 0.86° | 0.97° | 0.85° |
+| 8 | 0.53° | 0.74° | 0.53° |
+| 16 | 0.43° | 0.64° | 0.43° |
+| 32 | 0.25° | 0.32° | 0.25° |
+| 64 | 0.16° | 0.17° | 0.16° |
+| **128** | **0.11°** | **0.13°** | **0.11°** |
+| 256 | 0.09° | 0.09° | 0.09° |
+| 512 | 0.05° | 0.07° | 0.05° |
+
+With N=16 mics, the CSM is full-rank at N_SNAP ≥ 16. **N_SNAP = 128** (the live script
+default) gives sub-0.15° mean error at 20 dB SNR — well within one display pixel. Diminishing
+returns beyond 256 snapshots. At this array size and SNR, MVDR and MUSIC offer no meaningful
+accuracy advantage over D&S; the super-resolution benefit only appears for closely-spaced
+two-source separation (see section 5 of nb15).
 
 ### nb16 — Audio Capture & Offline Beamforming (`notebooks/16_uma16_capture.ipynb`)
 *Requires UMA-16 connected via USB*
