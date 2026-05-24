@@ -136,7 +136,7 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30):
     return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
 
 
-def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmax=6000):
+def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):
     """Draw real-time per-band power spectrum as a strip at the bottom of the frame."""
     h, w = frame.shape[:2]
     block = 2048
@@ -147,7 +147,7 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmax=600
     psd = np.mean(np.abs(F) ** 2, axis=1)
     bin_freqs = np.fft.rfftfreq(block, 1.0 / FS)
 
-    edges = np.linspace(0, fmax, n_bars + 1)
+    edges = np.linspace(fmin, fmax, n_bars + 1)
     bar_power = np.array([
         psd[(bin_freqs >= edges[k]) & (bin_freqs < edges[k + 1])].mean()
         if np.any((bin_freqs >= edges[k]) & (bin_freqs < edges[k + 1])) else 0.0
@@ -156,23 +156,89 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmax=600
     bar_db = 10 * np.log10(bar_power + 1e-30)
     norm = np.clip((bar_db - bar_db.max() + 40) / 40, 0, 1)
 
+    LABEL_H = 14   # pixels reserved at the bottom for axis labels
+    bar_top = height - LABEL_H
+
     y0 = h - height
     strip = cv2.addWeighted(frame[y0:].copy(), 0.3,
                             np.zeros((height, w, 3), dtype=np.uint8), 0.7, 0)
     for k, v in enumerate(norm):
         x0 = int(k * w / n_bars)
         x1 = max(x0 + 1, int((k + 1) * w / n_bars))
-        bar_h = int(v * (height - 6))
+        bar_h = int(v * (bar_top - 4))
         if bar_h > 0:
-            cv2.rectangle(strip, (x0, height - bar_h), (x1 - 1, height - 1), (0, 200, 80), -1)
+            cv2.rectangle(strip, (x0, bar_top - bar_h), (x1 - 1, bar_top - 1), (0, 200, 80), -1)
 
-    xf = max(1, min(w - 2, int(freq_mark / fmax * w)))
-    cv2.line(strip, (xf, 0), (xf, height), (255, 255, 255), 2)
-    xn = max(1, min(w - 2, int(NYQUIST / fmax * w)))
-    cv2.line(strip, (xn, 0), (xn, height), (255, 100, 0), 1)
+    span = max(fmax - fmin, 1)
+    xf = max(1, min(w - 2, int((freq_mark - fmin) / span * w)))
+    cv2.line(strip, (xf, 0), (xf, bar_top), (255, 255, 255), 2)
+    if fmin < NYQUIST < fmax:
+        xn = max(1, min(w - 2, int((NYQUIST - fmin) / span * w)))
+        cv2.line(strip, (xn, 0), (xn, bar_top), (255, 100, 0), 1)
+
+    # Frequency axis ticks and labels
+    steps = [100, 200, 500, 1000, 2000, 5000]
+    step = next((s for s in steps if span / s <= 6), 5000)
+    first = int(np.ceil(fmin / step)) * step
+    for f in range(first, fmax + 1, step):
+        xl = int((f - fmin) / span * w)
+        if xl < 2 or xl > w - 2:
+            continue
+        cv2.line(strip, (xl, bar_top), (xl, bar_top + 3), (140, 140, 140), 1)
+        lbl = f'{f // 1000}k' if f % 1000 == 0 else f'{f / 1000:.1f}k' if f >= 1000 else str(f)
+        cv2.putText(strip, lbl, (xl - 8, height - 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 160, 160), 1)
 
     frame[y0:] = strip
     return frame
+
+
+# --- Virtual sliders (mouse-draggable, drawn below the frame) ---
+
+_PANEL_H  = 44          # height of the slider panel in pixels
+_FLO_MAX  = 5000
+_FHI_MAX  = 8000
+_TRACK_X0 = 92          # left edge of slider track
+_sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480}
+
+
+def _slider_panel(w, flo, fhi):
+    panel = np.full((_PANEL_H, w, 3), 28, dtype=np.uint8)
+    track_w = max(w - _TRACK_X0 - 8, 1)
+    for row, (label, val, vmax, color) in enumerate([
+        (f'F lo: {flo} Hz', flo, _FLO_MAX, (80,  200,  80)),
+        (f'F hi: {fhi} Hz', fhi, _FHI_MAX, (80,  160, 220)),
+    ]):
+        y0 = row * (_PANEL_H // 2) + 6
+        cv2.rectangle(panel, (_TRACK_X0, y0 + 3), (_TRACK_X0 + track_w, y0 + 9), (80, 80, 80), -1)
+        xh = _TRACK_X0 + int(val / vmax * track_w)
+        cv2.rectangle(panel, (xh - 5, y0 - 1), (xh + 5, y0 + 13), color, -1)
+        cv2.putText(panel, label, (4, y0 + 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+    return panel
+
+
+def _on_mouse(event, x, y, flags, _param):
+    if event == cv2.EVENT_LBUTTONUP:
+        _sliders['drag'] = None
+        return
+    panel_y = y - _sliders['frame_h']
+    if panel_y < 0:
+        return
+    pressing = (event == cv2.EVENT_LBUTTONDOWN or
+                (event == cv2.EVENT_MOUSEMOVE and bool(flags & cv2.EVENT_FLAG_LBUTTON)))
+    if not pressing:
+        return
+    row = panel_y // (_PANEL_H // 2)
+    if event == cv2.EVENT_LBUTTONDOWN:
+        _sliders['drag'] = 'lo' if row == 0 else 'hi'
+    if _sliders['drag']:
+        track_w = max(_sliders.get('frame_w', 640) - _TRACK_X0 - 8, 1)
+        frac = max(0.0, min(1.0, (x - _TRACK_X0) / track_w))
+        if _sliders['drag'] == 'lo':
+            _sliders['flo'] = max(100, int(frac * _FLO_MAX))
+        else:
+            _sliders['fhi'] = max(_sliders['flo'] + 100, int(frac * _FHI_MAX))
 
 
 # --- Main ---
@@ -248,8 +314,10 @@ def main():
     t_last = time.monotonic()
     fps = 0.0
 
-    win = 'Acoustic Camera — Phase 3'
-    cv2.namedWindow(win, getattr(cv2, 'WINDOW_GUI_NORMAL', cv2.WINDOW_NORMAL))
+    win = 'Acoustic Camera - Phase 3'
+    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    _sliders['flo'], _sliders['fhi'] = 500, 4000
+    mouse_registered = False
 
     with stream:
         while True:
@@ -262,6 +330,10 @@ def main():
             else:
                 frame = np.zeros((480, 640, 3), dtype=np.uint8)
 
+            flo  = _sliders['flo']
+            fhi  = _sliders['fhi']
+            freq = (flo + fhi) / 2
+
             with buf_lock:
                 n_avail = len(audio_buf)
 
@@ -270,12 +342,12 @@ def main():
                     arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
                 latest_arr = arr
 
-                R = compute_csm(arr, args.freq)
+                R = compute_csm(arr, freq)
                 if cal_e is not None:
                     c = 1.0 / cal_e
                     R = np.outer(c, c.conj()) * R
 
-                P = ALGO(R, args.freq)
+                P = ALGO(R, freq)
                 # Temporal smoothing: reduces frame-to-frame jitter
                 if P_smooth is None:
                     P_smooth = P.copy()
@@ -286,12 +358,12 @@ def main():
                 k = np.argmax(P_smooth)
                 az_peak = az_grid[k // N_el]
                 el_peak = el_grid[k % N_el]
-                label = (f'{args.algo.upper()}  {args.freq:.0f}Hz  '
+                label = (f'{args.algo.upper()}  {freq:.0f}Hz  '
                          f'az={az_peak:.1f}°  el={el_peak:.1f}°')
 
             if P_smooth is not None:
                 frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
-                frame = spectrum_overlay(latest_arr, frame, args.freq)
+                frame = spectrum_overlay(latest_arr, frame, freq, fmin=flo, fmax=fhi)
 
                 # Cross-hair at peak direction
                 h, w = frame.shape[:2]
@@ -308,7 +380,14 @@ def main():
 
             cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            cv2.imshow(win, frame)
+            h_f, w_f = frame.shape[:2]
+            _sliders['frame_h'] = h_f
+            _sliders['frame_w'] = w_f
+            display = np.vstack([frame, _slider_panel(w_f, flo, fhi)])
+            cv2.imshow(win, display)
+            if not mouse_registered:
+                cv2.setMouseCallback(win, _on_mouse)
+                mouse_registered = True
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 

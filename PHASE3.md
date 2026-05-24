@@ -110,34 +110,71 @@ Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
 Real-time two-thread pipeline identical in structure to Phase 2, but with:
 - 16 channels at 48 kHz (vs 4 channels at 16 kHz)
 - 2D azimuth × elevation beamforming (vs 1D azimuth strip)
-- Full-frame acoustic overlay (vs bottom-strip only)
+- Full-frame acoustic heatmap overlay with JET colormap (vs bottom-strip only)
 - Cross-hair peak marker (az, el)
-- Real-time frequency spectrum strip at the bottom of the frame
+- Real-time frequency spectrum strip with interactive frequency range sliders
 
 ```bash
-python src/acoustic_camera_p3.py                              # D&S, 3000 Hz
-python src/acoustic_camera_p3.py --algo mvdr --freq 3000      # MVDR, 3 kHz
+python src/acoustic_camera_p3.py                              # D&S, default range 500–4000 Hz
+python src/acoustic_camera_p3.py --algo mvdr                  # MVDR beamformer
 python src/acoustic_camera_p3.py --algo music --nsrc 2        # MUSIC, 2 sources
 python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy     # with calibration
 python src/acoustic_camera_p3.py --alpha 0.7 --video 4        # higher opacity, camera 4
 ```
 
-Key CLI options: `--algo {ds,mvdr,clean,music}`, `--freq Hz` (default 3000), `--snap N` (default 128),
+Key CLI options: `--algo {ds,mvdr,clean,music}`, `--snap N` (default 128),
 `--smooth 0-1` (default 0.7), `--nsrc N` (MUSIC only), `--device idx`, `--video idx` (default 4),
 `--cal path`, `--az_fov deg` (default 90), `--el_fov deg` (default 60), `--alpha 0-1` (default 0.5)
 
+### Display layout
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                                                         │
+│   Webcam frame + 2D acoustic heatmap (JET colormap)     │
+│   Green cross-hair at beamformer peak (az, el)          │
+│   Status label: algo / freq / az / el / fps             │
+│                                                         │
+│ ░░░░░░░░░░ Spectrum strip (90 px) ░░░░░░░░░░░░░░░░░░░░ │
+│ Green bars · White line = beamform freq · Blue = Nyquist│
+│ 500  1k    2k    3k   4k   │ tick labels update live    │
+├─────────────────────────────────────────────────────────┤
+│ F lo: 500 Hz  ────●──────────────────────  (drag)       │
+│ F hi: 4000 Hz ──────────────────────●────  (drag)       │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Heatmap overlay
+
+Per-frame percentile stretch (10th–100th percentile → full colormap range) with `COLORMAP_JET`.
+The background collapses to blue; the acoustic hot spot appears red/yellow regardless of absolute
+level. Opacity controlled by `--alpha` (default 0.5).
+
 ### Frequency spectrum strip
 
-A 90-pixel strip at the bottom of the frame shows the incoherent average power spectrum
-(mean across all 16 channels) updated every frame:
+A 90 px strip immediately below the video frame shows the incoherent average power spectrum
+(mean PSD across all 16 channels) computed from the most recent 2048-sample window:
 
-- **Green bars** — per-band power, 64 bars spanning 0–6 kHz, normalized over a 40 dB window
-- **White line** — current beamforming frequency (`--freq`)
-- **Blue line** — spatial Nyquist (~4.1 kHz); above this the heatmap aliases
+- **Green bars** — 64 bands spanning the selected frequency range, normalized over a 40 dB window
+- **White vertical line** — beamforming frequency (midpoint of the selected range)
+- **Blue vertical line** — spatial Nyquist (~4.1 kHz); only shown when it falls within the range
+- **Tick labels** — round-number frequency labels on the x-axis, spacing auto-selected to give 3–6 ticks
 
-The strip uses a per-frame max-relative normalization (40 dB window) so it always fills the
-display regardless of absolute level. Use it to pick an effective `--freq` — the beamformer
-works best where the spectrum has a clear peak below the blue Nyquist line.
+### Frequency range sliders
+
+Two mouse-draggable sliders appended below the spectrum strip set the frequency range of interest:
+
+| Slider | Control | Effect |
+|---|---|---|
+| **F lo** (green handle) | Left edge of display range | Lower bound in Hz (min 100 Hz) |
+| **F hi** (orange handle) | Right edge of display range | Upper bound in Hz (min F lo + 100 Hz) |
+
+The beamforming frequency is automatically set to the midpoint `(F lo + F hi) / 2` and updates
+every frame. Drag either handle left/right; the heatmap, spectrum strip, and status label all
+respond immediately.
+
+**Workflow**: watch the spectrum strip for a peak below the blue Nyquist line, then drag the
+sliders to bracket that peak. The beamformer auto-targets the center of the selected band.
 
 ---
 
