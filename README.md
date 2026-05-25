@@ -95,7 +95,7 @@ Outperforms concentric rings, cross arms, and simple spirals on both sidelobe le
 aliasing. The **gfai Mikado** commercial product uses exactly 96 mics in this pattern. Logarithmic
 radial spacing naturally covers multiple spatial scales, which is well-suited for the 200 Hz–8 kHz
 target.
-**8 arms × 12 mics** (will simulate 6 × 16 as alternative in Phase 1).
+For this project I've selected **8 arms × 12 mics**. I will simulate 6 × 16 as alternative in Phase 1.
 
 For full details, see: [TRADEOFFS](./TRADEOFFS.md)
 
@@ -113,6 +113,8 @@ For full details, see: [TRADEOFFS](./TRADEOFFS.md)
 
 ## Acoustic Camera Products Overview
 
+A number of existing commercial products were examined to get a sense of their specs, features, and costs.
+
 | Vendor | Product | Mics | Aperture | Freq range | Interface | Notes |
 |---|---|---|---|---|---|---|
 | miniDSP | UMA-16 v2 | 16 (4×4 URA) | 42×42 mm | 8–48 kHz SR | USB | Phase 3 hardware; XMOS Xcore200 PDM→PCM |
@@ -127,15 +129,17 @@ For full details, see: [TRADEOFFS](./TRADEOFFS.md)
 | introlab | 16SoundsUSB | 8 or 16 | configurable | 8–96 kHz SR | USB | Open hardware; XMOS xCORE-200; electret or MEMS |
 
 Key observations from the survey:
-- **64–96 mics** is the commercial sweet spot for handheld far-field use (1–8 kHz, ~0.16–0.64 m aperture)
+- **64–96 mics** is the commercial sweet spot for handheld far-field use (1-8 kHz, ~0.16-0.64 m aperture)
 - **USB** dominates for portable/desktop use; **PoE** for fixed installations; **A²B/Dante** for multi-node
 - **PDM MEMS mics** are standard; electret arrays appear only in large wind-tunnel configurations
-- **Integrated video camera** is universal in commercial products — always co-located at array center
-- **Near-field acoustic holography** (25 Hz–) requires much closer source distances and a separate processing path from far-field beamforming
+- **Integrated video camera** is universal in commercial products and is always co-located at array center
+- **Near-field acoustic holography** (25 Hz) requires much closer source distances and a separate processing path from far-field beamforming
 
 See [PRODUCTS.md](./PRODUCTS.md) for full details.
 
-## Beamforming Projects
+## Beamforming Projects and Libraries
+
+A number of open-source beamforming projects and software packages were also studied to get an idea of what can practically be accomplished in such a project.
 
 | Project | Scale | Interface | Notable technique |
 |---|---|---|---|
@@ -143,7 +147,6 @@ See [PRODUCTS.md](./PRODUCTS.md) for full details.
 | Sonicam / CMU ECE (2020) | 96-mic, 6× 4×4 MEMS panels | FPGA → Ethernet | TDK InvenSense mics; large-format panel array |
 | Kickstarter handheld (2018) | 64-mic, 3 concentric rings | ARM Cortex-A53, Linux | Battery-powered; 7" touchscreen; 10–24 kHz; 100 fps acoustic |
 | 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | — | Early large-format MEMS grid demo |
-| acoular (Python library) | reference 64-mic demo | — | Open-source beamforming framework; used in this project |
 
 Key takeaways:
 - **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) — offloads PDM decimation and keeps the host pipeline simple
@@ -151,33 +154,38 @@ Key takeaways:
 - **Concentric-ring and spiral geometries** appear in handheld products; rectangular grids appear in panel/tile designs
 - **Standalone operation** (ARM + touchscreen + battery) is achievable at 64 mics; larger arrays require tethered compute
 
+**acoular** is a Python open-source beamforming framework that includes a reference 64-mic demo.
+I'm using this package in some of this project's experiments.
+Matlab has a lot of support for beamforming, but I'm sticking with open-source software in this project,
+so I haven't really looked at what it has to offer.
+
 See [PROJECTS.md](./PROJECTS.md) for full details.
 
 ## Phase 1 Simulation Findings
 
-Full results and methodology: [PHASE1](./PHASE1.md)
+Full results and methodology are in: [PHASE1](./PHASE1.md)
 
-### Recommended array configuration
+### Recommended Array Configuration
 
 **Underbrink H=12×8, α=22°** — 96 mics, 300 mm aperture, 12.9 mm min spacing
 
-- Best side-lobe suppression of all patterns tested: −24.4 dB @ 4 kHz, −18.9 dB @ 8 kHz
+- Best side-lobe suppression of all patterns tested: -24.4 dB @ 4 kHz, -18.9 dB @ 8 kHz
 - Alias-free to ~13 kHz (target ceiling: 8 kHz, 1.7× margin)
-- Perfect circular symmetry — azimuth and elevation HPBW are identical at all frequencies
+- Perfect circular symmetry; azimuth and elevation HPBW are identical at all frequencies
 
-Alternative: H=8×12, α=35° (−14.4 dB MSL, simpler layout, more uniform spacing — good if PCB routing is constrained)
+Alternative: H=8×12, α=35° (-14.4 dB MSL, simpler layout, more uniform spacing, which is good if PCB routing is constrained)
 
-### Beamwidth vs frequency
+### Beamwidth vs Frequency
 
 | Frequency | HPBW | Practical meaning |
 |---|---|---|
-| 200–500 Hz | > 180° | Omnidirectional — no spatial selectivity |
+| 200–500 Hz | > 180° | Omnidirectional -- no spatial selectivity |
 | 1 kHz | ~82° | Barely directional; cannot resolve sources within ~80° |
 | 2 kHz | ~37° | Minimum frequency for useful imaging |
 | 4 kHz | ~19° | Clear maps; commercial acoustic cameras primarily operate here |
 | 8 kHz | ~9° | High-resolution; closely-spaced sources resolvable |
 
-### Algorithm selection
+### Algorithm Selection
 
 | Use case | Recommended |
 |---|---|
@@ -190,52 +198,55 @@ Alternative: H=8×12, α=35° (−14.4 dB MSL, simpler layout, more uniform spac
 Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms converge at N_SNAP = 16
 (0.3 ms); 256 provides 16× margin while remaining below the ~10 ms perceptual latency threshold.
 
-### Where this system works well
+### Where This System Works Well
 
-- **Mechanical/industrial source hunting at 2–8 kHz** — the primary sweet spot. Fan noise, gear mesh,
-  bearing defect harmonics, structural resonances. MVDR/MUSIC resolve sources separated by 10–15° that
-  D&S cannot.
-- **Multi-source scenes** — MVDR and MUSIC maintain 100% resolution reliability down to DRR = −3 dB
-  (reverb exceeding direct power). MUSIC handles sub-HPBW separations when source count is known.
-- **Typical indoor rooms and labs (DRR ≥ 10 dB)** — 96 channels provide ~20 dB array gain; DoA error
-  at typical office DRR is indistinguishable from anechoic (~0.035°). Mild reverberation is essentially free.
-- **Near-field operation at 0.5–3 m** — spherical-wave steering recovers range to within ~10 cm and
-  azimuth within grid quantization. Sub-centimetre range error at 1.5 m in simulation.
-- **Outdoors or in treated spaces** — consistent strong performance; no special mitigation needed.
+- **Mechanical/industrial source hunting at 2-8 kHz**: the primary sweet spot. Fan noise, gear mesh,
+  bearing defect harmonics, structural resonances. MVDR/MUSIC resolve sources separated by 10-15° that
+  D&S cannot
+- **Multi-source scenes**: MVDR and MUSIC maintain 100% resolution reliability down to DRR = -3 dB
+  (reverb exceeding direct power). MUSIC handles sub-HPBW separations when source count is known
+- **Typical indoor rooms and labs (DRR ≥ 10 dB)**: 96 channels provide ~20 dB array gain; DoA error
+  at typical office DRR is indistinguishable from anechoic (~0.035°). Mild reverberation suppression is essentially free
+- **Near-field operation at 0.5-3 m**: spherical-wave steering recovers range to within ~10 cm and
+  azimuth within grid quantization. Sub-centimeter range error at 1.5 m in simulation
+- **Outdoors or in treated spaces**: consistent strong performance; no special mitigation needed
 
-### Where this system is NOT well-suited
+### Where This System is NOT Well-Suited
 
-- **Below 1 kHz** — the array is omnidirectional at 200–500 Hz and barely directional at 1 kHz.
-  A dedicated low-frequency array would need ~1.7 m aperture for 10° resolution at 1 kHz.
-- **Highly reverberant industrial environments (DRR < 3 dB)** — concrete rooms, large metal enclosures,
-  live rooms. Spatial pre-filtering (WPE) is needed before beamforming.
-- **Same-azimuth, different-range source separation** — range resolution along a single bearing at
+- **Below 1 kHz**: the array is omnidirectional at 200–500 Hz and barely directional at 1 kHz
+  A dedicated low-frequency array would need ~1.7 m aperture for 10° resolution at 1 kHz
+- **Highly reverberant industrial environments (DRR < 3 dB)**: concrete rooms, large metal enclosures,
+  live rooms. Spatial pre-filtering (WPE) is needed before beamforming
+- **Same-azimuth, different-range source separation**: range resolution along a single bearing at
   4 kHz / 300 mm aperture is ~1 m. Co-azimutal sources closer than ~1 m merge into a single peak.
-  A co-located depth camera is the practical solution.
-- **Low SNR (< 10 dB) with MUSIC** — overcounting n_sources produces 93–100% false alarm rate below
+  A colocated depth camera is the practical solution
+- **Low SNR (< 10 dB) with MUSIC**: overcounting 'n_sources' produces 93-100% false alarm rate below
   10 dB SNR. D&S and MVDR degrade more gracefully; use AIC/MDL model-order selection or conservative
-  n_sources at low SNR.
-- **High dynamic range (weak source near a strong source) with D&S or CLEAN-SC** — a −20 dB weak source
-  25° from a strong source is reliably detected only by MVDR and MUSIC.
-- **Sources beyond ~3–4 m** — range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
-  at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable.
+  'n_sources' at low SNR
+- **High dynamic range (weak source near a strong source) with D&S or CLEAN-SC**: a -20 dB weak source
+  25° from a strong source is reliably detected only by MVDR and MUSIC
+- **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
+  at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable
 
 ## Phase 2 Smoke Test — ReSpeaker 4-Mic Array
 
 Full results and methodology: [PHASE2](./PHASE2.md)
 
 End-to-end pipeline validation on real hardware: audio capture → beamforming → energy map → video overlay.
-Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (4 mics, 90mm aperture, 16 kHz, driverless USB).
 
-### Hardware findings
+
+Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (4 mics, 90mm aperture, 16 kHz, driverless USB).
+https://www.seeedstudio.com/ReSpeaker-XVF3800-USB-Mic-Array-p-6488.html
+
+### Hardware Findings
 
 - USB device index 12; 6 channels at 16 kHz; 23.9 ms latency
-- Channel mapping: ch0 = Conference processed, ch1 = ASR processed, **ch2–5 = Mic 0–3 raw**
+- Channel mapping: ch0 = Conference processed, ch1 = ASR processed, **ch2-5 = Mic 0-3 raw**
 - Mic gain imbalance up to ~3.6× across raw channels (Mic 1 consistently lower); motivates calibration
 
-### Pipeline validation (nb13)
+### Pipeline Validation (nb13)
 
-Welch-style CSM from 3 s ambient recording (~373 blocks at 256-sample blocks, 128-sample hop):
+Welch-style CSM from 3 sec ambient recording (~373 blocks at 256-sample blocks, 128-sample hop):
 
 | Algorithm | Peak (°) | Notes |
 |---|---|---|
@@ -243,13 +254,15 @@ Welch-style CSM from 3 s ambient recording (~373 blocks at 256-sample blocks, 12
 | MVDR | 7.5° | Near boresight |
 | CLEAN-SC | 2.7° | Near boresight |
 
-All three agree within 5° — **PASS**. Peaks stable 500–1750 Hz; scatter increases at 2000–2250 Hz as expected near the 2695 Hz spatial Nyquist.
+All three agree within 5°, so this is a **PASS**.
+
+Peaks are stable 500-1750 Hz; scatter increases at 2000-2250 Hz as expected near the 2695 Hz spatial Nyquist.
 
 ### Calibration (nb14)
 
-Cross-correlation-based gain and phase calibration. Run `notebooks/14_respeaker_calibration.ipynb` while playing a 1 kHz sine tone from boresight at 0.5–1 m to obtain valid calibration. Calibration vector saved to `test/ReSpeaker/cal.npy`.
+Cross-correlation-based gain and phase calibration. Run `notebooks/14_respeaker_calibration.ipynb` while playing a 1 kHz sine tone from boresight at 0.5-1 m to obtain valid calibration. Calibration vector saved to `test/ReSpeaker/cal.npy`.
 
-### Live script
+### Live Script
 
 ```bash
 python src/acoustic_camera_p2.py                              # D&S, 1000 Hz
@@ -266,17 +279,19 @@ Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets 
 
 Full results and methodology: [PHASE3](./PHASE3.md)
 
-16-mic 4×4 URA pipeline validation: audio capture → 2D beamforming (az × el) → full-frame overlay.
-Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
+16-mic 4×4 URA pipeline validation: audio capture → 2D beamforming (Az × El) → full-frame overlay.
 
-### Hardware findings
+Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
+https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array
+
+### Hardware Findings
 
 - USB device index 12; 16 channels at 48 kHz; Knowles SPH1668LM4H-1 MEMS mics (65.5 dB SNR)
 - All 16 USB channels are raw mic data (no processed channels as in Phase 2)
 - RMS levels balanced across channels (~5e-5 ambient noise floor)
-- Channel ordering: PDM L/R pairs per data line (see PHASE3.md for mapping)
+- Channel ordering: PDM L/R pairs per data line (see [PHASE3](./PHASE3.md) for mapping)
 
-### Live script
+### Live Script
 
 ```bash
 python src/acoustic_camera_p3.py                                  # D&S, 2000 Hz
@@ -290,7 +305,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sli
 webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz; operate at
-2000–3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
+2000-3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
 super-resolution benefit over D&S.
 
 ### Lessons from the UMA-16 Experiments
@@ -310,17 +325,12 @@ super-resolution benefit over D&S.
   - f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
   - below that frequency, the HPBW exceeds ~57° and degrades fast
 
-  ┌─────────┬──────┬───────────────────┐
-  │  Freq   │ HPBW │     Character     │
-  ├─────────┼──────┼───────────────────┤
-  │ 3000 Hz │ 43°  │ Good localization │
-  ├─────────┼──────┼───────────────────┤
-  │ 2000 Hz │ 73°  │ Marginal          │
-  ├─────────┼──────┼───────────────────┤
-  │ 1000 Hz │ 116° │ Poor              │
-  ├─────────┼──────┼───────────────────┤
-  │ 500 Hz  │ 180° │ Fully omni        │
-  └─────────┴──────┴───────────────────┘
+|  Freq   │ HPBW │     Character     │
+|--------:|-----:|:------------------|
+│ 3000 Hz │ 43°  │ Good localization │
+│ 2000 Hz │ 73°  │ Marginal          │
+│ 1000 Hz │ 116° │ Poor              │
+│ 500 Hz  │ 180° │ Fully omni        │
 
 * UMA-16 Usable Frequency Range
   - for the UMA-16, the usable window is roughly 2–4 kHz
