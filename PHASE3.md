@@ -184,7 +184,61 @@ Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
 
 ### nb17 Results
 
-*Run nb17 and populate this section.*
+**Measured per-channel delays** (relative to ch0, 1 kHz boresight tone)
+
+| ch | Delay (µs) | Samples | Gain (dB) |
+|---|---|---|---|
+| 0 | 0.0 | 0.0 | 0.00 |
+| 1 | −41.7 | −2.0 | −0.75 |
+| 2 | +62.5 | +3.0 | +1.91 |
+| 3 | +62.5 | +3.0 | +0.15 |
+| 4 | +125.0 | +6.0 | +2.10 |
+| 5 | +145.8 | +7.0 | +1.13 |
+| 6 | +229.2 | +11.0 | +2.60 |
+| 7 | +250.0 | +12.0 | +1.13 |
+| 8 | +208.3 | +10.0 | +3.62 |
+| 9 | +208.3 | +10.0 | +3.49 |
+| 10 | +145.8 | +7.0 | +3.50 |
+| 11 | +125.0 | +6.0 | +3.27 |
+| 12 | +104.2 | +5.0 | +2.64 |
+| 13 | +83.3 | +4.0 | +2.60 |
+| 14 | +83.3 | +4.0 | +0.86 |
+| 15 | +41.7 | +2.0 | +0.67 |
+
+Gain spread: **4.37 dB** (ch1 lowest at −0.75 dB, ch8 highest at +3.62 dB).
+
+**DoA before vs after calibration (boresight recording, true = 0°)**
+
+| Algorithm | Uncalibrated | Calibrated | Change |
+|---|---|---|---|
+| D&S | +3.9° | +11.3° | −7.4° (worse) |
+| MVDR | +2.4° | +4.6° | −2.2° (worse) |
+
+Calibration was saved to `test/UMA16/cal.npy` but **made DoA worse on both algorithms**.
+
+**Diagnosis**
+
+The measured delays (up to +250 µs / 12 integer samples) are far too large and too systematic
+to be hardware phase offsets — true mic-to-mic hardware delays are typically sub-sample
+(< 20 µs). Instead, the delays encode the actual acoustic propagation delay from the source
+to each mic, meaning the source was **not at true boresight** (or was in the near field).
+
+The cross-correlation approach conflates two things:
+- Hardware phase offsets (small, random, what we want to correct)
+- Propagation delays from the source position (large, spatially structured, geometry-dependent)
+
+Applying the resulting vector as a hardware correction steers the array *away* from boresight,
+which is exactly what was observed (error grew from 3.9° to 11.3°).
+
+The 4.37 dB **gain spread** is real and worth correcting independently; the UMA-16's
+factory-matched MEMS mics should show < 1 dB spread under ideal conditions, so this likely
+reflects near-field acoustic non-uniformity during the recording rather than hardware sensitivity
+mismatch.
+
+**For a valid phase calibration**: the boresight tone must be at **far field** (r > 2D²/λ ≈ 0.37 m
+at 4 kHz; at 1 kHz r > 0.09 m is sufficient) and aimed precisely at 0° azimuth / 0° elevation.
+With the 126 mm aperture, even a few degrees of source offset produce multi-sample differential
+delays at 48 kHz that overwhelm the actual hardware offsets.
 
 ---
 
@@ -209,7 +263,7 @@ Key CLI options: `--algo {ds,mvdr,clean,music}`, `--snap N` (default 128),
 `--smooth 0-1` (default 0.7), `--nsrc N` (MUSIC only), `--device idx`, `--video idx` (default 4),
 `--cal path`, `--az_fov deg` (default 90), `--el_fov deg` (default 60), `--alpha 0-1` (default 0.5)
 
-### Display layout
+### Display Layout
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -227,21 +281,21 @@ Key CLI options: `--algo {ds,mvdr,clean,music}`, `--snap N` (default 128),
 └─────────────────────────────────────────────────────────┘
 ```
 
-### Heatmap overlay
+### Heatmap Overlay
 
-Per-frame percentile stretch (10th–100th percentile → full colormap range) with `COLORMAP_JET`.
+Per-frame percentile stretch (10th-100th percentile → full colormap range) with `COLORMAP_JET`.
 The background collapses to blue; the acoustic hot spot appears red/yellow regardless of absolute
 level. Opacity controlled by `--alpha` (default 0.5).
 
-### Frequency spectrum strip
+### Frequency Spectrum Strip
 
 A 90 px strip immediately below the video frame shows the incoherent average power spectrum
 (mean PSD across all 16 channels) computed from the most recent 2048-sample window:
 
-- **Green bars** — 64 bands spanning the selected frequency range, normalized over a 40 dB window
-- **White vertical line** — beamforming frequency (midpoint of the selected range)
-- **Blue vertical line** — spatial Nyquist (~4.1 kHz); only shown when it falls within the range
-- **Tick labels** — round-number frequency labels on the x-axis, spacing auto-selected to give 3–6 ticks
+- **Green bars**: 64 bands spanning the selected frequency range, normalized over a 40 dB window
+- **White vertical line**: beamforming frequency (midpoint of the selected range)
+- **Blue vertical line**: spatial Nyquist (~4.1 kHz); only shown when it falls within the range
+- **Tick labels**: round-number frequency labels on the x-axis, spacing auto-selected to give 3–6 ticks
 
 ### Frequency range sliders
 
