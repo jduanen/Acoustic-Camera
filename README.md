@@ -338,17 +338,86 @@ super-resolution benefit over D&S.
     * this happens to overlap well with speech consonants and many mechanical tones
       - this is why a 126 mm array is a practical choice for a desktop acoustic camera
 
-
-
-
 ## Target Design
-[DESIGN](./DESIGN.md)
+Full details: [DESIGN](./DESIGN.md)
+
+### Microphone Array
+
+- **96× Infineon IM69D120** PDM MEMS mics: 69 dBA SNR, ±1 dB sensitivity, ±2° phase match (factory-calibrated)
+- **Underbrink multi-arm log-spiral**: 8 arms × 12 mics (simulate 6 × 16 as alternative in Phase 1)
+- **~300 mm diameter aperture; ~21 mm minimum mic spacing**: Spatial Nyquist at 8 kHz
+- **Custom PCB(s)**: mics share (carefully distributed) PDM clock, paired L/R → 48 DATA + 1 CLK to FPGA
+
+### Interface and Compute
+
+- **Pipeline**: PDM mics → FPGA hub → GbE → Linux host PC with GPU
+- **FPGA** handles: PDM clock distribution, per-channel CIC + FIR decimation (3.072 MHz PDM → 48 kHz 24-bit PCM), synchronous sampling, GbE packetization (UDP, with sequence numbers)
+- **Data rate**: 96 ch × 48 kHz × 24 b ≈ 110 Mbps — fits within 1 GbE
+- **FPGA** candidates: Lattice ECP5 (open-source toolchain) or Xilinx Artix-7 XC7A100T (resource headroom)
+- inspired by Ben Wang's 192-mic FPGA design
+
+### Software
+
+- Python and Acoular for beamforming core; GPU acceleration via PyTorch/CuPy
+- Algorithm progression: D&S → MVDR → CLEAN-SC → ML
+- USB webcam at array center; OpenCV overlay of energy map on video
+
+### GUI (Phase 2/3 — USB-tethered)
+
+Live video overlay · frequency band selector · dynamic range sliders · algorithm selector ·
+persistence slider · record/stop · SPL meter · status bar
+
+### GUI (Phase 4b — standalone field use)
+
+Embedded web UI over WiFi (inclusive or) 7" touchscreen · physical record/stop button · battery operation.
 
 ## Development Plan
-[PLAN](./PLAN.md)
+Full details: [PLAN](./PLAN.md)
+
+Each phase delivers a working end-to-end system — never "not yet working" for more than one phase at a time.
+
+| Phase | Hardware | Goal | Status |
+|---|---|---|---|
+| **1** | None (simulation) | Validate algorithms and array geometry in simulation; generate training datasets | Complete |
+| **2** | ReSpeaker XVF3800 (4-mic, 90 mm) | End-to-end pipeline: capture → beamform → overlay; surface real-world issues | Complete |
+| **3** | miniDSP UMA-16 v2 (16-mic, 126 mm) | Scale to 16 channels; 2D Az × El beamforming; validate MVDR/MUSIC benefit | In progress |
+| **4** | Custom PCB (96-mic, 300 mm, FPGA hub) | Full-performance system meeting all requirements | Not started |
+| **5** | Phase 3/4 hardware | ML-based beamformer (PILOT / CRNN); benchmark vs CLEAN-SC | Not started |
+
+**Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
+
+**Phase 5** requires real data from Phase 3/4 to train and validate ML models
 
 ## Implementation Details
-[IMPLEMENTATION](./IMPLEMENTATION.md)
+Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
+
+### Hardware
+
+**Mic**: Infineon IM69D120V01XTSA1 PDM MEMS (~$0.76 each at Newark)
+
+**FPGA candidates** (PDM decimation, GbE packetization):
+
+| Device | LUTs | BRAM | Toolchain | Dev board |
+|---|---|---|---|---|
+| Lattice ECP5-85F | 84K | 3.4 Mb | Yosys/nextpnr (open-source) | OrangeCrab, ULX3S |
+| Xilinx Artix-7 XC7A100T | 101K | 4.8 Mb | Vivado; mature IP ecosystem | Arty A7-100T, Nexys A7 |
+| Intel Cyclone 10 LP | — | — | Quartus | Cyclone 10 LP Eval Kit |
+
+### Software stack
+
+| Package | Role |
+|---|---|
+| acoular | Beamforming core (D&S, MVDR, CLEAN-SC, array geometry) |
+| pyroomacoustics | Room acoustics simulation, synthetic source data |
+| acoupipe | ML training dataset generation |
+| sounddevice | Real-time USB audio capture (Phases 2/3) |
+| opencv-python | Video capture, overlay, display |
+| scipy / numpy | Signal processing, array math |
+| matplotlib / seaborn | Plotting and visualization |
+| h5py | HDF5 I/O (Acoular data format) |
+| jupyterlab | Notebooks (Phase 1 deliverable) |
+
+See also: [FOSS](./FOSS.md) for open-source beamforming software survey; [MICS](./MICS.md) for mic element details.
 
 ---
 
