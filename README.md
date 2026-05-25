@@ -29,12 +29,14 @@ The key parameters are: **aperture** (sets beam width — larger = sharper), **m
 
 ### Key Concepts in Beamforming
 
-- **Cross-Spectral Matrix (CSM)**: frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
-- **Point Spread Function (PSF)**: how the array smears a true point source; deconvolution methods subtract it out
+- **Half-Power Bandwidth (HPBW)**: characterizes the angular width of the main lobe of the beam pattern (typically at the −3 dB points)
+- **Sidelobe Level (ALL)**: metric that measures the power of the sidelobes relative to the main‑lobe peak, usually expressed in decibels (e.g., "20 dB below the main lobe")
 - **Far-Field vs. Near-Field**: far-field (beyond Fraunhofer distance -- r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
 - **Spatial Nyquist**: upper frequency limit set by mic spacing: f_max = c / (2 × d_min); at frequencies above this, grating lobes appear
 - **Low-frequency Limit**: usable directionality requires roughly f > c / D (aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional
-- **Incoherent octave-band averaging** — commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; suppresses noise by √K and produces a band-averaged PSF
+- **Cross-Spectral Matrix (CSM)**: frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
+- **Point Spread Function (PSF)**: how the array smears a true point source; deconvolution methods subtract it out
+- **Incoherent Octave-band Averaging**: commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; suppresses noise by √K and produces a band-averaged PSF
 
 See [BACKGROUND.md](./BACKGROUND.md) for full algorithm descriptions and references.
 
@@ -254,7 +256,7 @@ Welch-style CSM from 3 sec ambient recording (~373 blocks at 256-sample blocks, 
 | MVDR | 7.5° | Near boresight |
 | CLEAN-SC | 2.7° | Near boresight |
 
-All three agree within 5°, so this is a **PASS**.
+All three agree within 5° -- **PASS**.
 
 Peaks are stable 500-1750 Hz; scatter increases at 2000-2250 Hz as expected near the 2695 Hz spatial Nyquist.
 

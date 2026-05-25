@@ -47,7 +47,7 @@ Channel ordering follows PDM L/R multiplexing pairs (each pair shares one data l
 
 **Coordinate system note (verified):** Manual Figure 1 is drawn from the sound-source side.
 The beamformer and camera use the observer-side (camera-side) frame, which is x-mirrored.
-Fix: `MIC_X = -_xy[:, 0]` (negate x). Confirmed on hardware — cross-hair tracks correctly.
+Fix: `MIC_X = -_xy[:, 0]` (negate x). Confirmed on hardware; the cross-hair tracks correctly.
 
 Expected HPBW vs frequency (horizontal axis, 126 mm aperture):
 
@@ -67,17 +67,17 @@ Expected HPBW vs frequency (horizontal axis, 126 mm aperture):
 
 Analogous to nb12 for Phase 2. Establishes quantitative expectations:
 - 4×4 URA geometry definition and visualization
-- PSF / HPBW sweep 500 Hz – 4 kHz
+- PSF / HPBW sweep 500 Hz - 4 kHz
 - Spatial Nyquist verification (42 mm spacing → ~4.1 kHz)
-- Algorithm comparison (D&S, MVDR, CLEAN-SC, MUSIC) — with N=16, MVDR/MUSIC provide
-  meaningful super-resolution benefit over D&S (vs Phase 2 where N=4 showed no benefit)
+- Algorithm comparison (D&S, MVDR, CLEAN-SC, MUSIC): with N=16, MVDR/MUSIC provide
+  meaningful super-resolution benefit over D&S (vs. Phase 2 where N=4 showed no benefit)
 - Snapshot convergence
 - 2D PSF plots (azimuth × elevation)
 - Comparison: Phase 2 (4-mic, 90 mm) vs Phase 3 (16-mic, 126 mm) vs Phase 4 (96-mic, 300 mm)
 
 ### nb15 Results
 
-**Array geometry (verified)**
+**Array Geometry (verified)**
 
 | Parameter | Simulated value |
 |---|---|
@@ -85,7 +85,7 @@ Analogous to nb12 for Phase 2. Establishes quantitative expectations:
 | Spatial Nyquist | 4083 Hz |
 | Far-field distance @ 4 kHz | 0.37 m |
 
-**D&S HPBW vs frequency** (1D azimuth PSF, source at 30°, N_SNAP = 512)
+**D&S: HPBW vs Frequency** (1D azimuth PSF, source at 30°, N_SNAP = 512)
 
 | Freq (Hz) | HPBW |
 |---|---|
@@ -96,10 +96,10 @@ Analogous to nb12 for Phase 2. Establishes quantitative expectations:
 | 4000 | 31.6° |
 | 4500 | 28.0° (above Nyquist — aliases present) |
 
-Practical operating ceiling: **3000–3700 Hz** gives 43–37° HPBW with good localization
+Practical operating ceiling: **3000-3700 Hz** gives 43-37° HPBW with good localization
 and no aliasing.
 
-**Snapshot convergence** (D&S / MVDR / MUSIC, 3000 Hz, SNR = 20 dB, 50 trials — mean DoA error in degrees)
+**Snapshot Convergence** (D&S / MVDR / MUSIC, 3000 Hz, SNR = 20 dB, 50 trials; mean DoA error in degrees)
 
 | N_SNAP | D&S | MVDR | MUSIC |
 |---|---|---|---|
@@ -113,7 +113,7 @@ and no aliasing.
 | 512 | 0.05° | 0.07° | 0.05° |
 
 With N=16 mics, the CSM is full-rank at N_SNAP ≥ 16. **N_SNAP = 128** (the live script
-default) gives sub-0.15° mean error at 20 dB SNR — well within one display pixel. Diminishing
+default) gives sub-0.15° mean error at 20 dB SNR, which is well within one display pixel. Diminishing
 returns beyond 256 snapshots. At this array size and SNR, MVDR and MUSIC offer no meaningful
 accuracy advantage over D&S; the super-resolution benefit only appears for closely-spaced
 two-source separation (see section 5 of nb15).
@@ -153,7 +153,7 @@ Far better than Phase 2 ReSpeaker (3.6×). The UMA-16's factory-matched MEMS mic
 | MVDR | −50.1° | |
 | CLEAN-SC | −48.6° | |
 
-All three agree within **1.5°**: this is a **PASS**.
+All three agree within **1.5°** -- **PASS**.
 With a single dominant source, CLEAN-SC converges with D&S (contrast with ambient run where CLEAN-SC diverged after subtracting the dominant source and finding residual noise).
 
 The 2D peak was reported at Az=−45°, el=+5°. The Az is clipped at the ±45° grid boundary; the true source is ~3–5° beyond the edge. The El estimate (+5°) reflects the actual elevation offset of the source.
@@ -182,9 +182,11 @@ Matches nb15 predictions closely: near-omni below ~1.5 kHz, progressive locking 
 Analogous to nb14. Cross-correlation gain+phase calibration.
 Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
 
+**N.B. Have to re-run this, too much background noise when calibrating**
+
 ### nb17 Results
 
-**Measured per-channel delays** (relative to ch0, 1 kHz boresight tone)
+**Measured Per-Channel Delays** (relative to ch0, 1 kHz boresight tone)
 
 | ch | Delay (µs) | Samples | Gain (dB) |
 |---|---|---|---|
@@ -205,16 +207,18 @@ Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
 | 14 | +83.3 | +4.0 | +0.86 |
 | 15 | +41.7 | +2.0 | +0.67 |
 
-Gain spread: **4.37 dB** (ch1 lowest at −0.75 dB, ch8 highest at +3.62 dB).
+Gain spread: **4.37 dB** (ch1 lowest at -0.75 dB, ch8 highest at +3.62 dB).
 
-**DoA before vs after calibration (boresight recording, true = 0°)**
+**DoA Before vs. After Calibration (boresight recording, true = 0°)**
 
 | Algorithm | Uncalibrated | Calibrated | Change |
 |---|---|---|---|
-| D&S | +3.9° | +11.3° | −7.4° (worse) |
-| MVDR | +2.4° | +4.6° | −2.2° (worse) |
+| D&S | +3.9° | +11.3° | -7.4° (worse) |
+| MVDR | +2.4° | +4.6° | -2.2° (worse) |
 
 Calibration was saved to `test/UMA16/cal.npy` but **made DoA worse on both algorithms**.
+
+**==> Need to re-run calibration**
 
 **Diagnosis**
 
@@ -295,7 +299,7 @@ A 90 px strip immediately below the video frame shows the incoherent average pow
 - **Green bars**: 64 bands spanning the selected frequency range, normalized over a 40 dB window
 - **White vertical line**: beamforming frequency (midpoint of the selected range)
 - **Blue vertical line**: spatial Nyquist (~4.1 kHz); only shown when it falls within the range
-- **Tick labels**: round-number frequency labels on the x-axis, spacing auto-selected to give 3–6 ticks
+- **Tick labels**: round-number frequency labels on the x-axis, spacing auto-selected to give 3-6 ticks
 
 ### Frequency range sliders
 
@@ -334,7 +338,7 @@ Same as Phase 2: `sounddevice`, `opencv-python`, `scipy`. No new packages requir
 
 ### Pipeline validation
 
-- Cross-hair tracks sound source correctly after x-axis fix — **PASS**
+- Cross-hair tracks sound source correctly after x-axis fix -- **PASS**
 
 ### Calibration results
 
