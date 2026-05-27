@@ -73,7 +73,7 @@ Usable directionality requires a frequency of roughly f > c / D (which is apertu
 CSM is a frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers.
 
 ![CSM](assets/concept_figures/concept_csm.png)
-**Figure:** *Example CSMs*
+**Figure:** *Left: |CSM| magnitude heatmap for a single snapshot. Right: CSM convergence as N_snap increases (1 → 256), where N_snap is the number of independent short-time frames averaged to estimate the CSM — more snapshots reduce the noise floor and improve MVDR/MUSIC stability.*
 
 #### Point Spread Function (PSF)
 
