@@ -384,7 +384,7 @@ super-resolution benefit over D&S.
   - below that frequency, the HPBW exceeds ~57° and degrades fast
 
 |  Freq   │ HPBW │     Character     │
-|--------:|-----:|:------------------|
+| ------- | ---- | ----------------- |
 │ 3000 Hz │ 43°  │ Good localization │
 │ 2000 Hz │ 73°  │ Marginal          │
 │ 1000 Hz │ 116° │ Poor              │
