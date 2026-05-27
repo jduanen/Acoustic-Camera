@@ -368,7 +368,7 @@ super-resolution benefit over D&S.
 
 ### Lessons from the UMA-16 Experiments
 
-* Key Intuition
+#### Key Intuition
   - mic arrays figure out locations based on direction of arrival
     * figure out direction of arrival based on the input signal's phase differences at different mics
     * at high frequency, a 10deg shift in angle of arrival results in a large, easily measureable phase difference 
@@ -378,19 +378,19 @@ super-resolution benefit over D&S.
   - min spacing of mics defines Spatial Nyquist
     * can't go to higher frequency than this to get better localization
 
-* Rule of Thumb
+#### Rule of Thumb
   - useful directionality requires roughly λ < D, i.e.:
-  - f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
-  - below that frequency, the HPBW exceeds ~57° and degrades fast
+    * f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
+  - below that frequency, the HPBW exceeds ~57° and degrades fast:
 
-|  Freq   │ HPBW │     Character     │
-| ------- | ---- | ----------------- |
-│ 3000 Hz │ 43°  │ Good localization │
-│ 2000 Hz │ 73°  │ Marginal          │
-│ 1000 Hz │ 116° │ Poor              │
-│ 500 Hz  │ 180° │ Fully omni        │
+| Freq │ HPBW │ Character │
+|---|---|---|
+│ 3000 Hz │ 43° │ Good localization │
+│ 2000 Hz │ 73° │ Marginal │
+│ 1000 Hz │ 116° │ Poor │
+│ 500 Hz │ 180° │ Fully omni │
 
-* UMA-16 Usable Frequency Range
+#### UMA-16 Usable Frequency Range
   - for the UMA-16, the usable window is roughly 2–4 kHz
     * bounded below by aperture-limited directionality and above by spatial Nyquist aliasing
     * this happens to overlap well with speech consonants and many mechanical tones
