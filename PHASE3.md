@@ -1,7 +1,7 @@
-# Phase 3 — UMA-16 v2 Smoke Test
+# Phase 3 — UMA-16 v2 Intermediate Array Test
 
-End-to-end pipeline validation with a 16-mic 4×4 URA. Goal: validate 2D beamforming, calibration,
-and video overlay on real hardware at higher resolution than Phase 2.
+End-to-end pipeline validation with a 16-mic 4×4 URA. Goals: validate 2D beamforming, calibration,
+and video overlay on real hardware at higher resolution than Phase 2, measure the resources required for each algorithm, and gain experience with practical application in the real-world environment.
 
 Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm aperture, 48 kHz, driverless USB)
 - Knowles SPH1668LM4H-1 MEMS mics, 65.5 dB SNR, 122 dB AOP

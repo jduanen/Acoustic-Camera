@@ -290,7 +290,7 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 
 Full results and methodology: [PHASE2](./PHASE2.md)
 
-End-to-end pipeline validation on real hardware: audio capture → beamforming → energy map → video overlay.
+End-to-end pipeline validation on real hardware. The goal to create a fully functional (not high performance) pipeline: audio capture → beamforming → energy map → video overlay.
 
 
 Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (4 mics, 90mm aperture, 16 kHz, driverless USB).
@@ -333,11 +333,12 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
-## Phase 3 Smoke Test — miniDSP UMA-16 v2
+## Phase 3 Intermediate Array Test — miniDSP UMA-16 v2
 
 Full results and methodology: [PHASE3](./PHASE3.md)
 
 16-mic 4×4 URA pipeline validation: audio capture → 2D beamforming (Az × El) → full-frame overlay.
+The goals of this phase include validating 2D beamforming, calibration, and video overlay on real hardware (at higher resolution than Phase 2), measuring the resources required by each algorithm, and gaining experience with practical application in the real-world environment.
 
 Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
 https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array
@@ -366,35 +367,69 @@ Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz;
 2000-3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
 super-resolution benefit over D&S.
 
+### Algorithm Benchmark Script
+
+```bash
+python src/benchmark_algos.py                              # all four algorithms, 3 kHz, 20 fps target
+python src/benchmark_algos.py --algos ds mvdr music        # skip CLEAN-SC
+python src/benchmark_algos.py --clean_iters 5 --fps 10    # CLEAN-SC feasibility at 10 fps
+python src/benchmark_algos.py --freq 2000 --iters 100     # higher-confidence timing at 2 kHz
+```
+
+Loads a pre-recorded WAV (`test/UMA16/capture_nb16.wav` by default), computes a single CSM
+(128 snapshots, calibration applied), then benchmarks each algorithm over `--iters` repetitions.
+
+Reports per-algorithm mean time, std dev, peak Python-heap allocation, and RT% (time as a
+fraction of the frame budget at the target fps). A pipeline total (CSM + algo) is shown for
+each algorithm.
+
+Measured results on the 181 × 121 grid (21,901 points):
+
+| Algorithm | Mean (ms) | Peak MB | RT% @ 20 fps | Notes |
+|-----------|----------:|--------:|-------------:|-------|
+| CSM       | ~3.6      | ~0.2    | 7%           | 128 snapshots |
+| D&S       | ~21       | ~16     | 43%          | steering matrix dominates |
+| MVDR      | ~22       | ~16     | 44%          | matrix inversion adds ~1 ms |
+| MUSIC     | ~22       | ~16     | 44%          | eigh adds ~1 ms vs D&S |
+| CLEAN-SC  | ~85       | ~16.5   | 171%         | 20 iters; use ≤ 10 for real-time |
+
+D&S, MVDR, and MUSIC are all dominated by the 5.3 MB steering matrix allocation (~16 MB peak
+each); their wall times are nearly equal at this grid resolution. CLEAN-SC scales with
+`--clean_iters` (set to 5–10 for 20 fps viability). Peak MB reflects Python-heap
+allocations only; actual RSS will be higher due to C/LAPACK internal buffers.
+
+Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_iters`,
+`--nsrc`, `--az_pts`, `--el_pts`, `--fps`, `--cal`.
+
 ### Lessons from the UMA-16 Experiments
 
 #### Key Intuition
-  - mic arrays figure out locations based on direction of arrival
-    * figure out direction of arrival based on the input signal's phase differences at different mics
-    * at high frequency, a 10deg shift in angle of arrival results in a large, easily measureable phase difference 
-  - phase differences grow with frequency
-    * low frequency sound waves are hard to localize
-    * at low frequency, the phase shift that results from a 10deg shift in angle of arrival is lost in the noise
-  - min spacing of mics defines Spatial Nyquist
-    * can't go to higher frequency than this to get better localization
+- mic arrays figure out locations based on direction of arrival
+  * they figure out direction of arrival based on the input signal's phase differences at different mics
+  * at high frequency, a 10deg shift in angle of arrival results in a large, easily measureable phase difference 
+- phase differences grow with frequency
+  * low frequency sound waves are hard to localize
+  * at low frequency, the phase shift that results from a 10deg shift in angle of arrival is lost in the noise
+- min spacing of mics defines Spatial Nyquist
+  * can't go to higher frequency than this to get better localization
 
 #### Rule of Thumb
-  - Useful directionality requires roughly λ < D, i.e.:
-    * f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
-  - Below that frequency, the HPBW exceeds ~57° and degrades fast:
+- Useful directionality requires roughly λ < D, i.e.:
+  * f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
+- Below that frequency, the HPBW exceeds ~57° and degrades fast:
 
 | Freq   | HPBW | Character          |
-|--------|------|--------------------|
+|-------:|-----:|:-------------------|
 | 3000 Hz| 43°  | Good localization  |
 | 2000 Hz| 73°  | Marginal           |
 | 1000 Hz| 116° | Poor               |
 | 500 Hz | 180° | Fully omni         |
 
 #### UMA-16 Usable Frequency Range
-  - for the UMA-16, the usable window is roughly 2–4 kHz
-    * bounded below by aperture-limited directionality and above by spatial Nyquist aliasing
-    * this happens to overlap well with speech consonants and many mechanical tones
-      - this is why a 126 mm array is a practical choice for a desktop acoustic camera
+- for the UMA-16, the usable window is roughly 2–4 kHz
+  * this is bounded below by aperture-limited directionality and above by spatial Nyquist aliasing
+  * this happens to overlap well with speech consonants and many mechanical tones
+     - this is why a 126 mm array is a practical choice for a desktop acoustic camera
 
 ## Target Design
 Full details: [DESIGN](./DESIGN.md)
