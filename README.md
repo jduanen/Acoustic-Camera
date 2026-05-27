@@ -94,6 +94,9 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 
 ★ Underbrink is the recommended pattern for this project (see Phase 1 findings). Literature confirms it outperforms other patterns in both resolution and MSL across tested frequencies.
 
+![2D Array Configurations](assets/concept_figures/array_patterns_2d.png)
+**Top row: mic positions (all arrays normalised to 300 mm aperture).  Bottom row: D&S PSF @ 4 kHz — SLL and aperture shape are visible consequences of each layout choice.**
+
 In the initial phases of this project, I will use a 2D microphone array. In later phases a 3D array might be used.
 
 ### 3D patterns
