@@ -7,6 +7,8 @@ An Acoustic Camera computes a power map of the sound scene that exists within a 
 Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
+See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
+
 ## Technical Background
 
 ### How Microphone Arrays Localize Sound Sources
