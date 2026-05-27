@@ -379,16 +379,16 @@ super-resolution benefit over D&S.
     * can't go to higher frequency than this to get better localization
 
 #### Rule of Thumb
-  - useful directionality requires roughly λ < D, i.e.:
+  - Useful directionality requires roughly λ < D, i.e.:
     * f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
-  - below that frequency, the HPBW exceeds ~57° and degrades fast:
+  - Below that frequency, the HPBW exceeds ~57° and degrades fast:
 
-| Freq │ HPBW │ Character │
-|---|---|---|
-│ 3000 Hz │ 43° │ Good localization │
-│ 2000 Hz │ 73° │ Marginal │
-│ 1000 Hz │ 116° │ Poor │
-│ 500 Hz │ 180° │ Fully omni │
+| Freq   | HPBW | Character          |
+|--------|------|--------------------|
+| 3000 Hz| 43°  | Good localization  |
+| 2000 Hz| 73°  | Marginal           |
+| 1000 Hz| 116° | Poor               |
+| 500 Hz | 180° | Fully omni         |
 
 #### UMA-16 Usable Frequency Range
   - for the UMA-16, the usable window is roughly 2–4 kHz
