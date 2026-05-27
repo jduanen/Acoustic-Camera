@@ -7,7 +7,7 @@ An Acoustic Camera computes a power map of the sound scene that exists within a 
 Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
-See an example of a commercial product here ![Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here ![Fotric](https://youtu.be/MBhJoPzHv2Y)
+See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
 
 ## Technical Background
 
@@ -17,7 +17,7 @@ The mic array captures the sound field simultaneously at all microphones. A **st
 
 The key parameters are: **aperture** (sets beam width — larger = sharper), **mic spacing** (sets the spatial Nyquist ceiling; closer = higher frequency limit), and **snapshot count** (sets CSM estimation quality; more = lower noise floor).
 
-### (Abridged) Beamforming Algorithm Family Tree
+### Selected Beamforming Algorithm Families
 
 | Family | Algorithms | Characteristic |
 |---|---|---|
@@ -35,13 +35,44 @@ An example of the power vs. azimuth plot for a strong and a weak sound source is
 ### Key Concepts in Beamforming
 
 - **Half-Power Bandwidth (HPBW)**: characterizes the angular width of the main lobe of the beam pattern (typically at the −3 dB points)
-- **Sidelobe Level (ALL)**: metric that measures the power of the sidelobes relative to the main‑lobe peak, usually expressed in decibels (e.g., "20 dB below the main lobe")
-- **Far-Field vs. Near-Field**: far-field (beyond Fraunhofer distance -- r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
+
+![HPBW](assets/concept_figures/concept_hpbw.png)
+**Beam pattern with -3 dB crossing points annotated**
+
+- **Sidelobe Level (SLL)**: metric that measures the power of the sidelobes relative to the main‑lobe peak, usually expressed in decibels (e.g., "20 dB below the main lobe")
+
+![Sidelobe Level](assets/concept_figures/concept_sidelobe.png)
+**2D PSF with azimuth slice for Underbrink vs. Regular Grid**
+
+- **Far-Field vs. Near-Field**: far-field (beyond Fraunhofer distance — r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
+
+![Far-Field vs Near-Field](assets/concept_figures/concept_farfield.png)
+**Left: wavefront curvature at different distances; Right: Frauenhofer boundary vs. frequency**
+
 - **Spatial Nyquist**: upper frequency limit set by mic spacing: f_max = c / (2 × d_min); at frequencies above this, grating lobes appear
+
+![Spatial Nyquist](assets/concept_figures/concept_spatial_nyquist.png)
+**1D PSF at five frequencies spanning sub-Nyquist to 3.5x Nyquist**
+
 - **Low-frequency Limit**: usable directionality requires roughly f > c / D (aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional
+
+![Low-Frequency Limit](assets/concept_figures/concept_lowfreq_limit.png)
+**HPBW vs. frequency (measured and theoretic) and three beam patterns**
+
 - **Cross-Spectral Matrix (CSM)**: frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
+
+![CSM](assets/concept_figures/concept_csm.png)
+**Example CSMs**
+
 - **Point Spread Function (PSF)**: how the array smears a true point source; deconvolution methods subtract it out
+
+![PSF](assets/concept_figures/concept_psf.png)
+**Single-source PSF, two-source D&S (smeared) and CLEAN-SC (resolved)**
+
 - **Incoherent Octave-band Averaging**: commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; suppresses noise by √K and produces a band-averaged PSF
+
+![Octave-Band Averaging](assets/concept_figures/concept_octave_averaging.png)
+**Per-bin maps, band average, noise-floor bar chart**
 
 See [BACKGROUND.md](./BACKGROUND.md) for full algorithm descriptions and references.
 
