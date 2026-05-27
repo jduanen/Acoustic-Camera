@@ -27,6 +27,9 @@ The key parameters are: **aperture** (sets beam width — larger = sharper), **m
 | **Spherical-harmonic** | PWD, CroPaC | For spherical arrays; Ambisonics / HOA domain |
 | **ML-based** | CNN/CRNN DoA, Transformer (SELD-Conformer), PILOT, Deep MUSIC, NN-MVDR | Learned models; top DCASE benchmarks; need training data matched to array geometry |
 
+In the initial phases of this project, I will explore representative algorithms from each of the first for families -- i.e., D&S, MVDR, CLEAN, and MUSIC.
+An example of the power vs. azimuth plot for a strong and a weak sound source is given for each of these four algorithms in the figure below. [Power vs. Azimuth](./notebooks/algo_dynamic_range.png)
+
 ### Key Concepts in Beamforming
 
 - **Half-Power Bandwidth (HPBW)**: characterizes the angular width of the main lobe of the beam pattern (typically at the −3 dB points)
@@ -56,6 +59,8 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 | **Brüel & Kjær spiral** | Non-uniform along spokes | Easily disassembled; two concentric hoops | Proprietary geometry |
 
 ★ Underbrink is the recommended pattern for this project (see Phase 1 findings). Literature confirms it outperforms other patterns in both resolution and MSL across tested frequencies.
+
+In the initial phases of this project, I will use a 2D microphone array. In later phases a 3D array might be used.
 
 ### 3D patterns
 
