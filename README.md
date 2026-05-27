@@ -35,42 +35,58 @@ In the initial phases of this project, I will explore representative algorithms 
 
 ### Key Concepts in Beamforming
 
-- **Half-Power Bandwidth (HPBW)**: characterizes the angular width of the main lobe of the beam pattern (typically at the −3 dB points)
+#### Half-Power Bandwidth (HPBW)
+
+HPBW characterizes the angular width of the main lobe of the beam pattern (typically at the −3 dB points)
 
 ![HPBW](assets/concept_figures/concept_hpbw.png)
 **Figure:** *Beam pattern with -3 dB crossing points annotated*
 
-- **Sidelobe Level (SLL)**: metric that measures the power of the sidelobes relative to the main‑lobe peak, usually expressed in decibels (e.g., "20 dB below the main lobe")
+#### Sidelobe Level (SLL)
+
+SLL is a metric that measures the power of the sidelobes relative to the main‑lobe peak, usually expressed in decibels (e.g., "20 dB below the main lobe")
 
 ![Sidelobe Level](assets/concept_figures/concept_sidelobe.png)
 **Figure:** *2D PSF with azimuth slice for Underbrink vs. Regular Grid*
 
-- **Far-Field vs. Near-Field**: far-field (beyond Fraunhofer distance — r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
+#### Far-Field vs. Near-Field Effects
+
+Far-field (beyond the Fraunhofer distance: r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation
 
 ![Far-Field vs Near-Field](assets/concept_figures/concept_farfield.png)
 **Figure:** *Left: wavefront curvature at different distances; Right: Frauenhofer boundary vs. frequency*
 
-- **Spatial Nyquist**: upper frequency limit set by mic spacing: f_max = c / (2 × d_min); at frequencies above this, grating lobes appear
+#### Spatial Nyquist Frequency
+
+The upper frequency limit set by mic spacing: f_max = c / (2 × d_min); at frequencies above this, grating lobes appear
 
 ![Spatial Nyquist](assets/concept_figures/concept_spatial_nyquist.png)
 **Figure:** *1D PSF at five frequencies spanning sub-Nyquist to 3.5x Nyquist*
 
-- **Low-frequency Limit**: usable directionality requires roughly f > c / D (aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional
+#### Low-frequency Limit
+
+Usable directionality requires a frequency of roughly f > c / D (which is aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional
 
 ![Low-Frequency Limit](assets/concept_figures/concept_lowfreq_limit.png)
 **Figure:** *HPBW vs. frequency (measured and theoretic) and three beam patterns*
 
-- **Cross-Spectral Matrix (CSM)**: frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
+#### Cross-Spectral Matrix (CSM)
+
+CSM is a frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers
 
 ![CSM](assets/concept_figures/concept_csm.png)
 **Figure:** *Example CSMs*
 
-- **Point Spread Function (PSF)**: how the array smears a true point source; deconvolution methods subtract it out
+#### Point Spread Function (PSF)
+
+PSF illustrates how the array smears a true point source; deconvolution methods subtract it out and offer a sharper response
 
 ![PSF](assets/concept_figures/concept_psf.png)
 **Figure:** *Single-source PSF, two-source D&S (smeared) and CLEAN-SC (resolved)*
 
-- **Incoherent Octave-band Averaging**: commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; suppresses noise by √K and produces a band-averaged PSF
+#### Incoherent Octave-band Averaging
+
+Commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; this suppresses noise by √K and produces a band-averaged PSF
 
 ![Octave-Band Averaging](assets/concept_figures/concept_octave_averaging.png)
 **Figure:** *Per-bin maps, band average, noise-floor bar chart*
@@ -95,7 +111,7 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 ★ Underbrink is the recommended pattern for this project (see Phase 1 findings). Literature confirms it outperforms other patterns in both resolution and MSL across tested frequencies.
 
 ![2D Array Configurations](assets/concept_figures/array_patterns_2d.png)
-**Top row: mic positions (all arrays normalised to 300 mm aperture).  Bottom row: D&S PSF @ 4 kHz — SLL and aperture shape are visible consequences of each layout choice.**
+**Figure:** *Top row: mic positions (all arrays normalised to 300 mm aperture).  Bottom row: D&S PSF @ 4 kHz — SLL and aperture shape are visible consequences of each layout choice.*
 
 In the initial phases of this project, I will use a 2D microphone array. In later phases a 3D array might be used.
 
