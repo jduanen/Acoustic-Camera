@@ -479,61 +479,85 @@ See also: [FOSS](./FOSS.md) for open-source beamforming software survey; [MICS](
 
 ---
 
-# Notes
+# References
 
-* Outstanding Questions
-  - what camera/optics are needed to match the mic array's FOV and resolution?
-  - ?
+## Beamforming Algorithms
 
-* Phase 1
-  - Tasks
-    * array geometry visualization
-    * a D&S beamforming demo
-    * Underbrink vs. other patterns comparison
-      - H=12x8 has best side-lobe suppression
-      - spiral angle matters, a=35deg and a=22deg improve beam pattern a lot
-      - beamwidth is set by aperture only
-        * at 1kHz and below, the beam width is greater than the FOV, so can't localize
-          - is this a problem?
-          - where's the knee of the curve when it comes to beam width vs. aperture at lower frequencies?
-      - ?
+**Delay-and-Sum (D&S)**
+- de Santana, L. (n.d.). *Fundamentals of Acoustic Beamforming*. NATO AVT-287 Lecture Notes. ([docs/EN-AVT-287-04.pdf](docs/EN-AVT-287-04.pdf))
 
-* TODOs
-  - match camera and mic array resolution
-  - match audio input path dynamic range to ADCs
-  - careful layout of audio front-end to ensure low noise
-  - get ADCs that share common clock and (if multiple in a package) sample at the same point
-  - look at creating add-on arms to increase the aperture to improve resolution at low frequencies
+**MVDR (Minimum Variance Distortionless Response / Capon beamformer)**
+- Capon, J. (1969). "High-resolution frequency-wavenumber spectrum analysis." *Proceedings of the IEEE*, 57(8), 1408–1418.
 
+**CLEAN-SC**
+- Sijtsma, P. (2007). "CLEAN Based on Spatial Source Coherence." *International Journal of Aeroacoustics*, 6(4), 357–374.
 
-* Advantages of low SNR mic in beamforming applications
-  - https://audioxpress.com/article/microphone-array-beamforming-with-optical-mems-microphones
-  - a better SNR mic can do better than multiple lesser SNR mics
-  - lower SNR mic means more compact array is possible
-    * 42mm mic spacing for a BW of  4KHz requires 17dB gain @ 100Hz -> min mic SNR = 65dBA
-    * 21mm mic spacing for a BW of  8KHz requires 22dB gain @ 100Hz -> min mic SNR = 70dBA
-    *  7mm mic spacing for a BW of 24KHz requires 32dB gain @ 100Hz -> min mic SNR = 80dBA
-* I2S PCM MEMS mics comparisons
-  - I have, and tested
-    * INMP441 (441 NEO447)
-    * MSM261S4030H0 (Xiao Sense?)
-  - Amazon
-    * SPH0645LM4H-B (Knowles?)
-    * MSM261S4030H0
-  - others
-    * InvenSense ICS-52000 -- not I2S, TDM
-    * InvenSense ICS-43434
-    * InvenSense ICS-43432
-* reSpeaker
-  - ST MP34DT01TR-M
-    * 4x PDM Omni MEMS mics
-    * 90mm diameter, 33mm inter-mic spacing
-    * SNR: 61 dB
-    * Sensitivity: -26 dBFS
-    * Overload: 120 dBSPL
-    * Max sample-rate: 16 kHz (limited by onboard XMOS firmware, not the mic hardware)
-  - micro USB interface, USB 2.0 (UAC1.0)
-  - Linux/macOS driverless; Windows requires driver
+**MUSIC (Multiple Signal Classification)**
+- Schmidt, R.O. (1986). "Multiple emitter location and signal parameter estimation." *IEEE Transactions on Antennas and Propagation*, 34(3), 276–280.
+
+**DAMAS (Deconvolution Approach for Mapping of Acoustic Sources)**
+- Brooks, T.F. & Humphreys, W.M. (2004). "A Deconvolution Approach for the Mapping of Acoustic Sources (DAMAS) Determined from Phased Microphone Arrays." AIAA Paper 2004-2954. ([docs/20080015889.pdf](docs/20080015889.pdf))
+
+---
+
+## Microphone Array Patterns
+
+**Underbrink Multi-Arm Log-Spiral**
+- Underbrink, J.R. (2000). *Aeroacoustic Phased Array*. US Patent 6,089,671.
+
+**Dougherty Log-Spiral (equal arc-length spacing)**
+- Dougherty, R.P. (2002). "A Spiral Phased Array." *Proc. 8th AIAA/CEAS Aeroacoustics Conference*, Paper 2002-2529.
+- de Santana (n.d.) covers the equal-arc-length formulation. ([docs/EN-AVT-287-04.pdf](docs/EN-AVT-287-04.pdf))
+
+**Arcondoulis Design and Calibration**
+- Arcondoulis, E.J.G., Doolan, C.J., Zander, A.C. & Brooks, L.A. (2010). "Design and Calibration of a Small Aeroacoustic Beamformer." *Proc. ICA 2010*, Sydney, Australia. ([docs/p453.pdf](docs/p453.pdf))
+
+**Optimal Planar Microphone Array Arrangements**
+- Sarradj, E. (2015). "Optimal planar microphone array arrangements." *Proc. CFA/VISHNO 2016*. ([docs/000468.pdf](docs/000468.pdf))
+- Sarradj, E. (2016). "A Generic Approach to Synthesize Optimal Array Microphone Arrangements." *Berlin Beamforming Conference (BeBeC) 2016*. ([docs/BeBeC-2016-S4.pdf](docs/BeBeC-2016-S4.pdf))
+
+**Array Pattern Comparison**
+- Prime, Z. & Doolan, C. (2013). "A comparison of popular beamforming arrays." *Proc. ACOUSTICS 2013*, Victor Harbor, Australia. ([docs/p5.pdf](docs/p5.pdf))
+
+**MEMS Microphone Array Design**
+- Poets, A., Schlieper, R., Preihs, S. & Peissig, J. (2020). "On the Design of a MEMS Microphone Array for a Mobile Beamforming Application." *DAGA 2020*. ([docs/000405.pdf](docs/000405.pdf))
+
+**General Tutorial**
+- McCowan, I. (2001). *Microphone Arrays: A Tutorial*. ([docs/microphone_array.pdf](docs/microphone_array.pdf))
+
+---
+
+## Commercial Acoustic Camera Products
+
+| Product | Manufacturer | Link |
+|---|---|---|
+| ReSpeaker XVF3800 | Seeed Studio | https://www.seeedstudio.com/ReSpeaker-XVF3800-USB-Mic-Array-p-6488.html |
+| UMA-16 v2 | miniDSP | https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array |
+| ACAM-64 | Convergence Instruments | https://www.convergenceinstruments.com |
+| CAM64 / CAM1K | Sorama | https://sorama.eu |
+| Mikado | gfai Tech | https://www.gfaitech.com |
+| Eigenmike em32/em64 | mh Acoustics | https://mhacoustics.com |
+| Various arrays | Brüel & Kjær | https://www.bksv.com |
+| A²B mic array | Clockworks Signal Processing | https://www.clockworkssignalprocessing.com |
+| 16SoundsUSB | introlab | https://github.com/introlab/16SoundsUSB |
+
+---
+
+## Open-Source Projects and Libraries
+
+**Acoular — Python microphone array beamforming framework**
+- Sarradj, E. & Herold, G. (2017). "A Python framework for microphone array data processing." *Applied Acoustics*, 116, 50–58.
+- GitHub: https://github.com/acoular/acoular — Website: https://acoular.org
+- Workshop: Sarradj, E. et al. *Acoular Workshop: Accessible and Reproducible Microphone Array Signal Processing with Python*. ([docs/373.pdf](docs/373.pdf))
+
+**AcouPipe — ML training dataset generation for mic arrays**
+- GitHub: https://github.com/acoular/acoupipe
+
+**Ben Wang (2023) — 192-mic FPGA-based array with GPU calibration**
+- Wang, B. (2023). "Research on multi-sound source localization performance based on leaf-shaped microphone array." *J. Phys.: Conf. Ser.*, 2479, 012026. ([docs/Wang_2023_J._Phys.__Conf._Ser._2479_012026.pdf](docs/Wang_2023_J._Phys.__Conf._Ser._2479_012026.pdf))
+
+**introlab 16SoundsUSB — open-hardware 16-mic USB audio interface**
+- GitHub: https://github.com/introlab/16SoundsUSB
 
 ---
 
@@ -606,5 +630,52 @@ See also: [FOSS](./FOSS.md) for open-source beamforming software survey; [MICS](
 Research on multi-sound source localization performance
 based on leaf-shaped microphone array [2022]
   - ?
-  
+---
 
+# Notes
+
+* Outstanding Questions
+  - what camera/optics are needed to match the mic array's FOV and resolution?
+  - how should I partition the functionality between the front-end (FPGA) and backend (embedded processor)
+  - what FPGA should I use
+  - what processing and display to use
+
+* TODOs
+  - match camera and mic array resolution
+  - figure out packaging
+  - careful layout of audio front-end to ensure low noise
+  - look at creating add-on arms to increase the aperture to improve resolution at low frequencies
+
+* Advantages of low SNR mic in beamforming applications
+  - https://audioxpress.com/article/microphone-array-beamforming-with-optical-mems-microphones
+  - a better SNR mic can do better than multiple lesser SNR mics
+  - lower SNR mic means more compact array is possible
+    * 42mm mic spacing for a BW of  4KHz requires 17dB gain @ 100Hz -> min mic SNR = 65dBA
+    * 21mm mic spacing for a BW of  8KHz requires 22dB gain @ 100Hz -> min mic SNR = 70dBA
+    *  7mm mic spacing for a BW of 24KHz requires 32dB gain @ 100Hz -> min mic SNR = 80dBA
+
+* I2S PCM MEMS mics comparisons
+  - I have, and tested
+    * INMP441 (441 NEO447)
+    * MSM261S4030H0 (Xiao Sense?)
+  - Amazon
+    * SPH0645LM4H-B (Knowles?)
+    * MSM261S4030H0
+  - others
+    * InvenSense ICS-52000 -- not I2S, TDM
+    * InvenSense ICS-43434
+    * InvenSense ICS-43432
+
+* reSpeaker
+  - ST MP34DT01TR-M
+    * 4x PDM Omni MEMS mics
+    * 90mm diameter, 33mm inter-mic spacing
+    * SNR: 61 dB
+    * Sensitivity: -26 dBFS
+    * Overload: 120 dBSPL
+    * Max sample-rate: 16 kHz (limited by onboard XMOS firmware, not the mic hardware)
+  - micro USB interface, USB 2.0 (UAC1.0)
+  - Linux/macOS driverless; Windows requires driver
+
+* UMA-16
+  - ?
