@@ -7,7 +7,7 @@ An Acoustic Camera computes a power map of the sound scene that exists within a 
 Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
-See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
+See an example of a commercial product here ![Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here ![Fotric](https://youtu.be/MBhJoPzHv2Y)
 
 ## Technical Background
 
@@ -30,7 +30,7 @@ The key parameters are: **aperture** (sets beam width — larger = sharper), **m
 | **ML-based** | CNN/CRNN DoA, Transformer (SELD-Conformer), PILOT, Deep MUSIC, NN-MVDR | Learned models; top DCASE benchmarks; need training data matched to array geometry |
 
 In the initial phases of this project, I will explore representative algorithms from each of the first for families -- i.e., D&S, MVDR, CLEAN, and MUSIC.
-An example of the power vs. azimuth plot for a strong and a weak sound source is given for each of these four algorithms in the figure below. [Power vs. Azimuth](./notebooks/algo_dynamic_range.png)
+An example of the power vs. azimuth plot for a strong and a weak sound source is given for each of these four algorithms in the figure below. ![Power vs. Azimuth](notebooks/algo_dynamic_range.png)
 
 ### Key Concepts in Beamforming
 
