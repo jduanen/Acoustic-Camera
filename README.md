@@ -49,21 +49,21 @@ MSL is a metric that measures the power of the sidelobes relative to the main‑
 
 #### Far-Field vs. Near-Field Effects
 
-Far-field (beyond the Fraunhofer distance: r > 2D²/λ) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation.
+Far-field (beyond the Fraunhofer distance: *r > 2D²/λ*) assumes plane waves and requires only angle steering; near-field requires a spherical-wave model and adds range estimation.
 
 ![Far-Field vs Near-Field](assets/concept_figures/concept_farfield.png)
 **Figure:** *Left: wavefront curvature at different distances; Right: Frauenhofer boundary vs. frequency*
 
 #### Spatial Nyquist Frequency
 
-The upper frequency limit set by mic spacing: f_max = c / (2 × d_min); at frequencies above this, grating lobes appear.
+The upper frequency limit set by mic spacing: *f_max = c / (2 × d_min)*; at frequencies above this, grating lobes appear.
 
 ![Spatial Nyquist](assets/concept_figures/concept_spatial_nyquist.png)
 **Figure:** *1D PSF at five frequencies spanning sub-Nyquist to 3.5x Nyquist*
 
 #### Low-frequency Limit
 
-Usable directionality requires a frequency of roughly f > c / D (which is aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional.
+Usable directionality requires a frequency of roughly *f > c / D* (which is aperture-limited); below this HPBW exceeds ~57° and the array is near-omnidirectional.
 
 ![Low-Frequency Limit](assets/concept_figures/concept_lowfreq_limit.png)
 **Figure:** *HPBW vs. frequency (measured and theoretic) and three beam patterns*
@@ -84,7 +84,7 @@ PSF illustrates how the array smears a true point source; deconvolution methods 
 
 #### Incoherent Octave-band Averaging
 
-Commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; this suppresses noise by √K and produces a band-averaged PSF.
+Commercial cameras compute one CSM per frequency bin, beamform each, then average power across an octave band; this suppresses noise by *√K* and produces a band-averaged PSF.
 
 ![Octave-Band Averaging](assets/concept_figures/concept_octave_averaging.png)
 **Figure:** *Per-bin maps, band average, noise-floor bar chart*
@@ -117,10 +117,10 @@ In the initial phases of this project, I will use a 2D microphone array. In late
 
 | Pattern | Coverage | Framework | Notes |
 |---|---|---|---|
-| **Spherical** | Full 4π sr | Higher-Order Ambisonics (HOA) | Order N needs (N+1)² mics; order 7 = 64 mics; radius sets freq ceiling |
+| **Spherical** | Full *4π sr* | Higher-Order Ambisonics (HOA) | Order *N* needs *(N+1)²* mics; order 7 = 64 mics; radius sets freq ceiling |
 | **Cylindrical** | 360° az; limited el | Cylindrical Harmonics | Good for horizontal-plane localization in tall spaces |
 | **Tetrahedral / Platonic solid** | 3D DoA | First-order Ambisonics (4 mics) up to HOA | Smallest 3D array; Zylia ZM-1 (19 mics) = 3rd-order |
-| **Nested / concentric spheres** | Full 4π sr | Multi-shell HOA | Inner shell = high freq; outer shell = low freq; enables range estimation |
+| **Nested / concentric spheres** | Full *4π sr* | Multi-shell HOA | Inner shell = high freq; outer shell = low freq; enables range estimation |
 
 See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 
@@ -137,17 +137,17 @@ See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 
 #### Spatial Nyquist Frequency
 
-Raising f_Nyq = c / (2 × d_min) requires smaller mic spacing, which extends the upper edge of the
-usable beamforming window ([c/D, f_Nyq]) and improves angular resolution at a given frequency
-(HPBW ∝ λ/D = c/(f·D)). For the UMA-16's 126 mm aperture, the window is only 2.7–4.1 kHz
-because f_Nyq = 4.1 kHz; halving the spacing to 21 mm would open it to 2.7–8.2 kHz.
+Raising *f_Nyq = c / (2 × d_min)* requires smaller mic spacing, which extends the upper edge of the
+usable beamforming window ([*c/D*, *f_Nyq*]) and improves angular resolution at a given frequency
+(*HPBW ∝ λ/D = c/(f·D)*). For the UMA-16's 126 mm aperture, the window is only 2.7–4.1 kHz
+because *f_Nyq* = 4.1 kHz; halving the spacing to 21 mm would open it to 2.7–8.2 kHz.
 
 The costs are steep: mic count scales as (aperture/d)², so halving spacing roughly quadruples
-mic count, multiplying cost, PCB complexity, bandwidth, and compute (CSM scales as N²,
-beamforming as N × n_grid). Mechanical tolerances tighten proportionally — at 8 kHz,
-λ/10 ≈ 4 mm, which is comparable to a MEMS mic body (~3–4 mm), leaving almost no layout margin.
+mic count, multiplying cost, PCB complexity, bandwidth, and compute (CSM scales as *N²*,
+beamforming as *N × n_grid*). Mechanical tolerances tighten proportionally. At 8 kHz,
+*λ/10* ≈ 4 mm, which is comparable to a MEMS mic body (~3–4 mm), leaving almost no layout margin.
 
-The Phase 4 design (21 mm, 96 mics, 300 mm aperture) hits the practical sweet spot: f_Nyq = 8.2 kHz
+The Phase 4 design (21 mm, 96 mics, 300 mm aperture) hits the practical sweet spot: *f_Nyq* = 8.2 kHz
 matches the target upper limit exactly, and the aperture pulls the lower limit down to ~1.1 kHz.
 Pushing spacing smaller would require ~400+ mics for marginal gain above 8 kHz, which is outside
 the target range.
@@ -172,7 +172,7 @@ Grid resolution does become an issue with the Phase 4 array (300 mm aperture, HB
 | **300 mm** | **~66°** | **~17°** | **~8°** |
 | 200 mm | ~100° | ~25° | ~12° |
 
-5° resolution at 1 kHz requires D ≈ 4 m, which is impractical. Deconvolution algorithms (e.g.,
+5° resolution at 1 kHz requires *D* ≈ 4 m, which is impractical. Deconvolution algorithms (e.g.,
 CLEAN-SC, Functional BF) can recover some resolution beyond the physical aperture limit but
 cannot overcome the hard floor.
 
@@ -190,12 +190,12 @@ For full details, see: [TRADEOFFS](./TRADEOFFS.md)
 
 | Parameter | Value | Notes |
 |---|---|---|
-| Min Distance | ~0.5 m | Far-field criterion r > 2D²/λ; 2×0.3²/0.343 ≈ 0.5 m for 300 mm array at 1 kHz |
+| Min Distance | ~0.5 m | Far-field criterion *r > 2D²/λ*; 2×0.3²/0.343 ≈ 0.5 m for 300 mm array at 1 kHz |
 | Max Distance | ~10 m | Practical limit for compact array at 200 Hz |
-| Resolution | ~8° @ 8 kHz, ~17° @ 4 kHz, ~66° @ 1 kHz | Scales as λ/D; HPBW ≈ 58° × λ/D for 300 mm aperture |
+| Resolution | ~8° @ 8 kHz, ~17° @ 4 kHz, ~66° @ 1 kHz | Scales as *λ/D*; HPBW ≈ 58° × *λ/D* for 300 mm aperture |
 | FOV | ±45° H, ±30° V | Matched to co-located video camera field of view |
 | Mic Array Diameter | ~300 mm | 96 mics in Underbrink spiral, ~21 mm min spacing (Nyquist at 8 kHz) |
-| Frequency Range | 200 Hz – 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
+| Frequency Range | 200 Hz - 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
 | Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
 ## Acoustic Camera Products Overview
@@ -260,7 +260,7 @@ Full results and methodology are in: [PHASE1](./PHASE1.md)
 - Alias-free to ~13 kHz (target ceiling: 8 kHz, 1.7× margin)
 - Perfect circular symmetry; azimuth and elevation HPBW are identical at all frequencies
 
-Alternative: H=8×12, α=35° (-14.4 dB MSL, simpler layout, more uniform spacing, which is good if PCB routing is constrained)
+Alternative: *H*=8×12, *α*=35° (-14.4 dB MSL, simpler layout, more uniform spacing, which is good if PCB routing is constrained)
 
 ### Beamwidth vs Frequency
 
@@ -307,9 +307,9 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Same-azimuth, different-range source separation**: range resolution along a single bearing at
   4 kHz / 300 mm aperture is ~1 m. Co-azimutal sources closer than ~1 m merge into a single peak.
   A colocated depth camera is the practical solution
-- **Low SNR (< 10 dB) with MUSIC**: overcounting 'n_sources' produces 93-100% false alarm rate below
+- **Low SNR (< 10 dB) with MUSIC**: overcounting `n_sources` produces 93-100% false alarm rate below
   10 dB SNR. D&S and MVDR degrade more gracefully; use AIC/MDL model-order selection or conservative
-  'n_sources' at low SNR
+  `n_sources` at low SNR
 - **High dynamic range (weak source near a strong source) with D&S or CLEAN-SC**: a -20 dB weak source
   25° from a strong source is reliably detected only by MVDR and MUSIC
 - **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
@@ -393,7 +393,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sli
 webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz; operate at
-2000-3700 Hz for meaningful 2D directionality. With N=16 mics, MVDR/MUSIC provide measurable
+2000-3700 Hz for meaningful 2D directionality. With *N*=16 mics, MVDR/MUSIC provide measurable
 super-resolution benefit over D&S.
 
 ### Algorithm Benchmark Script
@@ -444,16 +444,16 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
   * can't go to higher frequency than this to get better localization
 
 #### Rule of Thumb
-- Useful directionality requires roughly λ < D, i.e.:
-  * f > c / D = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
+- Useful directionality requires roughly *λ < D*, i.e.:
+  * *f > c / D* = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
 - Below that frequency, the HPBW exceeds ~57° and degrades fast:
 
 | Freq   | HPBW | Character          |
 |-------:|-----:|:-------------------|
-| 3000 Hz| 43°  | Good localization  |
-| 2000 Hz| 73°  | Marginal           |
+| 3000 Hz|  43° | Good localization  |
+| 2000 Hz|  73° | Marginal           |
 | 1000 Hz| 116° | Poor               |
-| 500 Hz | 180° | Fully omni         |
+|  500 Hz| 180° | Fully omni         |
 
 #### UMA-16 Usable Frequency Range
 - for the UMA-16, the usable window is roughly 2–4 kHz
