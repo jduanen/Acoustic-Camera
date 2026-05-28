@@ -135,6 +135,23 @@ See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 | **Mic spacing** | Better directionality at low freq | Aliasing-free to higher freq | **21 mm min** (Nyquist at 8 kHz) |
 | **Density** | Better high-freq detail | Lower cost | 96 mics at ~27 mm avg spacing |
 
+#### Spatial Nyquist Frequency
+
+Raising f_Nyq = c / (2 × d_min) requires smaller mic spacing, which extends the upper edge of the
+usable beamforming window ([c/D, f_Nyq]) and improves angular resolution at a given frequency
+(HPBW ∝ λ/D = c/(f·D)). For the UMA-16's 126 mm aperture, the window is only 2.7–4.1 kHz
+because f_Nyq = 4.1 kHz; halving the spacing to 21 mm would open it to 2.7–8.2 kHz.
+
+The costs are steep: mic count scales as (aperture/d)², so halving spacing roughly quadruples
+mic count, multiplying cost, PCB complexity, bandwidth, and compute (CSM scales as N²,
+beamforming as N × n_grid). Mechanical tolerances tighten proportionally — at 8 kHz,
+λ/10 ≈ 4 mm, which is comparable to a MEMS mic body (~3–4 mm), leaving almost no layout margin.
+
+The Phase 4 design (21 mm, 96 mics, 300 mm aperture) hits the practical sweet spot: f_Nyq = 8.2 kHz
+matches the target upper limit exactly, and the aperture pulls the lower limit down to ~1.1 kHz.
+Pushing spacing smaller would require ~400+ mics for marginal gain above 8 kHz, which is outside
+the target range.
+
 ### Beamforming Sampling Grid Size
 
 The sampling grid used in the beamforming algorithms defines the limits to the achievable resolution of the device. It is chosen based on practical considerations and is not derived from the only meaningful limit, which is the HPBW. Practically speaking, two to three grid points per HPBW are needed to reliably capture a peak without aliasing. For example, with the UMA-16 mic array described below, at 3 KHz the HPBW is ~43°, so a grid of 0.5°/pt makes for ~86 samples across the full main lobe, which is about 30x oversampled for this array's resolution. Even at 4KHz (HPBW ~32°) there are 64 samples per lobe, which is more than enough.
