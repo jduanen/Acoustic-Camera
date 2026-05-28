@@ -258,16 +258,19 @@ def main():
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
     ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
-    ap.add_argument('--az_fov', type=float, default=90.0,    help='azimuth display FOV (deg)')
-    ap.add_argument('--el_fov', type=float, default=60.0,    help='elevation display FOV (deg)')
-    ap.add_argument('--alpha',  type=float, default=0.5,     help='acoustic overlay opacity (0–1)')
-    ap.add_argument('--smooth', type=float, default=0.7,     help='temporal smoothing factor (0=none, 0.9=heavy)')
-    ap.add_argument('--video',  type=int,   default=4,       help='cv2.VideoCapture device index')
+    ap.add_argument('--az_fov',   type=float, default=90.0,  help='azimuth display FOV (deg)')
+    ap.add_argument('--el_fov',   type=float, default=60.0,  help='elevation display FOV (deg)')
+    ap.add_argument('--grid_deg', type=float, default=0.5,   help='beamforming grid spacing (deg); 0.5=181×121, 1.0=91×61')
+    ap.add_argument('--alpha',    type=float, default=0.5,   help='acoustic overlay opacity (0–1)')
+    ap.add_argument('--smooth',   type=float, default=0.7,   help='temporal smoothing factor (0=none, 0.9=heavy)')
+    ap.add_argument('--video',    type=int,   default=4,     help='cv2.VideoCapture device index')
     args = ap.parse_args()
 
     cal_e = np.load(args.cal) if args.cal else None
-    az_grid = np.linspace(-args.az_fov / 2, args.az_fov / 2, 181)
-    el_grid = np.linspace(-args.el_fov / 2, args.el_fov / 2, 121)
+    az_grid = np.linspace(-args.az_fov / 2, args.az_fov / 2,
+                          round(args.az_fov / args.grid_deg) + 1)
+    el_grid = np.linspace(-args.el_fov / 2, args.el_fov / 2,
+                          round(args.el_fov / args.grid_deg) + 1)
     N_az, N_el = len(az_grid), len(el_grid)
 
     dev_idx = args.device if args.device is not None else find_device()
