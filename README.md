@@ -135,6 +135,18 @@ See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 | **Mic spacing** | Better directionality at low freq | Aliasing-free to higher freq | **21 mm min** (Nyquist at 8 kHz) |
 | **Density** | Better high-freq detail | Lower cost | 96 mics at ~27 mm avg spacing |
 
+### Beamforming Sampling Grid Size
+
+The sampling grid used in the beamforming algorithms defines the limits to the achievable resolution of the device. It is chosen based on practical considerations and is not derived from the only meaningful limit, which is the HPBW. Practically speaking, two to three grid points per HPBW are needed to reliably capture a peak without aliasing. For example, with the UMA-16 mic array described below, at 3 KHz the HPBW is ~43°, so a grid of 0.5°/pt makes for ~86 samples across the full main lobe, which is about 30x oversampled for this array's resolution. Even at 4KHz (HPBW ~32°) there are 64 samples per lobe, which is more than enough.
+
+Increasing the number of sampling grid points will consume considerably more computation and memory resources and slow the frame rate down, but will not provide any improvement in the device's resolution. The benchmarks run below indicate that the algorithms' resource consumption is dominated by the steering matrix allocation (5.3 MB for the UMA-16 experiments with a half degree grid) and not the math itself.
+
+Using 0.5°/pt (90° ÷ 180 steps, 60° ÷ 120 steps) results in a grid of 181 x 121.
+
+Decreasing the sampling grid saves considerable time and memory. For example, going to a 1°/pt grid (91 × 61 = 5,551 points) would result in no visible quality loss for the UMA-16 array. However, this would reduce the size of the steering matrix from 5.3 MB to 1.3 MB, which would bring D&S, MVDR, and MUSIC frame time down from ~22 msec to ~5-6 msec (a roughly linear scaling factor), and CLEAN-SC with 20 iters would go from ~85 msec to ~20 msec (making it viable for real-time display).
+
+Grid resolution does become an issue with the Phase 4 array (300 mm aperture, HBPW ~5° @ 4 kHz), where a 0.5°/pt gives just 10 samples across the main lobe and finer grid is warranted.
+
 ### Resolution vs. Aperture (HPBW ≈ 58° × λ/D)
 
 | Aperture | @ 1 kHz | @ 4 kHz | @ 8 kHz |
@@ -370,10 +382,11 @@ super-resolution benefit over D&S.
 ### Algorithm Benchmark Script
 
 ```bash
-python src/benchmark_algos.py                              # all four algorithms, 3 kHz, 20 fps target
-python src/benchmark_algos.py --algos ds mvdr music        # skip CLEAN-SC
+python src/benchmark_algos.py                             # all four algorithms, 3 kHz, 20 fps target
+python src/benchmark_algos.py --algos ds mvdr music       # skip CLEAN-SC
 python src/benchmark_algos.py --clean_iters 5 --fps 10    # CLEAN-SC feasibility at 10 fps
 python src/benchmark_algos.py --freq 2000 --iters 100     # higher-confidence timing at 2 kHz
+python src/benchmark_algos.py --grid_deg 1.0              # coarser grid; ~4× faster
 ```
 
 Loads a pre-recorded WAV (`test/UMA16/capture_nb16.wav` by default), computes a single CSM
@@ -383,23 +396,23 @@ Reports per-algorithm mean time, std dev, peak Python-heap allocation, and RT% (
 fraction of the frame budget at the target fps). A pipeline total (CSM + algo) is shown for
 each algorithm.
 
-Measured results on the 181 × 121 grid (21,901 points):
+Grid density is set by `--grid_deg` (degrees per point); number of grid points is derived as
+`round(fov / grid_deg) + 1` in each axis. At the default 0.5°/pt the UMA-16's ~43° HPBW at
+3 kHz is already sampled ~86× — far more than needed. A 1°/pt grid is sufficient for this
+array and cuts steering matrix memory 4× (5.3 MB → 1.4 MB), bringing all four algorithms
+within the 20 fps budget.
 
-| Algorithm | Mean (ms) | Peak MB | RT% @ 20 fps | Notes |
-|-----------|----------:|--------:|-------------:|-------|
-| CSM       | ~3.6      | ~0.2    | 7%           | 128 snapshots |
-| D&S       | ~21       | ~16     | 43%          | steering matrix dominates |
-| MVDR      | ~22       | ~16     | 44%          | matrix inversion adds ~1 ms |
-| MUSIC     | ~22       | ~16     | 44%          | eigh adds ~1 ms vs D&S |
-| CLEAN-SC  | ~85       | ~16.5   | 171%         | 20 iters; use ≤ 10 for real-time |
+| `--grid_deg` | Grid points | Steer MB | D&S ms | MVDR ms | CLEAN-SC ms | MUSIC ms |
+|-------------:|------------:|---------:|-------:|--------:|------------:|---------:|
+| 0.5° (default) | 181 × 121 = 21,901 | 5.3 | ~21 | ~22 | ~85 | ~22 |
+| 1.0°           | 91 × 61 = 5,551    | 1.4 | ~7  | ~5  | ~14 | ~5  |
 
-D&S, MVDR, and MUSIC are all dominated by the 5.3 MB steering matrix allocation (~16 MB peak
-each); their wall times are nearly equal at this grid resolution. CLEAN-SC scales with
-`--clean_iters` (set to 5–10 for 20 fps viability). Peak MB reflects Python-heap
-allocations only; actual RSS will be higher due to C/LAPACK internal buffers.
+CLEAN-SC scales with `--clean_iters`; at 0.5°/pt, use ≤ 10 iters for 20 fps viability.
+Peak MB reflects Python-heap allocations only; actual RSS will be higher due to C/LAPACK
+internal buffers.
 
 Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_iters`,
-`--nsrc`, `--az_pts`, `--el_pts`, `--fps`, `--cal`.
+`--nsrc`, `--grid_deg`, `--az_fov`, `--el_fov`, `--fps`, `--cal`.
 
 ### Lessons from the UMA-16 Experiments
 
