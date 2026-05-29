@@ -248,7 +248,7 @@ so I haven't really looked at what it has to offer.
 
 See [PROJECTS.md](./PROJECTS.md) for full details.
 
-## Phase 1 Simulation Findings
+## Phase 1: Simulation Findings
 
 Full results and methodology are in: [PHASE1](./PHASE1.md)
 
@@ -315,7 +315,7 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
   at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable
 
-## Phase 2 Smoke Test — ReSpeaker 4-Mic Array
+## Phase 2: Smoke Test — ReSpeaker 4-Mic Array
 
 Full results and methodology: [PHASE2](./PHASE2.md)
 
@@ -362,7 +362,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
-## Phase 3 Intermediate Array Test — miniDSP UMA-16 v2
+## Phase 3: Intermediate Array Test — miniDSP UMA-16 v2
 
 Full results and methodology: [PHASE3](./PHASE3.md)
 
