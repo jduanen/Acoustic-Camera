@@ -1,7 +1,8 @@
 # Phase 4 — Full Custom Array
 
-96-mic Underbrink-spiral PCB + Artix-7 FPGA front-end + GbE to Linux host. Goal: full-performance
-acoustic camera meeting system requirements (200 Hz – 8 kHz, ±45° FoV, ~5° resolution @ 1 kHz).
+96-mic Underbrink-spiral PCB + Artix-7 FPGA front-end + GbE to Raspberry Pi 5 host. Goal:
+full-performance acoustic camera meeting system requirements (200 Hz – 8 kHz, ±45° FoV, ~5°
+resolution @ 1 kHz).
 
 ---
 
@@ -126,10 +127,134 @@ frequency range, giving better sidelobe performance at low mic count.
 
 ---
 
+## Host Configurations
+
+Two deployment targets share the same FPGA hardware and the same GbE UDP stream. Only the
+receiving host and compute backend differ. A single `acoustic_camera_p4.py` script supports
+both via a `--backend {numpy,cupy}` flag.
+
+---
+
+### Configuration A — Standalone (Raspberry Pi 5, 8 GB)
+
+Self-contained field unit. Pi is mounted in the camera housing alongside the FPGA hub board.
+Runs from a battery. Display via HDMI touchscreen or SSH + web UI.
+
+#### Compute feasibility
+
+The dominant operation is `R @ H` (96×96 CSM times 96×n_grid steering matrix). Scaling from
+the Phase 3 UMA-16 benchmark (16-ch D&S at 1°/pt ≈ 7 ms on desktop Linux):
+
+| Config | Grid points | Est. desktop | Est. Pi 5 |
+|---|---|---|---|
+| 16-ch D&S, 1°/pt (Phase 3 measured) | 5,551 | 7 ms | ~25 ms |
+| 96-ch D&S, 1°/pt | 5,551 | ~250 ms | ~900 ms |
+| 96-ch D&S, 3°/pt, H pre-computed | 651 | ~6 ms | **~20 ms** |
+| 96-ch MVDR, 3°/pt | 651 | ~15 ms | **~50 ms** |
+| 96-ch MUSIC, 3°/pt | 651 | ~15 ms | **~50 ms** |
+
+Pi 5 Cortex-A76 @ 2.4 GHz with OpenBLAS is roughly 3–4× slower than a modern desktop CPU on
+dense BLAS. **With a pre-computed steering matrix and a 3°/pt grid, D&S runs in ~20 ms —
+feasible at 15–20 fps.** MVDR/MUSIC are workable at ~10 fps. CLEAN-SC: ≤ 8 iterations for
+real-time; 20 for offline.
+
+The CSM itself (~5 ms for 128 snapshots) is not the bottleneck.
+
+**3°/pt is adequate for live display**: HPBW at 8 kHz ≈ 8° for a 300 mm aperture gives ~2.7
+samples/lobe — sufficient for peak localization. Use 0.5°/pt for offline post-processing.
+
+#### Why Pi 5 (not Pi 4 or CM4)
+
+- **Cortex-A76** — ~1.5–2× faster than Pi 4's A72 for NumPy/BLAS
+- **PCIe M.2 slot** — upgrade path to Hailo-8 NPU (~$70) for ML beamforming (Phase 5),
+  without changing any other hardware
+- **MIPI CSI connector** — Pi Camera Module 3 (IMX708, 12 MP) preferred over USB webcam;
+  lower CPU overhead, native hardware sync between camera frames and audio timestamps
+- **8 GB RAM** — fits steering matrix, CSM buffers, and video pipeline comfortably
+- **Native GbE** — receives FPGA UDP stream directly; no adapter
+
+#### Camera: Pi Camera Module 3 Wide
+
+The 120° diagonal FoV matches a typical acoustic camera field of view. Mounts at array center.
+Accessed via `picamera2` library rather than OpenCV `VideoCapture`.
+
+---
+
+### Configuration B — GbE-attached Host with GPU
+
+High-performance workstation or server connected to the FPGA hub via a standard network switch
+or direct GbE cable. Runs full-resolution beamforming at 20+ fps using a CUDA GPU.
+
+#### Compute feasibility with GPU
+
+CuPy provides near-drop-in NumPy replacement on CUDA. The `R @ H` matrix multiply that costs
+~250 ms on CPU (96-ch, 1°/pt) becomes a single cuBLAS ZGEMM call:
+
+| Config | Grid points | CPU (desktop) | GPU (RTX 3060) |
+|---|---|---|---|
+| 96-ch D&S, 1°/pt | 5,551 | ~250 ms | **~3 ms** |
+| 96-ch D&S, 0.5°/pt | 21,901 | ~1,000 ms | **~10 ms** |
+| 96-ch MVDR, 1°/pt | 5,551 | ~260 ms | **~5 ms** |
+| 96-ch MUSIC, 1°/pt | 5,551 | ~260 ms | **~5 ms** |
+| 96-ch CLEAN-SC (20 iter), 1°/pt | 5,551 | ~5,000 ms | **~100 ms** |
+
+All four algorithms at full 0.5°/pt resolution are real-time feasible on GPU.
+
+#### GPU requirements
+
+The steering matrix + CSM + working buffers fit in under 100 MB VRAM at full resolution
+(96 × 21,901 × 16 bytes = 33 MB for complex128 steering matrix). Any CUDA-capable GPU works.
+Minimum useful: GTX 1070 (8 GB VRAM, ~$100 used). Recommended: RTX 3060 (12 GB, ~$300 new).
+
+#### Camera: USB 3.0
+
+Standard USB camera via OpenCV `VideoCapture`. No Pi-specific hardware needed.
+
+---
+
+### Interface: GbE — identical for both configurations
+
+The FPGA design does not change. Both hosts receive the same 110 Mbps UDP stream.
+
+```
+FPGA hub  ──GbE──  [network switch or direct cable]  ──  Pi 5  (Config A)
+                                                      ──  GPU workstation  (Config B)
+```
+
+On both hosts, a background thread receives UDP packets via Python `socket`, checks sequence
+numbers, and pushes PCM frames into a thread-safe deque. The main thread drains the deque to
+build the sliding audio buffer. Identical code path for ingestion.
+
+---
+
+### Software Architecture: `--backend {numpy,cupy}`
+
+A single script `src/acoustic_camera_p4.py` selects the compute backend at startup:
+
+```python
+if args.backend == 'cupy':
+    import cupy as xp
+    from cupy.linalg import inv, eigh
+else:
+    import numpy as xp
+    from scipy.linalg import inv, eigh
+```
+
+All beamforming functions (`beamform_ds`, `beamform_mvdr`, `beamform_music`) operate on `xp`
+arrays transparently. The steering matrix is pre-computed once on the selected device. Grid
+resolution defaults: `--grid_deg 3.0` for `--backend numpy` (Pi 5), `--grid_deg 0.5` for
+`--backend cupy` (GPU host).
+
+CLEAN-SC is the one exception: its loop structure does not parallelize cleanly across grid
+points, so GPU speedup is limited. Implement as CPU fallback even on the GPU host, or use
+the Functional Beamforming approximation instead for real-time display.
+
+---
+
 ## FPGA / Host Partition
 
 The FPGA does only what a CPU cannot: real-time parallel PDM capture and decimation of 96
-channels at 3 MHz. Everything flexible or algorithmically complex stays on the host in Python.
+channels at 3 MHz. Everything flexible or algorithmically complex stays on the Pi in Python.
 
 ### FPGA responsibilities (hard real-time, parallel)
 
@@ -152,9 +277,10 @@ channels at 3 MHz. Everything flexible or algorithmically complex stays on the h
 | **Audio ring buffer** | Thread-safe deque of incoming PCM frames |
 | **Cross-spectral matrix** | Windowed FFT → outer product → running average over N snapshots |
 | **Beamforming** | D&S, MVDR, CLEAN-SC, MUSIC (reuse `src/acoustic_camera_p3.py` code as base) |
-| **GPU acceleration** | Optional PyTorch / CuPy for CSM and beamforming at 96-channel scale |
+| **Grid strategy** | 3°/pt for live display; 0.5°/pt for offline post-processing of recordings |
+| **NPU acceleration** | Optional Hailo-8 via PCIe M.2 HAT for ML beamforming (Phase 5) |
 | **Calibration** | Gain + phase correction vector applied to CSM: `R_cal = outer(1/e, conj(1/e)) * R` |
-| **Camera capture** | OpenCV `VideoCapture` |
+| **Camera capture** | Pi Camera Module 3 via MIPI CSI (preferred) or USB webcam fallback |
 | **Heatmap rendering** | Power → dB → percentile normalize → colormap → resize to frame |
 | **Video overlay + display** | `cv2.addWeighted`, crosshair, status label, frequency sliders |
 | **Record / playback** | Write raw PCM packets + video frames; replay from file for offline analysis |
