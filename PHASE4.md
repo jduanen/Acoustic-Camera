@@ -72,7 +72,7 @@ in-circuit debug tools. The price difference is ~$90–120 at single-unit quanti
 
 **Part number**: XC7A200T-1FBG484C (484-pin FBGA)
 
-**Phase 4 build strategy**: Use a **Nexys Video dev board** (~$325, Digilent) as the FPGA
+**Phase 4 build strategy**: Use a **Nexys Video dev board** (~$500, Digilent) as the FPGA
 hub. The Nexys Video uses the same XC7A200T and adds an FMC LPC connector exposing 68 I/O —
 enough for all 48 PDM DATA lines + 1 CLK. The mic array is a separate custom PCB that
 connects via an FMC LPC cable. No BGA soldering required until rev-2.
@@ -251,7 +251,7 @@ All four algorithms at full 0.5°/pt resolution are real-time feasible on GPU.
 
 The steering matrix + CSM + working buffers fit in under 100 MB VRAM at full resolution
 (96 × 21,901 × 16 bytes = 33 MB for complex128 steering matrix). Any CUDA-capable GPU works.
-Minimum useful: GTX 1070 (8 GB VRAM, ~$100 used). Recommended: RTX 3060 (12 GB, ~$300 new).
+Minimum useful: GTX 1070 (8 GB VRAM, ~$100 used). Recommended: RTX 3060 (12 GB).
 
 #### Camera: USB 3.0
 
@@ -342,7 +342,7 @@ Phase 4 is split into two parallel workstreams that merge at integration.
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **Procure Nexys Video** | Digilent ~$325; XC7A200T + FMC LPC; includes Vivado WebPACK license | None |
+| **Procure Nexys Video** | Digilent ~$500; XC7A200T + FMC LPC; includes Vivado WebPACK license | None |
 | **HDL development** | CIC + FIR + GbE/UDP pipeline in Verilog/VHDL; test on Nexys Video | Nexys in hand |
 | **FMC breakout adapter** | Passive adapter: FMC LPC plug on one end, 50-pin IDC headers on other; carries 48 DATA + 1 CLK | HDL ping-pong test passing |
 

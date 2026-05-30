@@ -35,7 +35,7 @@ Reasons for XC7A200T over XC7A100T:
 - 128-channel upgrade (see below) drops headroom to 61% vs 16% on A100T
 - 740 DSP48E1 blocks — all FIR chains implemented in DSPs, zero LUT cost for MAC
 - Same Artix-7 family: identical Vivado flow, same TEMAC GbE IP, same ILA/VIO debug tools
-- **Phase 4 build**: **Nexys Video** dev board (~$325) as FPGA hub; same XC7A200T plus FMC
+- **Phase 4 build**: **Nexys Video** dev board (~$550) as FPGA hub; same XC7A200T plus FMC
   LPC connector (68 I/O) — needed for all 48 PDM DATA lines + CLK; mic array on a separate
   PCB connected via FMC cable — no BGA soldering until rev-2
 - **Rev-2**: bare XC7A200T-1FBG484C (484-pin FBGA) on custom PCB once pipeline is validated
@@ -102,7 +102,7 @@ High-performance workstation connected via GbE. Full-resolution real-time beamfo
 * **Compute**: CuPy on CUDA GPU
   - 0.5°/pt grid: D&S ~10 ms, MVDR/MUSIC ~5 ms, all at 20+ fps
   - VRAM required: ~33 MB for steering matrix (complex128, 96 × 21,901) — any GPU fits
-  - Minimum GPU: GTX 1070 (8 GB). Recommended: RTX 3060 (12 GB, ~$300)
+  - Minimum GPU: GTX 1070 (8 GB). Recommended: RTX 3060 (12 GB)
 * **Camera**: USB 3.0 webcam via OpenCV `VideoCapture`
 
 ### GbE interface (same for both)
