@@ -155,11 +155,11 @@ Same as established in Phase 1 simulation (nb05–nb11):
 |---|---|
 | Mic count | 96 |
 | Pattern | Underbrink multi-arm log-spiral |
-| Arms × mics per arm | 8 × 12 (simulate 6 × 16 as alternative) |
+| Arms × mics per arm | 12 × 8 (6 × 16 simulated as alternative in Phase 1) |
 | Aperture | ~300 mm diameter |
-| Min mic spacing | ~21 mm |
-| Spatial Nyquist | ~8.2 kHz (c / 2×0.021) |
-| Far-field distance | ~0.37 m @ 8 kHz |
+| Min mic spacing | ~13 mm |
+| Spatial Nyquist | ~13 kHz (no aliasing within 8 kHz operating range) |
+| Far-field distance | 0.52 m @ 1 kHz · 1.6 m @ 3 kHz · 4.2 m @ 8 kHz |
 
 The geometry was optimized in Phase 1 simulation. The Underbrink pattern is preferred over a
 regular grid because its logarithmic spiral arm spacing suppresses grating lobes across the full

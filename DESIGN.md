@@ -7,9 +7,10 @@
   - Factory-calibrated: ±1 dB sensitivity match, ±2° phase match
   - Part: IM72D128V01XTMA1 (DigiKey / Mouser)
 * **Underbrink multi-arm log-spiral** pattern
-  - 8 arms × 12 mics (simulate 6 × 16 as alternative in Phase 1; geometry already optimized)
-* **~300 mm diameter aperture; ~21 mm minimum mic spacing**
-  - Spatial Nyquist at 8 kHz: λ/2 = 343/(2×8000) ≈ 21.4 mm
+  - 12 arms × 8 mics (6 × 16 alternative simulated in Phase 1; 12 × 8 chosen)
+* **~300 mm diameter aperture; ~13 mm minimum mic spacing**
+  - Spatial Nyquist ~13 kHz — no aliasing within 8 kHz operating range
+  - Far-field distance: 0.52 m @ 1 kHz · 1.6 m @ 3 kHz · 4.2 m @ 8 kHz
 * **Custom PCB(s)**
   - Mics share PDM clock, paired L/R on data lines → 48 DATA + 1 CLK to FPGA
 
