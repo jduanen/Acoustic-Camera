@@ -71,7 +71,11 @@ Both use the same Artix-7 family: same Vivado flow, same TEMAC GbE IP, same ILA/
 in-circuit debug tools. The price difference is ~$90–120 at single-unit quantities.
 
 **Part number**: XC7A200T-1FBG484C (484-pin FBGA)  
-**Dev board for HDL development**: Nexys A7-200T (~$270), same chip
+**Phase 4 build strategy**: Use **Nexys A7-200T dev board** (~$270) as the FPGA hub for the
+first build. The mic array is a separate custom PCB that connects to the Nexys via a ribbon
+cable or header carrying the 48 PDM data lines and clock. No BGA soldering required until
+rev-2. The custom FPGA hub PCB (bare XC7A200T) is deferred until the full pipeline is
+validated end-to-end on the dev board.
 
 #### Alternate: Lattice ECP5-45F
 
@@ -325,16 +329,39 @@ channels at 3 MHz. Everything flexible or algorithmically complex stays on the P
 
 ## Hardware Sub-Tasks
 
-These can be parallelized once the HDL is stable on the Arty A7-100T dev board.
+Phase 4 is split into two parallel workstreams that merge at integration.
+
+### Workstream 1 — FPGA hub (Nexys A7-200T dev board)
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **HDL development** | CIC + FIR + GbE pipeline in Verilog/VHDL; test on Arty A7-100T | None |
-| **FPGA hub PCB** | Custom board: XC7A100T + 88E1111 PHY + 12.288 MHz TCXO + 48-pin PDM input header | HDL stable |
-| **Mic array PCB** | 96× IM72D128 in Underbrink spiral; PDM clock fan-out; 48 data lines to FPGA header | Geometry finalized |
-| **Host software** | UDP ingestion + 96-ch pipeline (extend `acoustic_camera_p3.py`) | HDL producing valid UDP |
-| **Camera selection** | USB camera, FOV matched to array aperture at expected working distance | — |
-| **Calibration** | Gain + phase estimation at scale; extend nb17 approach | Hardware assembled |
+| **Procure Nexys A7-200T** | Digilent ~$270; ships with Vivado license for WebPACK | None |
+| **HDL development** | CIC + FIR + GbE/UDP pipeline in Verilog/VHDL; test on Nexys | Nexys in hand |
+| **PDM connector breakout** | Small adapter board or ribbon cable from Nexys PMOD/GPIO headers to 48-line PDM bus | HDL ping-pong test passing |
+
+### Workstream 2 — Mic array PCB
+
+| Sub-task | Description | Dependency |
+|---|---|---|
+| **Geometry finalization** | Confirm 8×12 Underbrink spiral from Phase 1 simulation; generate mic XY coordinates | Phase 1 data |
+| **PCB design** | 96× IM72D128 in spiral; 12.288 MHz TCXO; PDM clock fan-out with matched traces; 48-line ribbon cable header to Nexys | Geometry final |
+| **PCB fabrication** | 6-layer recommended (PDM ground plane, clock shielding); JLCPCB / PCBWay | Layout complete |
+| **Assembly** | IM72D128 is a small LGA; reflow oven or PCB assembly service | PCB received |
+
+### Integration & Software
+
+| Sub-task | Description | Dependency |
+|---|---|---|
+| **First integration** | Connect mic array PCB to Nexys; verify all 96 PDM channels on ILA | Both workstreams complete |
+| **Host software** | UDP ingestion + 96-ch pipeline; extend `acoustic_camera_p3.py` → `acoustic_camera_p4.py` | Nexys producing valid UDP |
+| **Camera** | Pi Camera Module 3 Wide (Config A) or USB webcam (Config B) | Host software running |
+| **Calibration** | Gain + phase estimation at 96-ch scale; extend nb17 approach | Hardware assembled |
+
+### Rev-2 (deferred)
+
+Custom FPGA hub PCB (bare XC7A200T + 88E1111 PHY + 12.288 MHz TCXO) designed after the
+full pipeline is validated on the Nexys. Eliminates the dev board and produces a compact
+integrated unit suitable for the Phase 4b housing.
 
 ---
 
