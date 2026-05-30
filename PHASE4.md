@@ -70,12 +70,19 @@ margin for any additional DSP-heavy logic.
 Both use the same Artix-7 family: same Vivado flow, same TEMAC GbE IP, same ILA/VIO
 in-circuit debug tools. The price difference is ~$90–120 at single-unit quantities.
 
-**Part number**: XC7A200T-1FBG484C (484-pin FBGA)  
-**Phase 4 build strategy**: Use **Nexys A7-200T dev board** (~$350) as the FPGA hub for the
-first build. The mic array is a separate custom PCB that connects to the Nexys via a ribbon
-cable or header carrying the 48 PDM data lines and clock. No BGA soldering required until
-rev-2. The custom FPGA hub PCB (bare XC7A200T) is deferred until the full pipeline is
-validated end-to-end on the dev board.
+**Part number**: XC7A200T-1FBG484C (484-pin FBGA)
+
+**Phase 4 build strategy**: Use a **Nexys Video dev board** (~$325, Digilent) as the FPGA
+hub. The Nexys Video uses the same XC7A200T and adds an FMC LPC connector exposing 68 I/O —
+enough for all 48 PDM DATA lines + 1 CLK. The mic array is a separate custom PCB that
+connects via an FMC LPC cable. No BGA soldering required until rev-2.
+
+> **Why not Nexys A7-200T ($350)?**  The Nexys A7-200T only exposes 32 I/O pins (4× Pmod) —
+> 17 short of the 49 needed for the full 96-channel array. The Nexys Video adds FMC LPC
+> (68 I/O) for $25 less, making it the better choice for this application.
+
+The custom FPGA hub PCB (bare XC7A200T) remains deferred to rev-2 until the full pipeline
+is validated end-to-end on the dev board.
 
 #### Alternate: Lattice ECP5-45F
 
@@ -331,13 +338,13 @@ channels at 3 MHz. Everything flexible or algorithmically complex stays on the P
 
 Phase 4 is split into two parallel workstreams that merge at integration.
 
-### Workstream 1 — FPGA hub (Nexys A7-200T dev board)
+### Workstream 1 — FPGA hub (Nexys Video dev board)
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **Procure Nexys A7-200T** | Digilent ~$350; ships with Vivado license for WebPACK | None |
-| **HDL development** | CIC + FIR + GbE/UDP pipeline in Verilog/VHDL; test on Nexys | Nexys in hand |
-| **PDM connector breakout** | Small adapter board or ribbon cable from Nexys PMOD/GPIO headers to 48-line PDM bus | HDL ping-pong test passing |
+| **Procure Nexys Video** | Digilent ~$325; XC7A200T + FMC LPC; includes Vivado WebPACK license | None |
+| **HDL development** | CIC + FIR + GbE/UDP pipeline in Verilog/VHDL; test on Nexys Video | Nexys in hand |
+| **FMC breakout adapter** | Passive adapter: FMC LPC plug on one end, 50-pin IDC headers on other; carries 48 DATA + 1 CLK | HDL ping-pong test passing |
 
 ### Workstream 2 — Mic array PCB
 
