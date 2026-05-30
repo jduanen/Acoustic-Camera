@@ -1,8 +1,8 @@
 # Phase 4 — Full Custom Array
 
-96-mic Underbrink-spiral PCB + Artix-7 FPGA front-end + GbE to Raspberry Pi 5 host. Goal:
-full-performance acoustic camera meeting system requirements (200 Hz – 8 kHz, ±45° FoV, ~5°
-resolution @ 1 kHz).
+96-mic Underbrink-spiral PCB + Artix-7 XC7A200T FPGA front-end + GbE to host (Pi 5 standalone
+or GPU workstation). Goal: full-performance acoustic camera meeting system requirements
+(200 Hz – 8 kHz, ±45° FoV, ~5° resolution @ 1 kHz).
 
 ---
 
@@ -34,48 +34,84 @@ TDK, STMicro, and Vesper PDM mics in this range do not publish comparable phase 
 
 ---
 
-### FPGA — Xilinx Artix-7 XC7A100T
+### FPGA — Xilinx Artix-7 XC7A200T
 
-#### Why not smaller devices
-
-The 96-channel CIC + FIR + GbE pipeline requires approximately 38,000–40,000 LUTs:
+#### Pipeline resource estimate
 
 | Block | LUT estimate |
 |---|---|
 | CIC decimation, 96 ch × ~250 LUTs | ~24,000 |
-| FIR compensation, 96 ch × ~150 LUTs | ~14,400 |
+| FIR compensation, 96 ch (DSP48, minimal LUTs) | ~2,400 |
 | GbE MAC + UDP stack | ~3,000 |
 | PDM capture, L/R demux, control | ~2,000 |
-| **Total** | **~43,000** |
+| **Total** | **~31,400** (with DSP-based FIR) |
 
-| Device | LUTs available | Fits? |
-|---|---|---|
-| Xilinx XC7A35T | 20,800 | No |
-| Lattice ECP5-25F | 25,500 | No |
-| Lattice ECP5-45F | 44,500 | Tight (~5% margin) |
-| **Xilinx XC7A100T** | **63,400** | **Yes (~35% headroom)** |
+#### Device comparison
 
-#### Primary recommendation: Artix-7 XC7A100T
+| Device | LUTs | DSP | BRAM | 96-ch headroom | 128-ch headroom | Notes |
+|---|---|---|---|---|---|---|
+| XC7A35T | 20,800 | 90 | 1.8 Mb | No | No | Too small |
+| ECP5-25F | 25,500 | 56 | 1.67 Mb | No | No | Too small |
+| ECP5-45F | 44,500 | 90 | 1.93 Mb | Tight (5%) | No | Open toolchain; no 128-ch path |
+| XC7A100T | 63,400 | 240 | 4.86 Mb | 35% | 16% | Considered; rejected (tight at 128-ch) |
+| **XC7A200T** | **134,600** | **740** | **13.1 Mb** | **~75%** | **~60%** | **Chosen** |
 
-- **63,400 LUTs** — adequate headroom after the full audio pipeline
-- **240 DSP48E1 blocks** — efficient FIR MAC without burning LUTs
-- **4.86 Mb BRAM** — adequate for filter state and GbE packet buffers
-- **TEMAC** (Tri-Mode Ethernet MAC) — production-grade GbE IP, included in Vivado evaluation
-- **ILA / VIO** in-circuit logic analyzer — essential for PCB bring-up debugging
-- **Vivado** free WebPACK tier covers all IP needed for this design
-- **Dev board for HDL development**: Arty A7-100T ($149) uses the same chip and package
+#### Why XC7A200T over XC7A100T
 
-**Part number**: XC7A100T-1FTG256C (256-pin FTBGA, 1.0 speed grade)
+The XC7A100T has 35% LUT headroom for 96 channels but only 16% for 128 channels — tight for
+a first build where HDL synthesis estimates are uncertain. The XC7A200T gives 75% headroom
+at 96 channels and 60% at 128 channels, with room for future FPGA-side additions (octave-band
+parallel beamforming, hardware PSF, etc.).
+
+Its 740 DSP48E1 blocks cover all 96 FIR compensation chains in dedicated DSPs with zero LUT
+cost for MAC operations. The XC7A100T's 240 DSPs could handle this too but leaves little
+margin for any additional DSP-heavy logic.
+
+Both use the same Artix-7 family: same Vivado flow, same TEMAC GbE IP, same ILA/VIO
+in-circuit debug tools. The price difference is ~$90–120 at single-unit quantities.
+
+**Part number**: XC7A200T-1FBG484C (484-pin FBGA)  
+**Dev board for HDL development**: Nexys A7-200T (~$270), same chip
 
 #### Alternate: Lattice ECP5-45F
 
-If a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement:
-- 44,500 LUTs — fits with minimal headroom
-- GbE SerDes integration on the ECP5 open toolchain is significantly harder than Vivado TEMAC;
-  expect 4–6 additional weeks of integration effort
-- Suitable for a rev-2 board once the HDL design is proven on Artix-7
+Only if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement.
+Fits 96 channels with ~5% margin; does not fit 128 channels. GbE SerDes integration is
+harder (~4–6 extra weeks). Suitable for a rev-2 board after the HDL is proven on Artix-7.
 
-**Verdict**: Use XC7A100T for the first PCB.
+#### Considered and rejected: Zynq-7020
+
+85,000 LUTs + dual-core ARM Cortex-A9. Potentially interesting for Config A (standalone)
+because the ARM could replace the Pi 5, but rejected:
+- Cortex-A9 @ 1 GHz is 4–5× slower than Pi 5's Cortex-A76 for NumPy/BLAS
+- 96-ch D&S at 3°/pt: ~80–100 ms on Zynq ARM vs ~20 ms on Pi 5 (~5–10 fps vs 15–20 fps)
+- 85k LUT fabric gives less headroom than XC7A200T
+- PS+PL integration adds toolchain complexity (Vivado + Vitis)
+- Pi 5 + XC7A200T is better performance at comparable total cost
+- Worth revisiting for a future rev-2 if a single-board integrated design is desired
+
+#### Considered and rejected: 128-mic array
+
+Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
+- Benefits: +1.3 dB array gain, ~1 dB sidelobe improvement — marginal
+- Costs: FPGA headroom drops from 60% to ~45% on XC7A200T (still fine, but closer);
+  ECP5-45F no longer fits; Pi 5 D&S grows from ~20 ms to ~36 ms at 3°/pt
+- HPBW is aperture-limited, not mic-count-limited — adding mics does not change resolution
+- Verdict: not worth it for the first board; revisit if Phase 4 data shows sidelobe-limited
+  performance in a specific measured scenario
+
+#### Considered and rejected: 350 mm aperture
+
+Increasing aperture from 300 mm to 350 mm was evaluated:
+- HPBW improvement: ~14% across all frequencies (e.g., 22° → 19° at 3 kHz) — modest
+- Far-field distance increases: 4.2 m → 5.7 m at 8 kHz; at a typical 5 m working range the
+  system would be operating in near-field at 8 kHz, introducing systematic DoA error
+- Spatial Nyquist drops: scaling 96 mics over a larger aperture increases min spacing from
+  ~21 mm to ~24.5 mm, dropping Nyquist from 8.2 kHz to ~7.0 kHz; restoring Nyquist requires
+  ~131 mics → rounds to 128
+- PCB is 17% larger; harder to mount at array center
+- Verdict: the far-field regression outweighs the HPBW gain for the first board; revisit with
+  a larger mic count after Phase 4 field data is available
 
 ---
 

@@ -15,29 +15,45 @@
 
 ## FPGA Front-End
 
-### Primary: Xilinx Artix-7 XC7A100T
+### Primary: Xilinx Artix-7 XC7A200T
 
-The 96-channel CIC + FIR + GbE pipeline requires ~38,000–40,000 LUTs. The XC7A35T (20,800
-LUTs) and ECP5-25F (25,500 LUTs) do not fit.
+The 96-channel CIC + FIR + GbE pipeline requires ~40,000–43,000 LUTs. Several devices were
+evaluated; the XC7A200T was chosen for its headroom and DSP count.
 
-| Device | LUTs | DSP | BRAM | Fits? |
-|---|---|---|---|---|
-| XC7A35T | 20,800 | 90 | 1.8 Mb | No |
-| ECP5-25F | 25,500 | 56 | 1.67 Mb | No |
-| ECP5-45F | 44,500 | 90 | 1.93 Mb | Yes (tight) |
-| **XC7A100T** | **63,400** | **240** | **4.86 Mb** | **Yes (~35% headroom)** |
+| Device | LUTs | DSP | BRAM | 96-ch headroom | 128-ch headroom | Notes |
+|---|---|---|---|---|---|---|
+| XC7A35T | 20,800 | 90 | 1.8 Mb | No | No | Too small |
+| ECP5-25F | 25,500 | 56 | 1.67 Mb | No | No | Too small |
+| ECP5-45F | 44,500 | 90 | 1.93 Mb | Tight (5%) | No | Open toolchain only |
+| XC7A100T | 63,400 | 240 | 4.86 Mb | 35% | 16% | Considered; headroom tight for expansion |
+| **XC7A200T** | **134,600** | **740** | **13.1 Mb** | **70%** | **61%** | **Chosen** |
 
-Reasons for XC7A100T:
-- TEMAC (Tri-Mode Ethernet MAC) IP included in Vivado — production-grade GbE
-- ILA / VIO in-circuit debug — essential for PCB bring-up
-- 240 DSP48E1 blocks — efficient FIR MAC without burning LUTs
-- Dev board for HDL development: Arty A7-100T ($149), same chip
-- Part: XC7A100T-1FTG256C
+Reasons for XC7A200T over XC7A100T:
+- 70% LUT headroom after the 96-channel pipeline vs 35% — comfortable margin for future additions
+  (octave-band parallel beamforming, hardware PSF correction, additional channels)
+- 128-channel upgrade (see below) drops headroom to 61% vs 16% on A100T
+- 740 DSP48E1 blocks — all FIR chains implemented in DSPs, zero LUT cost for MAC
+- Same Artix-7 family: identical Vivado flow, same TEMAC GbE IP, same ILA/VIO debug tools
+- Dev board for HDL development: Nexys A7-200T (~$270)
+- Part: XC7A200T-1FBG484C (484-pin FBGA)
 
 ### Alternate: Lattice ECP5-45F
 
-Use if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is required. GbE SerDes
-integration on the ECP5 open tools is harder (~4–6 weeks extra). Suitable for a rev-2 board.
+Use only if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement.
+Fits 96 channels with ~5% LUT margin; does **not** fit 128 channels. GbE SerDes integration
+on the ECP5 open tools is harder (~4–6 weeks extra). Suitable for a rev-2 board.
+
+### Considered and rejected: Zynq-7020
+
+The XC7Z020 combines 85,000 LUTs of FPGA fabric with a dual-core ARM Cortex-A9 processor on
+the same die. Potentially interesting for Config A (standalone) because the ARM could replace
+the Pi 5. Rejected for the first board because:
+- Cortex-A9 @ 1 GHz is 4–5× slower than Pi 5's Cortex-A76 @ 2.4 GHz for NumPy/BLAS;
+  96-ch D&S at 3°/pt would run at ~5–10 fps rather than ~15–20 fps
+- 85,000 LUT fabric gives only ~50% headroom for 96-ch; tighter than XC7A200T
+- Added complexity of PS+PL integration (Vitis toolchain in addition to Vivado)
+- Pi 5 + XC7A200T gives better standalone performance at comparable cost
+- Worth revisiting if a future rev integrates everything into one board
 
 ### Supporting ICs
 
