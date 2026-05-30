@@ -34,7 +34,7 @@ Reasons for XC7A200T over XC7A100T:
 - 128-channel upgrade (see below) drops headroom to 61% vs 16% on A100T
 - 740 DSP48E1 blocks — all FIR chains implemented in DSPs, zero LUT cost for MAC
 - Same Artix-7 family: identical Vivado flow, same TEMAC GbE IP, same ILA/VIO debug tools
-- **Phase 4 build**: Nexys A7-200T dev board (~$270) as FPGA hub; mic array on a separate
+- **Phase 4 build**: Nexys A7-200T dev board (~$350) as FPGA hub; mic array on a separate
   PCB connected via ribbon cable — no BGA soldering until rev-2
 - **Rev-2**: bare XC7A200T-1FBG484C (484-pin FBGA) on custom PCB once pipeline is validated (484-pin FBGA)
 

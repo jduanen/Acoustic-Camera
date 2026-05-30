@@ -71,7 +71,7 @@ Both use the same Artix-7 family: same Vivado flow, same TEMAC GbE IP, same ILA/
 in-circuit debug tools. The price difference is ~$90–120 at single-unit quantities.
 
 **Part number**: XC7A200T-1FBG484C (484-pin FBGA)  
-**Phase 4 build strategy**: Use **Nexys A7-200T dev board** (~$270) as the FPGA hub for the
+**Phase 4 build strategy**: Use **Nexys A7-200T dev board** (~$350) as the FPGA hub for the
 first build. The mic array is a separate custom PCB that connects to the Nexys via a ribbon
 cable or header carrying the 48 PDM data lines and clock. No BGA soldering required until
 rev-2. The custom FPGA hub PCB (bare XC7A200T) is deferred until the full pipeline is
@@ -335,7 +335,7 @@ Phase 4 is split into two parallel workstreams that merge at integration.
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **Procure Nexys A7-200T** | Digilent ~$270; ships with Vivado license for WebPACK | None |
+| **Procure Nexys A7-200T** | Digilent ~$350; ships with Vivado license for WebPACK | None |
 | **HDL development** | CIC + FIR + GbE/UDP pipeline in Verilog/VHDL; test on Nexys | Nexys in hand |
 | **PDM connector breakout** | Small adapter board or ribbon cable from Nexys PMOD/GPIO headers to 48-line PDM bus | HDL ping-pong test passing |
 
