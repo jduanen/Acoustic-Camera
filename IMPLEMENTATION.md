@@ -28,7 +28,7 @@ Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous s
   - preferred for resource headroom and mature ecosystem (Vivado)
   - XC7A100T: 101K LUTs, 4.8Mb BRAM, up to 210 user I/O
   - large library of IP cores (GbE MAC, PCIe, etc.)
-  - dev boards: Digilent Arty A7-100T, Nexys A7
+  - dev boards: Digilent Arty A7-100T, Nexys Video (chosen for Phase 4 — FMC LPC)
 
 * Intel Cyclone 10 LP
   - alternative; good balance of cost and I/O count

@@ -523,7 +523,7 @@ Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
 | Device | LUTs | BRAM | Toolchain | Dev board |
 |---|---|---|---|---|
 | Lattice ECP5-85F | 84K | 3.4 Mb | Yosys/nextpnr (open-source) | OrangeCrab, ULX3S |
-| Xilinx Artix-7 XC7A100T | 101K | 4.8 Mb | Vivado; mature IP ecosystem | Arty A7-100T, Nexys A7 |
+| **Xilinx Artix-7 XC7A200T** | **134K** | **13.1 Mb** | **Vivado; chosen for Phase 4** | **Nexys Video (FMC LPC)** |
 | Intel Cyclone 10 LP | — | — | Quartus | Cyclone 10 LP Eval Kit |
 
 ### Software stack
