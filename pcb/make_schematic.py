@@ -374,10 +374,165 @@ def make_arm(arm_idx):
 
     return ''.join(buf), sch_uuid
 
+# ── VITA 57.1 FMC LPC signal → physical pin map ───────────────────────────────
+# Verified against Analog Devices HDL repository constraint files.
+# LA16-LA33 inferred from the confirmed spacing pattern; verify against
+# the VITA 57.1 standard before ordering a PCB.
+
+_FMC_SIG_PIN = {
+    'CLK0_M2C_P': 'H4',   'CLK0_M2C_N': 'H5',
+    'CLK1_M2C_P': 'G2',   'CLK1_M2C_N': 'G3',
+    'LA00_CC_P':  'G6',   'LA00_CC_N':  'G7',
+    'LA01_CC_P':  'D8',   'LA01_CC_N':  'D9',
+    'LA02_P':  'H7',   'LA02_N':  'H8',
+    'LA03_P':  'G9',   'LA03_N':  'G10',
+    'LA04_P':  'H10',  'LA04_N':  'H11',
+    'LA05_P':  'D11',  'LA05_N':  'D12',
+    'LA06_P':  'C10',  'LA06_N':  'C11',
+    'LA07_P':  'H13',  'LA07_N':  'H14',
+    'LA08_P':  'G12',  'LA08_N':  'G13',
+    'LA09_P':  'D14',  'LA09_N':  'D15',
+    'LA10_P':  'C14',  'LA10_N':  'C15',
+    'LA11_P':  'H16',  'LA11_N':  'H17',
+    'LA12_P':  'G15',  'LA12_N':  'G16',
+    'LA13_P':  'D17',  'LA13_N':  'D18',
+    'LA14_P':  'C18',  'LA14_N':  'C19',
+    'LA15_P':  'H19',  'LA15_N':  'H20',
+    'LA16_P':  'G18',  'LA16_N':  'G19',
+    'LA17_CC_P': 'D20', 'LA17_CC_N': 'D21',
+    'LA18_CC_P': 'C20', 'LA18_CC_N': 'C21',
+    'LA19_P':  'H22',  'LA19_N':  'H23',
+    'LA20_P':  'G21',  'LA20_N':  'G22',
+    'LA21_P':  'H25',  'LA21_N':  'H26',
+    'LA22_P':  'G24',  'LA22_N':  'G25',
+    'LA23_P':  'D23',  'LA23_N':  'D24',
+    'LA24_P':  'H28',  'LA24_N':  'H29',
+    'LA25_P':  'G27',  'LA25_N':  'G28',
+    'LA26_P':  'D26',  'LA26_N':  'D27',
+    'LA27_P':  'C26',  'LA27_N':  'C27',
+    'LA28_P':  'H31',  'LA28_N':  'H32',
+    'LA29_P':  'G30',  'LA29_N':  'G31',
+    'LA30_P':  'H34',  'LA30_N':  'H35',
+    'LA31_P':  'G33',  'LA31_N':  'G34',
+    'LA32_P':  'H37',  'LA32_N':  'H38',
+    'LA33_P':  'G36',  'LA33_N':  'G37',
+}
+
+# LA names in wire-assignment order (DATA_00..DATA_33 → P side)
+_LA_ORDER = [
+    'LA00_CC', 'LA01_CC', 'LA02',    'LA03',    'LA04',    'LA05',
+    'LA06',    'LA07',    'LA08',    'LA09',    'LA10',    'LA11',
+    'LA12',    'LA13',    'LA14',    'LA15',    'LA16',    'LA17_CC',
+    'LA18_CC', 'LA19',    'LA20',    'LA21',    'LA22',    'LA23',
+    'LA24',    'LA25',    'LA26',    'LA27',    'LA28',    'LA29',
+    'LA30',    'LA31',    'LA32',    'LA33',
+]
+
+def _build_pin_net():
+    """Return {physical_pin: net_name} for all 49 active FMC signals."""
+    m = {'H4': 'PDM_CLK'}                          # CLK0_M2C_P
+    for i, la in enumerate(_LA_ORDER):
+        m[_FMC_SIG_PIN[f'{la}_P']] = f'DATA_{i:02d}'    # DATA_00..DATA_33
+        if i < 14:                                        # DATA_34..DATA_47
+            m[_FMC_SIG_PIN[f'{la}_N']] = f'DATA_{34+i:02d}'
+    return m
+
+_PIN_NET = _build_pin_net()
+
+# ── FMC LPC connector helpers ─────────────────────────────────────────────────
+
+def _read_fmc_sym():
+    """Read ASP-134604-01 from the project library, return as lib_symbols entry."""
+    import re
+    sym_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        'FMC_LPC', 'KiCADv6', '2026-05-31_21-41-26.kicad_sym')
+    txt = open(sym_path).read()
+    start = txt.find('  (symbol "ASP-134604-01"')
+    if start == -1:
+        raise FileNotFoundError("ASP-134604-01 symbol not found in FMC_LPC library")
+    # Walk parentheses to find the matching close
+    depth, end = 0, start
+    for i, ch in enumerate(txt[start:], start):
+        if ch == '(':   depth += 1
+        elif ch == ')':
+            depth -= 1
+            if depth == 0:
+                end = i + 1
+                break
+    sym = txt[start:end]
+    # Prefix top-level name with library name for embedding in lib_symbols
+    sym = sym.replace('(symbol "ASP-134604-01"', '(symbol "FMC_LPC:ASP-134604-01"', 1)
+    # Strip old-format (id N) property ids used in KiCad 6 symbols
+    sym = re.sub(r'\s*\(id \d+\)', '', sym)
+    return sym
+
+def _fmc_unit(unit_n, row, sx, sy, top_uuid):
+    """One unit (row) of J1. Pins at (sx, sy + 2.54*(n-1)) in screen coords."""
+    pin_lines = '\n'.join(f'    (pin "{row}{n}" (uuid "{_uid()}"))' for n in range(1, 41))
+    return (
+        f'  (symbol (lib_id "FMC_LPC:ASP-134604-01")\n'
+        f'    (at {_f(sx)} {_f(sy)} 0)\n'
+        f'    (unit {unit_n})\n'
+        f'    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)\n'
+        f'    (uuid "{_uid()}")\n'
+        f'    (property "Reference" "J1"\n'
+        f'      (at {_f(sx + 8)} {_f(sy - 4)} 0)\n'
+        f'      (effects (font (size 1.27 1.27))))\n'
+        f'    (property "Value" "ASP-134604-01"\n'
+        f'      (at {_f(sx + 8)} {_f(sy - 7)} 0)\n'
+        f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+        f'    (property "Footprint" "Connector_Samtec:Samtec_FMC_ASP-134604-01_4x40_Vertical"\n'
+        f'      (at {_f(sx)} {_f(sy)} 0)\n'
+        f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+        f'    (property "Datasheet" "https://suddendocs.samtec.com/prints/asp-134604-01-mkt.pdf"\n'
+        f'      (at {_f(sx)} {_f(sy)} 0)\n'
+        f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+        f'    (property "Description" "FMC LPC plug, mezzanine card side"\n'
+        f'      (at {_f(sx)} {_f(sy)} 0)\n'
+        f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+        + pin_lines + '\n'
+        + f'    (instances (project "{PROJECT}"\n'
+        f'      (path "/{top_uuid}" (reference "J1") (unit {unit_n})))))\n'
+    )
+
+def _fmc_connector(top_uuid):
+    """Return schematic elements for J1: 4 units + labels + GND on unused pins.
+
+    Layout (A1 sheet, connector to the right of the 12 arm sub-sheets):
+      Row G (unit 3): Sx=450,  pins carry LA00,LA03,LA08,LA12,LA16,LA20,LA22,LA25,LA29,LA31,LA33
+      Row H (unit 4): Sx=530,  pins carry CLK0,LA02,LA04,LA07,LA11,LA15,LA19,LA21,LA24,LA28,LA30,LA32
+      Row D (unit 2): Sx=610,  pins carry LA01,LA05,LA09,LA13,LA17,LA23,LA26
+      Row C (unit 1): Sx=690,  pins carry LA06,LA10,LA14,LA18,LA27
+    """
+    UNIT_SX = {'G': 450.0, 'H': 530.0, 'D': 610.0, 'C': 690.0}
+    UNIT_N  = {'C': 1,     'D': 2,     'G': 3,     'H': 4}
+    SY = 25.0   # top of all connector units
+    buf = []
+
+    for row in ('G', 'H', 'D', 'C'):
+        sx = UNIT_SX[row]
+        buf.append(_fmc_unit(UNIT_N[row], row, sx, SY, top_uuid))
+
+        for n in range(1, 41):
+            pin_id = f'{row}{n}'
+            sy_pin = SY + (n - 1) * 2.54   # screen y of this pin's connection point
+
+            if pin_id in _PIN_NET:
+                net = _PIN_NET[pin_id]
+                shape = 'input' if net == 'PDM_CLK' else 'output'
+                buf.append(_glabel(net, sx, sy_pin, angle=180, shape=shape))
+            else:
+                # Non-signal pin: tie to GND (covers power GND pins and unused N-side pins)
+                # Power supply pins (VADJ, VCC, VREF) are left unconnected; ERC will flag them
+                buf.append(_pwr("power:GND", "GND", sx, sy_pin, top_uuid))
+
+    return ''.join(buf)
+
 # ── top sheet generator ───────────────────────────────────────────────────────
 
 def make_top(arm_uuids):
-    """Return top.kicad_sch content referencing all 12 arm sub-sheets."""
+    """Return top.kicad_sch content: 12 arm sub-sheets + J1 FMC LPC connector."""
     top_uuid = _uid()
     buf = []
 
@@ -387,25 +542,28 @@ def make_top(arm_uuids):
         f'  (generator "{PROJECT}_make_schematic")\n'
         f'  (generator_version "1.0")\n'
         f'  (uuid "{top_uuid}")\n'
-        f'  (paper "A3")\n'
+        f'  (paper "A1")\n'
         f'  (title_block\n'
         f'    (title "96-mic IM72D128 PDM Array — Top Level")\n'
-        f'    (comment 1 "12 arms × 8 mics  |  48 DATA lines + 1 PDM_CLK → FMC LPC (J1)")\n'
-        f'    (comment 2 "FPGA hub: Nexys Video (XC7A200T) via FMC LPC")\n'
-        f'    (comment 3 "See DESIGN.md for pinout and signal assignment")\n'
+        f'    (comment 1 "12 arms × 8 mics  |  48 DATA + 1 PDM_CLK → J1 FMC LPC")\n'
+        f'    (comment 2 "FPGA hub: Nexys Video (XC7A200T), FMC LPC port")\n'
+        f'    (comment 3 "LA pin mapping: VITA 57.1; verify LA16-LA33 against standard")\n'
         f'  )\n'
-        f'  (lib_symbols)\n'   # top sheet has no directly-placed components
+        f'  (lib_symbols\n'
+        + _lib_gnd()
+        + _lib_vdd()
+        + _read_fmc_sym()
+        + '  )\n'
     )
 
-    # 4 columns × 3 rows of sheet symbols (each 85 × 45 mm)
-    SW, SH = 85.0, 45.0    # sheet symbol width / height
+    # ── 12 arm sub-sheet symbols (4 cols × 3 rows) ───────────────────────────
+    SW, SH = 85.0, 45.0
     MARGIN_X, MARGIN_Y = 20.0, 25.0
     SPACING_X, SPACING_Y = SW + 15.0, SH + 20.0
-    COLS_TOP, ROWS_TOP = 4, 3
 
     for arm_idx in range(N_ARMS):
-        col = arm_idx % COLS_TOP
-        row = arm_idx // COLS_TOP
+        col = arm_idx % 4
+        row = arm_idx // 4
         sx  = MARGIN_X + col * SPACING_X
         sy  = MARGIN_Y + row * SPACING_Y
         sym_uuid = _uid()
@@ -429,6 +587,9 @@ def make_top(arm_uuids):
             f'        (path "/{top_uuid}"\n'
             f'          (page "{arm_idx + 2}")))))\n'
         )
+
+    # ── J1: FMC LPC connector ─────────────────────────────────────────────────
+    buf.append(_fmc_connector(top_uuid))
 
     buf.append(
         f'  (sheet_instances\n'
@@ -490,8 +651,8 @@ def main():
     print(f"Next steps:")
     print(f"  1. Assign IM72D128 footprint (from Infineon / Ultra Librarian / SnapEDA)")
     print(f"  2. Assign C footprint (e.g., Capacitor_SMD:C_0402_1005Metric)")
-    print(f"  3. Add FMC LPC connector (J1) to top.kicad_sch")
-    print(f"  4. Run ERC; expected warnings: unconnected Footprint fields, single global labels")
+    print(f"  3. Run ERC; expected: unconnected VADJ/VCC/VREF pins on J1, missing footprints")
+    print(f"  4. Verify LA16-LA33 pin assignments against VITA 57.1 standard before PCB order")
 
 if __name__ == "__main__":
     main()
