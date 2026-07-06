@@ -107,7 +107,7 @@ Eigenvector/eigenvalue-based methods decompose the array's Spatial Covariance Ma
 
 ### ML-based Beamforming
 
-* overview
+* Overview
   - shown to be better than conventional SVD-based methods, particularly in dynamic or complex environments
   - more adaptable to varying signal environments
   - Classification-Based Transfer Learning (CBTL) and Denoising-Based Transfer Learning (DBTL) are better than or equal to traditional blind beamforming across diverse conditions
@@ -147,7 +147,7 @@ Below is a overview of some commonly used beamforming algorithms.
   - can increase gain of on-axis signals
   - can attenuate off-axis signals (but very frequency-dependent)
   - symmetric, 0deg and 180deg are equivalent
-  - can increase system SNR (AGWN sums to zero)
+  - can increase system SNR (because AGWN sums to zero)
     * e.g., can get 3dB SNR gain with every additional mic used
     * however, lower SNR mics can get same SNR with fewer mics, or better SNR with same number of mics
   - pros
@@ -229,7 +229,9 @@ Below is a overview of some commonly used beamforming algorithms.
     * signal subspace, spanned by the K largest eigenvectors
     * noise subspace, consisting of the remaining N-K eigenvectors
   - the spectrum is the inverse projection of each steering vector onto the noise subspace
-    * ?
+    * the noise subspace can be thought of as the set of directions that do not contain the signals
+    * projection of the correct steering vector onto the noise subspace is small, and the reciprocal magnifies it to a large spike
+    * an incorrect steering vector generally has a larger projection onto the noise space, so its reciprocal stays small
   - used primarily for estimating Direction-of-Arrival (DoA) of multiple signal sources
   - approach
     * Signal Model: create Spatial Covariance Matrix from input signals
@@ -242,7 +244,7 @@ Below is a overview of some commonly used beamforming algorithms.
     * DoA Estimation: directions corresponding to peaks are the estimated DoAs of the sources
   - can resolve multiple closely-spaced sources
   - provides high accuracy in low-noise and low-reverb environments
-  - need to provide an estimate of the number of sources -- could be problematic in practice
+  - need to provide an estimate of the number of sources, which could be problematic in practice
     * undercount: n_sources < true value of K
       - signal subspace is too small, some signal energy leaks into the noise subspace
       - the true source peaks may weaken or merge, making it hard to detect them
@@ -273,6 +275,25 @@ Below is a overview of some commonly used beamforming algorithms.
   - uses sources' spatial coherence to separate overlapping sources
   - *Ref: Sijtsma, P. (2007). "CLEAN Based on Spatial Source Coherence." Int. J. Aeroacoustics 6(4):357–374. doi:10.1260/147547207783359459*
 
+#### HR-CLEAN_SC
+  - high-resolution acoustic beamforming cleanup method
+    * improves on CLEAN-SC by better separating closely spaced sound sources and suppressing sidelobe artifacts
+  - starts with a "dirty" map from conventional beamforming
+    * finds the strongest peak
+    * estimates the coherent contribution associated with that source
+    * subtracts that contribution from the map
+    * repeats until stopping criteria is met
+  - can (in many cases) resolve sources that are closure than the usual Rayleigh limit
+  - the resulting "cleaned" map improves both source location and strength estimates
+  - CLEAN-SC removes artifacts iteratively by exploiting source coherence
+  - HR-CLEAN_SC pushes resolution further for difficult cases with closely spaced sources
+    * this is especially useful in cases where multiple sources overlap in angle or frequency
+  - performance suffers when coherence is lost -- e.g., in wind tunnels, or long-range outdoor environments
+  - rule of thumb:
+    * use CLEAN-SC if you want a straightforward acoustic-map cleanup method that is robust and widely established
+    * use HR-CLEAN-SC if you need cleaner separation of closely spaced acoustic sources and can benefit from the extra resolution
+    * use MUSIC if your problem is fundamentally DOA estimation and you have a reliable covariance matrix and array model
+
 #### CLEAN-PSF
   - building block to understand CLEAN-SC
   - deconvolution technique from astronomy, for where less bright stars are near very bright ones
@@ -284,13 +305,6 @@ Below is a overview of some commonly used beamforming algorithms.
     * keep going until all sources are removed from the dirty map
   - assumes sources behave like monopoles with negligible directivity effects
     * not always true -- e.g., wind tunnels, aircraft fly-over, etc.
-
-#### HR-CLEAN_SC
-  - ?
-
-### COMET2
-  - gridless version of (HR-)CLEAN-SC are not as accurate as COMET2
-  - ?
 
 ### Plane Wave Decomposition (PWD)
   - signal-independent beamformer for spherical mic arrays
