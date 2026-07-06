@@ -142,47 +142,57 @@ Analogous to nb13:
 
 **Channel balance (ambient RMS)**
 
-All 16 channels live and well-matched. Max/min RMS ratio: **1.22×** (ch14 loudest, ch13 quietest).
+All 16 channels live and well-matched. Max/min RMS ratio: **1.34×** (ch1 loudest, ch10 quietest).
 Far better than Phase 2 ReSpeaker (3.6×). The UMA-16's factory-matched MEMS mics need no calibration for gain.
+
+*Re-run note*: an earlier attempt at this cell reported 15 of 16 channels at exactly zero RMS
+(max/min ratio `inf`). Cause was not a code bug — the UMA-16 was unplugged, so `sd.query_devices()`
+never found a device with `'uma'` in its name and the notebook's fallback silently opened ALSA's
+generic `sysdefault` device instead, which routed to the laptop's 2-channel built-in mic. Confirmed
+via `lsusb` (device absent) and `arecord -l` (no `UMA16v2` card). After reconnecting the array,
+`arecord -l` showed `card 4: UMA16v2` and `sd.query_devices()` resolved it correctly at the same
+index (12), restoring the name-based match. Re-running cells 2–3 gave the balanced result above.
 
 **Beamforming at 3000 Hz** (233 Welch blocks, 2048-sample window, 50% overlap; off-axis source)
 
 | Algorithm | Peak azimuth | Notes |
 |---|---|---|
-| D&S | −48.6° | |
-| MVDR | −50.1° | |
-| CLEAN-SC | −48.6° | |
+| D&S | −65.0° | |
+| MVDR | −64.5° | |
+| CLEAN-SC | −65.0° | |
 
-All three agree within **1.5°** -- **PASS**.
+All three agree within **0.5°** -- **PASS**.
 With a single dominant source, CLEAN-SC converges with D&S (contrast with ambient run where CLEAN-SC diverged after subtracting the dominant source and finding residual noise).
 
-The 2D peak was reported at Az=−45°, el=+5°. The Az is clipped at the ±45° grid boundary; the true source is ~3–5° beyond the edge. The El estimate (+5°) reflects the actual elevation offset of the source.
+The 2D peak was reported at Az=−45°, el=+4°. The Az is clipped at the ±45° grid boundary; the true source is beyond the edge. The El estimate (+4°) reflects the actual elevation offset of the source.
 
 **Frequency Sweep: peak azimuth vs. frequency**
 
 | Freq (Hz) | D&S peak | Notes |
 |---|---|---|
-| 500 | −6.2° | Near-omni; no directionality |
-| 750 | −8.7° | Near-omni |
-| 1000 | −8.4° | Near-omni |
-| 1500 | −24.5° | Beginning to resolve source direction |
-| 2000 | −20.9° | Resolving but wide beam (~73° HPBW) |
-| 2500 | −42.0° | Locking in |
-| 3000 | −48.6° | Stable — good localization |
-| 3500 | −46.8° | Stable |
-| 4000 | −20.6° | Near-Nyquist instability begins |
-| 4500 | −15.6° | Above Nyquist — aliasing |
-| 5000 | −31.6° | Above Nyquist — aliasing |
+| 500 | +4.6° | Near-omni; no directionality |
+| 750 | −20.1° | Near-omni |
+| 1000 | −21.3° | Near-omni |
+| 1500 | −61.2° | Beginning to resolve source direction |
+| 2000 | −62.4° | Resolving but wide beam (~73° HPBW) |
+| 2500 | −68.2° | Locking in |
+| 3000 | −65.0° | Stable — good localization |
+| 3500 | −71.5° | Stable |
+| 4000 | −73.9° | Near-Nyquist instability begins |
+| 4500 | −66.8° | Above Nyquist — aliasing |
+| 5000 | +45.4° | Above Nyquist — aliasing |
 
 Matches nb15 predictions closely: near-omni below ~1.5 kHz, progressive locking from 1.5-2.5 kHz, stable localization 2.5-3.5 kHz, aliasing above the 4083 Hz spatial Nyquist. The practical operating window is **2.5–3.7 kHz**.
+
+Absolute azimuth values shifted from the previous run (source/array were repositioned between
+sessions) but the qualitative behavior — near-omni at low frequency, stable lock in the 2.5–3.5 kHz
+window, aliasing past spatial Nyquist — is unchanged.
 
 ### nb17 — Calibration (`notebooks/17_uma16_calibration.ipynb`)
 *Requires UMA-16 connected via USB*
 
 Analogous to nb14. Cross-correlation gain+phase calibration.
 Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
-
-**N.B. Have to re-run this, too much background noise when calibrating**
 
 ### nb17 Results
 
