@@ -8,7 +8,11 @@ FPGA-fed array — the steps below get the current 16-ch pipeline running standa
 the meantime, and most of the setup (OS packages, PortAudio, OpenBLAS) carries over
 directly to that later phase.
 
-Assumes Raspberry Pi OS (Debian Bookworm), 64-bit, Pi 5 (4 or 8 GB).
+Assumes Raspberry Pi OS, 64-bit, Pi 5 (4 or 8 GB). Written against Debian Bookworm; nothing
+here is Bookworm-specific (package names, PortAudio, and the CSI-camera/`picamera2` situation
+are all the same on Trixie), but it hasn't been verified hands-on against a Trixie-based image.
+On Trixie, do the `numpy.show_config()` and `cv2.imshow` checks below first since package
+versions (NumPy 2.x, newer OpenCV) differ from Bookworm even though nothing structural changes.
 
 ## 1. System packages
 
