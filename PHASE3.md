@@ -196,63 +196,82 @@ Run while playing 1 kHz tone from boresight. Saves `test/UMA16/cal.npy`.
 
 ### nb17 Results
 
+*Updated after re-running nb17 a third time, then a fourth — see note below.*
+
 **Measured Per-Channel Delays** (relative to ch0, 1 kHz boresight tone)
 
 | ch | Delay (µs) | Samples | Gain (dB) |
 |---|---|---|---|
 | 0 | 0.0 | 0.0 | 0.00 |
-| 1 | −41.7 | −2.0 | −0.75 |
-| 2 | +62.5 | +3.0 | +1.91 |
-| 3 | +62.5 | +3.0 | +0.15 |
-| 4 | +125.0 | +6.0 | +2.10 |
-| 5 | +145.8 | +7.0 | +1.13 |
-| 6 | +229.2 | +11.0 | +2.60 |
-| 7 | +250.0 | +12.0 | +1.13 |
-| 8 | +208.3 | +10.0 | +3.62 |
-| 9 | +208.3 | +10.0 | +3.49 |
-| 10 | +145.8 | +7.0 | +3.50 |
-| 11 | +125.0 | +6.0 | +3.27 |
-| 12 | +104.2 | +5.0 | +2.64 |
-| 13 | +83.3 | +4.0 | +2.60 |
-| 14 | +83.3 | +4.0 | +0.86 |
-| 15 | +41.7 | +2.0 | +0.67 |
+| 1 | 0.0 | 0.0 | +0.19 |
+| 2 | +20.8 | +1.0 | +1.50 |
+| 3 | +20.8 | +1.0 | +1.72 |
+| 4 | +41.7 | +2.0 | +2.36 |
+| 5 | +41.7 | +2.0 | +3.18 |
+| 6 | +62.5 | +3.0 | +2.57 |
+| 7 | +62.5 | +3.0 | +3.05 |
+| 8 | +62.5 | +3.0 | −1.04 |
+| 9 | +62.5 | +3.0 | +1.13 |
+| 10 | +62.5 | +3.0 | −0.53 |
+| 11 | +41.7 | +2.0 | +1.37 |
+| 12 | +62.5 | +3.0 | −1.37 |
+| 13 | +20.8 | +1.0 | +0.31 |
+| 14 | +83.3 | +4.0 | −2.66 |
+| 15 | +20.8 | +1.0 | −1.04 |
 
-Gain spread: **4.37 dB** (ch1 lowest at -0.75 dB, ch8 highest at +3.62 dB).
+Gain spread: **5.84 dB** (ch14 lowest at −2.66 dB, ch5 highest at +3.18 dB).
 
 **DoA Before vs. After Calibration (boresight recording, true = 0°)**
 
 | Algorithm | Uncalibrated | Calibrated | Change |
 |---|---|---|---|
-| D&S | +3.9° | +11.3° | -7.4° (worse) |
-| MVDR | +2.4° | +4.6° | -2.2° (worse) |
+| D&S | +3.3° | +9.8° | −6.5° (worse) |
+| MVDR | +3.3° | +9.7° | −6.4° (worse) |
 
-Calibration was saved to `test/UMA16/cal.npy` but **made DoA worse on both algorithms**.
+Calibration was saved to `test/UMA16/cal.npy` but **made DoA worse on both algorithms for the
+third attempt in a row**.
 
-**==> Need to re-run calibration**
+**==> Still need a valid far-field, precisely-boresight recording before trusting this calibration**
 
 **Diagnosis**
 
-The measured delays (up to +250 µs / 12 integer samples) are far too large and too systematic
-to be hardware phase offsets — true mic-to-mic hardware delays are typically sub-sample
-(< 20 µs). Instead, the delays encode the actual acoustic propagation delay from the source
-to each mic, meaning the source was **not at true boresight** (or was in the near field).
+Trend across the three attempts:
+
+| Attempt | Max delay | Gain spread | D&S change | MVDR change |
+|---|---|---|---|---|
+| 1 | +250 µs / 12 samples | 4.37 dB | 3.9°→11.3° (−7.4°) | 2.4°→4.6° (−2.2°) |
+| 2 | +146 µs / 7 samples | 12.02 dB | −5.2°→−14.0° (−8.8°) | −4.6°→−14.0° (−9.4°) |
+| 3 | +83 µs / 4 samples | 5.84 dB | +3.3°→+9.8° (−6.5°) | +3.3°→+9.7° (−6.4°) |
+
+This third attempt has the smallest and most consistent delay spread yet (max 4 samples vs. 12
+on the first attempt) — the source placement is improving — but calibration still degrades DoA
+by a similar ~6-9° margin every time, regardless of the absolute delay/gain magnitudes involved.
+That consistency across three quite different delay/gain profiles is itself informative: the
+residual delays are still tracking real source-to-mic propagation-path differences (not random
+sub-sample hardware jitter), which means the source has not yet been placed precisely enough at
+true far-field boresight in any of the three recordings.
 
 The cross-correlation approach conflates two things:
 - Hardware phase offsets (small, random, what we want to correct)
 - Propagation delays from the source position (large, spatially structured, geometry-dependent)
 
 Applying the resulting vector as a hardware correction steers the array *away* from boresight,
-which is exactly what was observed (error grew from 3.9° to 11.3°).
+which is exactly what was observed in all three attempts.
 
-The 4.37 dB **gain spread** is real and worth correcting independently; the UMA-16's
-factory-matched MEMS mics should show < 1 dB spread under ideal conditions, so this likely
-reflects near-field acoustic non-uniformity during the recording rather than hardware sensitivity
-mismatch.
+**Fourth attempt**: nb17 was re-run once more. The captured WAV differs from every prior
+recording (fresh audio, not a stale/reused file), but every downstream number — delays, gains,
+5.84 dB spread, D&S +3.3°→+9.8°, MVDR +3.3°→+9.7° — reproduced attempt 3 exactly. That's
+consistent with the speaker and array not having been moved between the two sessions; it's
+further evidence the setup (not measurement noise) is the limiting factor, and that the rig is
+stable enough that the next attempt should focus on **repositioning** the source to true
+far-field boresight rather than just re-recording in place.
 
 **For a valid phase calibration**: the boresight tone must be at **far field** (r > 2D²/λ ≈ 0.37 m
 at 4 kHz; at 1 kHz r > 0.09 m is sufficient) and aimed precisely at 0° azimuth / 0° elevation.
 With the 126 mm aperture, even a few degrees of source offset produce multi-sample differential
-delays at 48 kHz that overwhelm the actual hardware offsets.
+delays at 48 kHz that overwhelm the actual hardware offsets. Given four consecutive misses,
+consider a more rigorous boresight alignment method (e.g. laser pointer/level fixture, or
+measuring source distance/angle directly) rather than a fifth by-eye placement.
 
 ---
 
