@@ -14,6 +14,10 @@ confirmed hands-on on Trixie as well. Package names, PortAudio, and the CSI-came
 is **not** installed by default (see §2) — do that check/install regardless of which OS
 version you're on.
 
+**Desktop vs. Lite**: §5 (Display) assumes the Desktop image, which auto-starts a GUI
+session (X11 or Wayland). On **Raspberry Pi OS Lite**, there is no display server
+running at all — see the Lite-specific fix in §5.
+
 ## 1. System packages
 
 ```bash
@@ -120,7 +124,8 @@ Use `v4l2-ctl --list-devices` to find the right `--video` index — it will very
 
 ## 5. Display
 
-`cv2.imshow` needs a real GUI session:
+`cv2.imshow` needs a real GUI session. The options below (HDMI/VNC "just work") assume
+the **Desktop** image, which auto-starts a GUI session on boot.
 
 - HDMI display attached directly to the Pi — works with no extra setup.
 - VNC (e.g. RealVNC, built into Raspberry Pi OS) — works.
@@ -129,6 +134,38 @@ Use `v4l2-ctl --list-devices` to find the right `--video` index — it will very
 - SSH with `-X`/`-Y` forwarding — technically works but X11-forwards every video frame
   over the network; expect it to be far too slow for a live 15-20 fps overlay. Only
   useful for a one-off sanity check, not real use.
+
+### Raspberry Pi OS Lite
+
+**Confirmed on hardware**: Lite has no display server running at all — no X11, no
+Wayland compositor. `cv2.imshow` fails with something like:
+
+```
+qt.qpa.xcb: could not connect to display
+qt.qpa.plugin: Could not load the Qt platform plugin "xcb" ...
+```
+
+This looks like a GTK-vs-Qt OpenCV backend problem (the plugin list even offers
+`wayland`), but it isn't — there is simply no compositor for any backend to attach to.
+Installing a full desktop environment works but is heavier than necessary for a
+Pi that's just driving a single fixed camera display. The minimal fix is a bare X
+server with no window manager, using `xinit` to launch the script as the sole X
+client:
+
+```bash
+sudo apt install --no-install-recommends xserver-xorg xinit x11-xserver-utils
+```
+
+Then, from the Pi's own console (HDMI + keyboard — `xinit` needs to own the real
+display, this does not work over plain SSH):
+
+```bash
+xinit /path/to/venv/bin/python /path/to/acoustic_camera_p3.py --video 0 --grid_deg 1.0 -- :0
+```
+
+No window manager is needed — the script's OpenCV window fills the display and the
+mouse-drag frequency sliders still work, just without title bars/borders. Pressing
+`q` in the window quits the app and the X server exits with it, back to the console.
 
 ## 6. Performance expectations
 
