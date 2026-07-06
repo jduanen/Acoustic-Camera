@@ -13,7 +13,7 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
 
 The mic array captures the sound field simultaneously at all microphones. A **steering matrix** encodes the expected inter-mic phase pattern for each candidate direction (az, el). A beamformer correlates the received signals against each steering vector and assigns a power value to each grid cell, producing an **energy map** that is overlaid on the video frame.
 
-The key parameters are: **aperture** (sets beam width — larger = sharper), **mic spacing** (sets the spatial Nyquist ceiling; closer = higher frequency limit), and **snapshot count** (sets CSM estimation quality; more = lower noise floor).
+The key parameters are: **aperture** (sets beam width: larger = sharper), **mic spacing** (sets the spatial Nyquist ceiling; closer = higher frequency limit), and **snapshot count** (sets CSM estimation quality; more = lower noise floor).
 
 ### Selected Beamforming Algorithm Families
 
@@ -73,7 +73,7 @@ Usable directionality requires a frequency of roughly *f > c / D* (which is aper
 CSM is a frequency-domain matrix of cross-powers between every mic pair; the universal input to all adaptive and subspace beamformers.
 
 ![CSM](assets/concept_figures/concept_csm.png)
-**Figure:** *Left: |CSM| magnitude heatmap for a single snapshot. Right: CSM convergence as N_snap increases (1 → 256), where N_snap is the number of independent short-time frames averaged to estimate the CSM — more snapshots reduce the noise floor and improve MVDR/MUSIC stability.*
+**Figure:** *Left: |CSM| magnitude heatmap for a single snapshot. Right: CSM convergence as N_snap increases (1 → 256), where N_snap is the number of independent short-time frames averaged to estimate the CSM -- more snapshots reduce the noise floor and improve MVDR/MUSIC stability.*
 
 #### Point Spread Function (PSF)
 
@@ -101,7 +101,7 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 |---|---|---|---|
 | **Regular grid** | Uniform | Easy to build; predictable PSF | High, periodic sidelobes; spatial aliasing above Nyquist |
 | **Archimedean spiral** | Linear increase with angle | Simple single-arm; even radial coverage | Worse MSL than multi-arm variants |
-| **Dougherty log-spiral** | Equal arc-length | Denser center; >10 dB sidelobe suppression at high freq | Single arm — less uniform outer coverage |
+| **Dougherty log-spiral** | Equal arc-length | Denser center; >10 dB sidelobe suppression at high freq | Single arm; less uniform outer coverage |
 | **Arcondoulis** | Adjustable squash | Elliptical or non-circular shapes; tunable center density | More design parameters to optimize |
 | **Underbrink** ★ | Multi-arm log-spiral | Best all-around: high resolution + good MSL over wide area; circular symmetry | Patented (US 6,089,671); more complex layout |
 | **Brüel & Kjær spiral** | Non-uniform along spokes | Easily disassembled; two concentric hoops | Proprietary geometry |
@@ -109,7 +109,7 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 ★ Underbrink is the recommended pattern for this project (see Phase 1 findings). Literature confirms it outperforms other patterns in both resolution and MSL across tested frequencies.
 
 ![2D Array Configurations](assets/concept_figures/array_patterns_2d.png)
-**Figure:** *Top row: mic positions (all arrays normalised to 300 mm aperture); Bottom row: D&S PSF @ 4 kHz — SLL and aperture shape are visible consequences of each layout choice*
+**Figure:** *Top row: mic positions (all arrays normalised to 300 mm aperture); Bottom row: D&S PSF @ 4 kHz -- SLL and aperture shape are visible consequences of each layout choice*
 
 In the initial phases of this project, I will use a 2D microphone array. In later phases a 3D array might be used.
 
@@ -126,11 +126,11 @@ See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 
 ## Design Trade-offs
 
-### Core Tensions
+### Core Tradeoffs/Tensions
 
 | Parameter | Larger/More | Smaller/Fewer | Sweet spot |
 |---|---|---|---|
-| **Aperture** | Narrower beam, better low-freq | Portable, cheaper, closer far-field | **300 mm** (8°@8kHz, 66°@1kHz) |
+| **Aperture** | Narrower beam, better at low-freq | Portable, cheaper, closer far-field | **300 mm** (8°@8kHz, 66°@1kHz) |
 | **Mic count** | Lower sidelobes, better SNR | Less compute and cost | **96 mics** (47% packing at 300 mm) |
 | **Mic spacing** | Better directionality at low freq | Aliasing-free to higher freq | **21 mm min** (Nyquist at 8 kHz) |
 | **Density** | Better high-freq detail | Lower cost | 96 mics at ~27 mm avg spacing |
@@ -208,15 +208,15 @@ A number of existing commercial products were examined to get a sense of their s
 | Convergence Instruments | ACAM-64 | 64 (32×32) | ~187×182 mm | 20 Hz–8 kHz | USB | $2,100; open protocol; 16 kHz audio |
 | Sorama | CAM64 | 64 MEMS PDM | 160×160 mm | 1.2–15 kHz (FF) | PoE | Pyramid form factor with handle |
 | Sorama | CAM1K | 1024 MEMS | 640×640 mm | 300 Hz–15 kHz (FF) | PoE | Integrated HD camera; 5.5 kg |
-| gfai Tech | Mikado | 96 MEMS | hexagon | — | — | Also Ring32/48/72 and large wind-tunnel arrays |
-| Head acoustics | Visor VMA V | 60 or 120 MEMS | 0.3 m or 1 m disk | — | — | Depth camera at center; paired/irregular spacing |
+| gfai Tech | Mikado | 96 MEMS | hexagon | -- | -- | Also Ring32/48/72 and large wind-tunnel arrays |
+| Head acoustics | Visor VMA V | 60 or 120 MEMS | 0.3 m or 1 m disk | -- | -- | Depth camera at center; paired/irregular spacing |
 | mh Acoustics | Eigenmike em32/em64 | 32 or 64 | spherical | 20 Hz–20 kHz | USB/Dante | HOA reference platform; up to 7th-order Ambisonics |
-| Brüel & Kjær | various | — | spherical/wheel/grid | — | — | Research-grade; many geometries |
-| Clockworks SP | A²B array | 8 | 100 mm ring | — | A²B bus | Infineon IM68D130 PDM mics; twisted-pair daisy-chain |
+| Brüel & Kjær | various | -- | spherical/wheel/grid | -- | -- | Research-grade; many geometries |
+| Clockworks SP | A²B array | 8 | 100 mm ring | -- | A²B bus | Infineon IM68D130 PDM mics; twisted-pair daisy-chain |
 | introlab | 16SoundsUSB | 8 or 16 | configurable | 8–96 kHz SR | USB | Open hardware; XMOS xCORE-200; electret or MEMS |
 
 Key observations from the survey:
-- **64–96 mics** is the commercial sweet spot for handheld far-field use (1-8 kHz, ~0.16-0.64 m aperture)
+- **64-96 mics** is the commercial sweet spot for handheld far-field use (1-8 kHz, ~0.16-0.64 m aperture)
 - **USB** dominates for portable/desktop use; **PoE** for fixed installations; **A²B/Dante** for multi-node
 - **PDM MEMS mics** are standard; electret arrays appear only in large wind-tunnel configurations
 - **Integrated video camera** is universal in commercial products and is always co-located at array center
@@ -233,10 +233,10 @@ A number of open-source beamforming projects and software packages were also stu
 | Ben Wang (2023) | 192-mic MEMS, 24 radial arms, exponential spacing | FPGA → GbE → GPU host | GPU-fused cross-correlation calibration; PyTorch gradient descent for mic positions + speed of sound |
 | Sonicam / CMU ECE (2020) | 96-mic, 6× 4×4 MEMS panels | FPGA → Ethernet | TDK InvenSense mics; large-format panel array |
 | Kickstarter handheld (2018) | 64-mic, 3 concentric rings | ARM Cortex-A53, Linux | Battery-powered; 7" touchscreen; 10–24 kHz; 100 fps acoustic |
-| 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | — | Early large-format MEMS grid demo |
+| 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | -- | Early large-format MEMS grid demo |
 
 Key takeaways:
-- **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) — offloads PDM decimation and keeps the host pipeline simple
+- **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) -- offloads PDM decimation and keeps the host pipeline simple
 - **Calibration via cross-correlation** (Ben Wang's approach) is practical at scale: GPU-fused FFT pairs + gradient descent converges in seconds and recovers both mic positions and speed of sound simultaneously
 - **Concentric-ring and spiral geometries** appear in handheld products; rectangular grids appear in panel/tile designs
 - **Standalone operation** (ARM + touchscreen + battery) is achievable at 64 mics; larger arrays require tethered compute
@@ -254,7 +254,7 @@ Full results and methodology are in: [PHASE1](./PHASE1.md)
 
 ### Recommended Array Configuration
 
-**Underbrink H=12×8, α=22°** — 96 mics, 300 mm aperture, 12.9 mm min spacing
+**Underbrink H=12×8, α=22°**: 96 mics, 300 mm aperture, 12.9 mm min spacing
 
 - Best side-lobe suppression of all patterns tested: -24.4 dB @ 4 kHz, -18.9 dB @ 8 kHz
 - Alias-free to ~13 kHz (target ceiling: 8 kHz, 1.7× margin)
@@ -315,7 +315,7 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
   at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable
 
-## Phase 2: Smoke Test — ReSpeaker 4-Mic Array
+## Phase 2: Smoke Test: ReSpeaker 4-Mic Array
 
 Full results and methodology: [PHASE2](./PHASE2.md)
 
@@ -362,7 +362,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
-## Phase 3: Intermediate Array Test — miniDSP UMA-16 v2
+## Phase 3: Intermediate Array Test: miniDSP UMA-16 v2
 
 Full results and methodology: [PHASE3](./PHASE3.md)
 
@@ -415,7 +415,7 @@ each algorithm.
 
 Grid density is set by `--grid_deg` (degrees per point); number of grid points is derived as
 `round(fov / grid_deg) + 1` in each axis. At the default 0.5°/pt the UMA-16's ~43° HPBW at
-3 kHz is already sampled ~86× — far more than needed. A 1°/pt grid is sufficient for this
+3 kHz is already sampled ~86×, which is far more than needed. A 1°/pt grid is sufficient for this
 array and cuts steering matrix memory 4× (5.3 MB → 1.4 MB), bringing all four algorithms
 within the 20 fps budget.
 
@@ -475,7 +475,7 @@ Full details: [DESIGN](./DESIGN.md)
 
 - **Pipeline**: PDM mics → FPGA hub → GbE → Linux host PC with GPU
 - **FPGA** handles: PDM clock distribution, per-channel CIC + FIR decimation (3.072 MHz PDM → 48 kHz 24-bit PCM), synchronous sampling, GbE packetization (UDP, with sequence numbers)
-- **Data rate**: 96 ch × 48 kHz × 24 b ≈ 110 Mbps — fits within 1 GbE
+- **Data rate**: 96 ch × 48 kHz × 24 b ≈ 110 Mbps; fits within 1 GbE
 - **FPGA** candidates: Lattice ECP5 (open-source toolchain) or Xilinx Artix-7 XC7A100T (resource headroom)
 - inspired by Ben Wang's 192-mic FPGA design
 
@@ -485,19 +485,19 @@ Full details: [DESIGN](./DESIGN.md)
 - Algorithm progression: D&S → MVDR → CLEAN-SC → ML
 - USB webcam at array center; OpenCV overlay of energy map on video
 
-### GUI (Phase 2/3 — USB-tethered)
+### GUI (Phase 2/3: USB-tethered)
 
 Live video overlay · frequency band selector · dynamic range sliders · algorithm selector ·
 persistence slider · record/stop · SPL meter · status bar
 
-### GUI (Phase 4b — standalone field use)
+### GUI (Phase 4b: standalone field use)
 
 Embedded web UI over WiFi (inclusive or) 7" touchscreen · physical record/stop button · battery operation.
 
 ## Development Plan
 Full details: [PLAN](./PLAN.md)
 
-Each phase delivers a working end-to-end system — never "not yet working" for more than one phase at a time.
+Each phase delivers a working end-to-end system; never "not yet working" for more than one phase at a time.
 
 | Phase | Hardware | Goal | Status |
 |---|---|---|---|
@@ -524,7 +524,7 @@ Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
 |---|---|---|---|---|
 | Lattice ECP5-85F | 84K | 3.4 Mb | Yosys/nextpnr (open-source) | OrangeCrab, ULX3S |
 | **Xilinx Artix-7 XC7A200T** | **134K** | **13.1 Mb** | **Vivado; chosen for Phase 4** | **Nexys Video (FMC LPC)** |
-| Intel Cyclone 10 LP | — | — | Quartus | Cyclone 10 LP Eval Kit |
+| Intel Cyclone 10 LP | -- | -- | Quartus | Cyclone 10 LP Eval Kit |
 
 ### Software stack
 
