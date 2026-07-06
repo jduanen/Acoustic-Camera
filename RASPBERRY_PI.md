@@ -8,11 +8,11 @@ FPGA-fed array — the steps below get the current 16-ch pipeline running standa
 the meantime, and most of the setup (OS packages, PortAudio, OpenBLAS) carries over
 directly to that later phase.
 
-Assumes Raspberry Pi OS, 64-bit, Pi 5 (4 or 8 GB). Written against Debian Bookworm; nothing
-here is Bookworm-specific (package names, PortAudio, and the CSI-camera/`picamera2` situation
-are all the same on Trixie), but it hasn't been verified hands-on against a Trixie-based image.
-On Trixie, do the `numpy.show_config()` and `cv2.imshow` checks below first since package
-versions (NumPy 2.x, newer OpenCV) differ from Bookworm even though nothing structural changes.
+Assumes Raspberry Pi OS, 64-bit, Pi 5 (4 or 8 GB). Written against Debian Bookworm and
+confirmed hands-on on Trixie as well. Package names, PortAudio, and the CSI-camera/
+`picamera2` situation are the same on both. One real difference found on Trixie: OpenBLAS
+is **not** installed by default (see §2) — do that check/install regardless of which OS
+version you're on.
 
 ## 1. System packages
 
@@ -45,17 +45,47 @@ pip install numpy scipy sounddevice
 `--system-site-packages` matters here: it lets the venv see the apt-installed
 `cv2` (with GUI support) instead of pulling in a headless wheel from PyPI.
 
-Confirm NumPy is linked against OpenBLAS (this is what the beamforming math actually
-rides on):
+**Confirmed on Raspberry Pi OS Trixie: OpenBLAS is not installed by default.** A stock
+Trixie image only has `libblas3`/`liblapack3` (Netlib reference implementations — no
+NEON vectorization, single-threaded). `numpy.show_config()` on an unmodified Trixie
+install shows generic `name: blas` / `name: lapack` with `openblas configuration:
+unknown`, which is the tell that it's riding on the reference implementation rather
+than OpenBLAS. This makes MVDR/MUSIC (`scipy.linalg.inv`, `numpy.linalg.eigh`) far
+slower than the estimates in §6 — install it explicitly:
+
+```bash
+sudo apt install libopenblas0-pthread
+```
+
+Debian's `update-alternatives` gives the OpenBLAS build a higher priority (100) than
+the reference implementation (10), so this switches automatically — confirm with:
+
+```bash
+update-alternatives --display libblas.so.3-aarch64-linux-gnu
+update-alternatives --display liblapack.so.3-aarch64-linux-gnu
+```
+
+Both should report "link currently points to" a path containing `openblas-pthread`.
+If not, force it with `sudo update-alternatives --config libblas.so.3-aarch64-linux-gnu`
+(and the `liblapack` equivalent) and pick the OpenBLAS entry.
+
+Then confirm from Python:
 
 ```bash
 python3 -c "import numpy; numpy.show_config()"
 ```
 
-Look for `openblas` in the output. Raspberry Pi OS's apt `python3-numpy` and current
-piwheels builds both link OpenBLAS by default, so this should need no extra action —
-just worth a one-time check, since a reference-BLAS fallback would make MVDR/MUSIC
-(`scipy.linalg.inv`, `numpy.linalg.eigh`) far slower than the estimates below.
+Note that even with OpenBLAS correctly selected via `update-alternatives`,
+`numpy.show_config()` may still print the generic `blas`/`lapack` name with
+`openblas configuration: unknown` rather than an explicit `openblas` entry — NumPy's
+build-time pkgconfig detection doesn't see through Debian's alternatives indirection.
+The `update-alternatives --display` output above is the reliable way to confirm which
+implementation is actually linked, not `show_config()`'s `name` field.
+
+This was not something the Bookworm-era assumption in this guide accounted for
+(Bookworm's `python3-numpy` was believed to pull in OpenBLAS directly) — treat "is
+OpenBLAS actually selected" as a required check on any fresh Pi OS install, not a
+formality.
 
 ## 3. UMA-16 v2 hookup
 
@@ -144,3 +174,4 @@ trustworthy than the estimates in the table above.
 | Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or add `picamera2` support (Phase 4 work) |
 | `cv2.imshow` hangs / X errors over SSH | no display session | attach HDMI or use VNC |
 | Low fps at default settings | 0.5°/pt grid + MVDR/MUSIC/CLEAN-SC too heavy for Pi 5 | `--grid_deg 1.0`, start with `--algo ds` |
+| MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
