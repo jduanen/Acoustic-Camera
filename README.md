@@ -396,6 +396,9 @@ Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz;
 2000-3700 Hz for meaningful 2D directionality. With *N*=16 mics, MVDR/MUSIC provide measurable
 super-resolution benefit over D&S.
 
+Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
+for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
+
 ### Algorithm Benchmark Script
 
 ```bash
