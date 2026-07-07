@@ -332,7 +332,7 @@ def main():
 
     with stream:
         while True:
-            time.sleep(0.05)
+            loop_start = time.monotonic()
 
             t0 = time.monotonic()
             if cam is not None:
@@ -408,6 +408,10 @@ def main():
                 mouse_registered = True
             key_result = cv2.waitKey(1) & 0xFF
             t5 = time.monotonic()
+
+            # Adaptive pacing: sleep only the remainder of the 50 ms (20 fps) budget,
+            # rather than always sleeping the full 50 ms on top of the work above.
+            time.sleep(max(0.0, 0.05 - (t5 - loop_start)))
 
             if args.profile:
                 prof['cam']      += t1 - t0
