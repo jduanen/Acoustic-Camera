@@ -294,24 +294,27 @@ hardware, those turned out to matter more than the compute estimates did. The sc
 python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0 --video 0 --profile
 ```
 
-**Confirmed on hardware** (Pi 5, D&S, 1.0°/pt, real UMA-16 + USB webcam):
+**Confirmed on hardware** (Pi 5, D&S, 1.0°/pt, real UMA-16):
 
-| Stage | With camera | No camera (`--video 99`) |
-|---|---|---|
-| `cam.read()` | 40.7 ms | 0.1 ms |
-| audio buffer → array | 6.2 ms | 6.0 ms |
-| CSM + D&S | 13.1 ms | 12.6 ms |
-| overlay render | 6.3 ms | 5.7 ms |
-| `cv2.imshow` + `waitKey` | 4.0 ms | 3.9 ms |
-| **compute total** | **70.3 ms** | **28.2 ms** |
+| Stage | USB webcam (`--video 0`) | No camera (`--video 99`) | MIPI-CSI (`--csi`) |
+|---|---|---|---|
+| camera capture | 40.7 ms | 0.1 ms | **0.6 ms** |
+| audio buffer → array | 6.2 ms | 6.0 ms | 6.5 ms |
+| CSM + D&S | 13.1 ms | 12.6 ms | 13.2 ms |
+| overlay render | 6.3 ms | 5.7 ms | 6.2 ms |
+| `cv2.imshow` + `waitKey` | 4.0 ms | 3.9 ms | 4.3 ms |
+| **compute total** | **70.3 ms** | **28.2 ms** | **30.8 ms** |
 
 `--fullscreen` made no measurable difference to any of these — the source frame `cv2.imshow`
 receives is the same size either way; only the window-manager-side scale-to-screen changes,
 which isn't where the cost is.
 
-- No camera: 28.2 ms of work + ~21.8 ms sleep ≈ 50 ms/frame → **~20 fps** (hits the intended target after fixing loop delay bug)
-- With camera: 70.3 ms of work already exceeds the 50 ms budget → sleep contributes ~0 →
-  **~14 fps** (up from the original ~8 fps), now limited purely by camera capture cost
+- USB webcam: 70.3 ms of work already exceeds the 50 ms budget → sleep contributes ~0 →
+  **~14 fps** (up from the original ~8 fps), limited purely by camera capture cost
+- No camera: 28.2 ms of work + ~21.8 ms sleep ≈ 50 ms/frame → **~20 fps** (hits the intended target after fixing the loop delay bug)
+- MIPI-CSI: 30.8 ms of work + ~19.2 ms sleep ≈ 50 ms/frame → **~20 fps** — matches the
+  no-camera ceiling, i.e. the CSI camera is effectively free compared to the beamforming
+  compute cost. This is the best available camera configuration on this hardware.
 
 ### Camera Backend: default auto-selection was already the best option
 
@@ -332,21 +335,13 @@ combination. This is device-specific; a different USB webcam could behave differ
 
 ### Confirmed: MIPI-CSI camera via `picamera2` solves the camera bottleneck
 
-Implemented (`--csi` flag, see §4) and confirmed on hardware. A CSI-attached Camera
-Module bypasses USB and GStreamer entirely, talking to the Pi's ISP/DMA pipeline
-directly via `picamera2` rather than `cv2.VideoCapture` (which cannot open a CSI camera
-at all). Same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already
-planned for the 96-ch host — implemented here first instead of doing the work twice.
-
-| Camera | `cam.read()` |
-|---|---|
-| USB webcam (`cv2.VideoCapture`, default backend) | 40.7 ms |
-| MIPI-CSI (`picamera2`, `--csi`) | **0.6 ms** |
-
-Total per-frame work with CSI: ~30.8 ms (buf_copy 6.5, CSM+D&S 13.2, overlay 6.2, imshow
-4.3) — under the 50 ms budget, so the adaptive pacing fix sleeps out the ~19 ms
-remainder and this hits the full **~20 fps** target, vs. ~14 fps with the USB webcam.
-Colors confirmed correct with no `cv2.cvtColor` needed (see §4's `RGB888`/BGR note).
+Implemented (`--csi` flag, see §4) and confirmed on hardware — numbers above. A
+CSI-attached Camera Module bypasses USB and GStreamer entirely, talking to the Pi's
+ISP/DMA pipeline directly via `picamera2` rather than `cv2.VideoCapture` (which cannot
+open a CSI camera at all). Same direction
+[PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already planned for the 96-ch
+host — implemented here first instead of doing the work twice. Colors confirmed correct
+with no `cv2.cvtColor` needed (see §4's `RGB888`/BGR note).
 
 ## 8. Known Issues Summary
 
