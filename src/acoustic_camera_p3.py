@@ -264,6 +264,7 @@ def main():
     ap.add_argument('--alpha',    type=float, default=0.5,   help='acoustic overlay opacity (0–1)')
     ap.add_argument('--smooth',   type=float, default=0.7,   help='temporal smoothing factor (0=none, 0.9=heavy)')
     ap.add_argument('--video',    type=int,   default=4,     help='cv2.VideoCapture device index')
+    ap.add_argument('--fullscreen', action='store_true',     help='show the display fullscreen (borderless)')
     args = ap.parse_args()
 
     cal_e = np.load(args.cal) if args.cal else None
@@ -319,6 +320,8 @@ def main():
 
     win = 'Acoustic Camera - Phase 3'
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
+    if args.fullscreen:
+        cv2.setWindowProperty(win, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     _sliders['flo'], _sliders['fhi'] = 500, 4000
     mouse_registered = False
 
