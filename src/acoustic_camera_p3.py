@@ -141,7 +141,7 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, 
     """Draw real-time per-band power spectrum as a strip at the bottom of the frame."""
     h, w = frame.shape[:2]
     block = 2048
-    if audio_arr.shape[0] < block:
+    if audio_arr is None or audio_arr.shape[0] < block:
         return frame
     seg = audio_arr[-block:] * np.hanning(block)[:, np.newaxis]
     F = np.fft.rfft(seg, axis=0)
@@ -194,7 +194,7 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, 
     return frame
 
 
-# --- Virtual sliders (mouse-draggable, drawn below the frame) ---
+# --- Virtual sliders (mouse/touch-draggable, drawn below the frame) ---
 
 _PANEL_H  = 44          # height of the slider panel in pixels
 _FLO_MAX  = 5000
@@ -237,7 +237,7 @@ def _on_mouse(event, x, y, flags, _param):
         track_w = max(_sliders.get('frame_w', 640) - _TRACK_X0 - 8, 1)
         frac = max(0.0, min(1.0, (x - _TRACK_X0) / track_w))
         if _sliders['drag'] == 'lo':
-            _sliders['flo'] = max(100, int(frac * _FLO_MAX))
+            _sliders['flo'] = max(100, min(_sliders['fhi'] - 100, int(frac * _FLO_MAX)))
         else:
             _sliders['fhi'] = max(_sliders['flo'] + 100, int(frac * _FHI_MAX))
 
@@ -248,7 +248,9 @@ class Picam2Capture:
     """Wraps picamera2 to match the cv2.VideoCapture .read()/.release() interface
     used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam."""
 
-    def __init__(self, size=(1280, 720)):
+    def __init__(self, size=(1280, 676)):
+        # 676 = 720 - _PANEL_H (44): leaves exactly enough room for the slider strip
+        # below so the combined display matches the 1280x720 panel with no letterboxing.
         try:
             from picamera2 import Picamera2
         except ImportError as e:
