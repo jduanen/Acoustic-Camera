@@ -109,18 +109,50 @@ notebooks, so no `--device` override should be needed. USB bandwidth for 16 chan
 
 ## 4. Camera
 
+### USB Webcam
+
 The script uses `cv2.VideoCapture(args.video)` (i.e. a V4L2 device index), this only
 works with a **USB webcam**, not the Pi Camera Module (CSI). Bookworm removed the
 legacy camera stack; the CSI camera is exposed through `libcamera`/`picamera2`, which
 `cv2.VideoCapture` cannot open directly. If you only have a Camera Module on hand:
 
 - Easiest: plug in a USB webcam instead; zero code changes.
-- Camera Module: would require switching the capture path to `picamera2` (this is
-  exactly what [PHASE4.md](./PHASE4.md#why-pi-5-not-pi-4-or-cm4) already plans for
-  Phase 4, so if you want this now it's worth doing once rather than twice).
+- Camera Module: use the `--csi` flag — see below. Same direction
+  [PHASE4.md](./PHASE4.md#why-pi-5-not-pi-4-or-cm4) already planned for the future 96-ch
+  host, implemented here first instead of doing this work twice.
 
 Use `v4l2-ctl --list-devices` to find the right `--video` index. It will very likely
 **not** be 0 on a Pi with both a USB webcam and other V4L2-capable hardware present.
+
+### MIPI-CSI Camera
+
+Install 22-pin ribbon cable on one of the connectors near RJ45 connector (contacts facing towards the RJ45).
+Earlier Raspberry Pis used 15-pin ribbon cables, can use adaptors to make some of these cameras work with Raspberry Pi 5 boards.
+Use camera with M12 lens mount so I can select a lens with the desired FOV.
+
+**Software**: `cv2.VideoCapture` cannot open a CSI camera directly (see above), so the
+script uses `picamera2` as a second, alternate capture path — pass `--csi` to select it
+(`--video` is ignored in that case):
+
+```bash
+sudo apt install python3-picamera2   # if not already present on the Desktop image
+python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0 --csi
+```
+
+`picamera2` is an apt package tied to the system `libcamera` stack, not pip-installable
+in an isolated venv — same reasoning as `python3-opencv` in §2: the venv needs
+`--system-site-packages` to see it.
+
+Implementation note: `picamera2`'s `"RGB888"` format is actually packed as BGR in
+memory (a known naming quirk in `libcamera`), which happens to be exactly the byte
+order `cv2` expects — so the capture wrapper (`Picam2Capture` in
+`acoustic_camera_p3.py`) does **not** call `cv2.cvtColor` on it. If colors ever look
+swapped (red/blue reversed) on different `picamera2` versions, that conversion is the
+first thing to add back.
+
+Not yet benchmarked against the USB webcam's ~40 ms `cam.read()` floor from §7 — that's
+the next thing to measure once this is running on hardware.
+
 
 ## 5. Display
 
