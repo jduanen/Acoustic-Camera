@@ -137,12 +137,13 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30):
     return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
 
 
-def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):
-    """Draw real-time per-band power spectrum as a strip at the bottom of the frame."""
-    h, w = frame.shape[:2]
+def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):
+    """Render real-time per-band power spectrum as a standalone strip
+    (frequency axis left-to-right, magnitude as bar height)."""
+    panel = np.full((height, w, 3), 28, dtype=np.uint8)
     block = 2048
     if audio_arr is None or audio_arr.shape[0] < block:
-        return frame
+        return panel
     seg = audio_arr[-block:] * np.hanning(block)[:, np.newaxis]
     F = np.fft.rfft(seg, axis=0)
     psd = np.mean(np.abs(F) ** 2, axis=1)
@@ -160,22 +161,19 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, 
     LABEL_H = 14   # pixels reserved at the bottom for axis labels
     bar_top = height - LABEL_H
 
-    y0 = h - height
-    strip = cv2.addWeighted(frame[y0:].copy(), 0.3,
-                            np.zeros((height, w, 3), dtype=np.uint8), 0.7, 0)
     for k, v in enumerate(norm):
         x0 = int(k * w / n_bars)
         x1 = max(x0 + 1, int((k + 1) * w / n_bars))
         bar_h = int(v * (bar_top - 4))
         if bar_h > 0:
-            cv2.rectangle(strip, (x0, bar_top - bar_h), (x1 - 1, bar_top - 1), (0, 200, 80), -1)
+            cv2.rectangle(panel, (x0, bar_top - bar_h), (x1 - 1, bar_top - 1), (0, 200, 80), -1)
 
     span = max(fmax - fmin, 1)
     xf = max(1, min(w - 2, int((freq_mark - fmin) / span * w)))
-    cv2.line(strip, (xf, 0), (xf, bar_top), (255, 255, 255), 2)
+    cv2.line(panel, (xf, 0), (xf, bar_top), (255, 255, 255), 2)
     if fmin < NYQUIST < fmax:
         xn = max(1, min(w - 2, int((NYQUIST - fmin) / span * w)))
-        cv2.line(strip, (xn, 0), (xn, bar_top), (255, 0, 255), 1)
+        cv2.line(panel, (xn, 0), (xn, bar_top), (255, 0, 255), 1)
 
     # Frequency axis ticks and labels
     steps = [100, 200, 500, 1000, 2000, 5000]
@@ -185,56 +183,60 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, 
         xl = int((f - fmin) / span * w)
         if xl < 2 or xl > w - 2:
             continue
-        cv2.line(strip, (xl, bar_top), (xl, bar_top + 3), (140, 140, 140), 1)
+        cv2.line(panel, (xl, bar_top), (xl, bar_top + 3), (140, 140, 140), 1)
         lbl = f'{f // 1000}k' if f % 1000 == 0 else f'{f / 1000:.1f}k' if f >= 1000 else str(f)
-        cv2.putText(strip, lbl, (xl - 8, height - 2),
+        cv2.putText(panel, lbl, (xl - 8, height - 2),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 160, 160), 1)
 
-    frame[y0:] = strip
-    return frame
+    return panel
 
 
-# --- Virtual sliders (mouse/touch-draggable, drawn below the frame) ---
+# --- Virtual sliders (mouse/touch-draggable) ---
+# Layout, top to bottom: video frame -> Fhi strip -> spectrum plot -> Flo strip.
+# Fhi and Flo are on opposite sides of the spectrum plot (not stacked together) so
+# they have enough vertical separation to be reliable touch targets on a touchscreen.
 
-_PANEL_H  = 44          # height of the slider panel in pixels
+_SLIDER_H = 44          # height of each individual slider strip
+_SPECTRUM_H = 90        # height of the spectrum panel between the two slider strips
 _FLO_MAX  = 5000
 _FHI_MAX  = 8000
 _TRACK_X0 = 92          # left edge of slider track
-_sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480}
+_sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640}
 
 
-def _slider_panel(w, flo, fhi):
-    panel = np.full((_PANEL_H, w, 3), 28, dtype=np.uint8)
+def _slider_strip(w, label, val, vmax, color):
+    strip = np.full((_SLIDER_H, w, 3), 28, dtype=np.uint8)
     track_w = max(w - _TRACK_X0 - 8, 1)
-    for row, (label, val, vmax, color) in enumerate([
-        (f'F lo: {flo} Hz', flo, _FLO_MAX, (80,  200,  80)),
-        (f'F hi: {fhi} Hz', fhi, _FHI_MAX, (80,  160, 220)),
-    ]):
-        y0 = row * (_PANEL_H // 2) + 6
-        cv2.rectangle(panel, (_TRACK_X0, y0 + 3), (_TRACK_X0 + track_w, y0 + 9), (80, 80, 80), -1)
-        xh = _TRACK_X0 + int(val / vmax * track_w)
-        cv2.rectangle(panel, (xh - 5, y0 - 1), (xh + 5, y0 + 13), color, -1)
-        cv2.putText(panel, label, (4, y0 + 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
-    return panel
+    yc = _SLIDER_H // 2
+    cv2.rectangle(strip, (_TRACK_X0, yc - 3), (_TRACK_X0 + track_w, yc + 3), (80, 80, 80), -1)
+    xh = _TRACK_X0 + int(val / vmax * track_w)
+    cv2.rectangle(strip, (xh - 5, yc - 7), (xh + 5, yc + 7), color, -1)
+    cv2.putText(strip, f'{label}: {val} Hz', (4, yc + 4),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+    return strip
 
 
 def _on_mouse(event, x, y, flags, _param):
     if event == cv2.EVENT_LBUTTONUP:
         _sliders['drag'] = None
         return
-    panel_y = y - _sliders['frame_h']
-    if panel_y < 0:
+    rel_y = y - _sliders['frame_h']
+    if rel_y < 0:
         return
     pressing = (event == cv2.EVENT_LBUTTONDOWN or
                 (event == cv2.EVENT_MOUSEMOVE and bool(flags & cv2.EVENT_FLAG_LBUTTON)))
     if not pressing:
         return
-    row = panel_y // (_PANEL_H // 2)
     if event == cv2.EVENT_LBUTTONDOWN:
-        _sliders['drag'] = 'lo' if row == 0 else 'hi'
+        if rel_y < _SLIDER_H:
+            _sliders['drag'] = 'hi'
+        elif rel_y < _SLIDER_H + _SPECTRUM_H:
+            _sliders['drag'] = None   # tapped the (non-interactive) spectrum plot
+            return
+        else:
+            _sliders['drag'] = 'lo'
     if _sliders['drag']:
-        track_w = max(_sliders.get('frame_w', 640) - _TRACK_X0 - 8, 1)
+        track_w = max(_sliders['frame_w'] - _TRACK_X0 - 8, 1)
         frac = max(0.0, min(1.0, (x - _TRACK_X0) / track_w))
         if _sliders['drag'] == 'lo':
             _sliders['flo'] = max(100, min(_sliders['fhi'] - 100, int(frac * _FLO_MAX)))
@@ -248,9 +250,10 @@ class Picam2Capture:
     """Wraps picamera2 to match the cv2.VideoCapture .read()/.release() interface
     used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam."""
 
-    def __init__(self, size=(1280, 676)):
-        # 676 = 720 - _PANEL_H (44): leaves exactly enough room for the slider strip
-        # below so the combined display matches the 1280x720 panel with no letterboxing.
+    def __init__(self, size=(1280, 542)):
+        # 542 = 720 - (2 * _SLIDER_H + _SPECTRUM_H) = 720 - (2*44 + 90): leaves exactly
+        # enough room for the Fhi strip, spectrum plot, and Flo strip below, so the
+        # combined display matches the 1280x720 panel with no letterboxing.
         try:
             from picamera2 import Picamera2
         except ImportError as e:
@@ -412,7 +415,6 @@ def main():
 
             if P_smooth is not None:
                 frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
-                frame = spectrum_overlay(latest_arr, frame, freq, fmin=flo, fmax=fhi)
 
                 # Cross-hair at peak direction
                 h, w = frame.shape[:2]
@@ -433,7 +435,13 @@ def main():
             h_f, w_f = frame.shape[:2]
             _sliders['frame_h'] = h_f
             _sliders['frame_w'] = w_f
-            display = np.vstack([frame, _slider_panel(w_f, flo, fhi)])
+            spec_panel_img = spectrum_panel(latest_arr, w_f, freq, height=_SPECTRUM_H, fmin=flo, fmax=fhi)
+            display = np.vstack([
+                frame,
+                _slider_strip(w_f, 'F hi', fhi, _FHI_MAX, (80, 160, 220)),
+                spec_panel_img,
+                _slider_strip(w_f, 'F lo', flo, _FLO_MAX, (80, 200, 80)),
+            ])
             cv2.imshow(win, display)
             if not mouse_registered:
                 cv2.setMouseCallback(win, _on_mouse)
