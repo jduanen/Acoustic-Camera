@@ -9,6 +9,7 @@ Usage:
 """
 import argparse
 import collections
+import sys
 import threading
 import time
 
@@ -265,6 +266,7 @@ def main():
     ap.add_argument('--smooth',   type=float, default=0.7,   help='temporal smoothing factor (0=none, 0.9=heavy)')
     ap.add_argument('--video',    type=int,   default=4,     help='cv2.VideoCapture device index')
     ap.add_argument('--fullscreen', action='store_true',     help='show the display fullscreen (borderless)')
+    ap.add_argument('--profile', action='store_true',        help='print per-stage timing breakdown to stderr')
     args = ap.parse_args()
 
     cal_e = np.load(args.cal) if args.cal else None
@@ -325,16 +327,21 @@ def main():
     _sliders['flo'], _sliders['fhi'] = 500, 4000
     mouse_registered = False
 
+    prof = collections.defaultdict(float)
+    prof_n = 0
+
     with stream:
         while True:
             time.sleep(0.05)
 
+            t0 = time.monotonic()
             if cam is not None:
                 ret, frame = cam.read()
                 if not ret:
                     frame = np.zeros((480, 640, 3), dtype=np.uint8)
             else:
                 frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            t1 = time.monotonic()
 
             flo  = _sliders['flo']
             fhi  = _sliders['fhi']
@@ -347,6 +354,7 @@ def main():
                 with buf_lock:
                     arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
                 latest_arr = arr
+                t2 = time.monotonic()
 
                 R = compute_csm(arr, freq)
                 if cal_e is not None:
@@ -366,6 +374,9 @@ def main():
                 el_peak = el_grid[k % N_el]
                 label = (f'{args.algo.upper()}  {freq:.0f}Hz  '
                          f'az={az_peak:.1f}°  el={el_peak:.1f}°')
+                t3 = time.monotonic()
+            else:
+                t2 = t3 = time.monotonic()
 
             if P_smooth is not None:
                 frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
@@ -379,6 +390,7 @@ def main():
                 py = max(1, min(h - 2, py))
                 cv2.line(frame, (px, 0), (px, h), (0, 255, 0), 1)
                 cv2.line(frame, (0, py), (w, py), (0, 255, 0), 1)
+            t4 = time.monotonic()
 
             now = time.monotonic()
             fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
@@ -394,7 +406,24 @@ def main():
             if not mouse_registered:
                 cv2.setMouseCallback(win, _on_mouse)
                 mouse_registered = True
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            key_result = cv2.waitKey(1) & 0xFF
+            t5 = time.monotonic()
+
+            if args.profile:
+                prof['cam']      += t1 - t0
+                prof['buf_copy'] += t2 - t1
+                prof['csm_algo'] += t3 - t2
+                prof['overlay']  += t4 - t3
+                prof['imshow']   += t5 - t4
+                prof_n += 1
+                if prof_n >= 20:
+                    parts = '  '.join(f'{k}={1000 * v / prof_n:5.1f}ms' for k, v in prof.items())
+                    print(f'[profile] {parts}  total={1000 * sum(prof.values()) / prof_n:5.1f}ms',
+                          file=sys.stderr)
+                    prof.clear()
+                    prof_n = 0
+
+            if key_result == ord('q'):
                 break
 
     if cam is not None:
