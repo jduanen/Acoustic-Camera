@@ -373,7 +373,17 @@ open a CSI camera at all). Same direction
 host — implemented here first instead of doing the work twice. Colors confirmed correct
 with no `cv2.cvtColor` needed (see §4's `RGB888`/BGR note).
 
-## 8. Known Issues Summary
+## 8. System Hardware
+
+When running the `acoustic_camera_p3.py` program, the system consumes up to around 1.75A @ 5V.
+This means that not only do I have to power this with a (ideally battery) source that can provide in excess of 2A at 5.V (actually 5.1V), but I also have to have cabling that can support this current load without imposing a significant resistive loss.
+
+Furthermore, even with a large heatsink, the CPU temperature gets up to ~60C (with ~25C ambient).
+
+?
+
+
+## 9. Known Issues Summary
 
 | Symptom | Cause | Fix |
 |---|---|---|
