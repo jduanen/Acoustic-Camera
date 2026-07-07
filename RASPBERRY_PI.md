@@ -146,12 +146,16 @@ in an isolated venv — same reasoning as `python3-opencv` in §2: the venv need
 Implementation note: `picamera2`'s `"RGB888"` format is actually packed as BGR in
 memory (a known naming quirk in `libcamera`), which happens to be exactly the byte
 order `cv2` expects — so the capture wrapper (`Picam2Capture` in
-`acoustic_camera_p3.py`) does **not** call `cv2.cvtColor` on it. If colors ever look
-swapped (red/blue reversed) on different `picamera2` versions, that conversion is the
-first thing to add back.
+`acoustic_camera_p3.py`) does **not** call `cv2.cvtColor` on it. **Confirmed correct on
+hardware** — colors display correctly with no conversion. If colors ever look swapped
+(red/blue reversed) on a different `picamera2` version, that conversion is the first
+thing to add back.
 
-Not yet benchmarked against the USB webcam's ~40 ms `cam.read()` floor from §7 — that's
-the next thing to measure once this is running on hardware.
+**Confirmed on hardware — this was worth doing**: `cam=0.6 ms`, vs. the USB webcam's
+40.7 ms (§7). Total per-frame work drops to ~30.8 ms, under the 50 ms budget, so the
+adaptive pacing fix (§7) sleeps out the remainder and this hits the full **~20 fps**
+target — a large improvement over the USB webcam's ~14 fps. See §7 for the full
+before/after comparison.
 
 
 ## 5. Display
@@ -326,15 +330,23 @@ software color-conversion work. **Reverted to the plain default** (`cv2.VideoCap
 no explicit backend/format) — confirmed the fastest of the three on this specific webcam/Pi
 combination. This is device-specific; a different USB webcam could behave differently.
 
-### Next Step: MIPI-CSI camera via `picamera2`
+### Confirmed: MIPI-CSI camera via `picamera2` solves the camera bottleneck
 
-Not yet implemented. A CSI-attached Camera Module bypasses USB and GStreamer entirely,
-talking to the Pi's ISP/DMA pipeline directly via `picamera2` rather than `cv2.VideoCapture`
-(which cannot open a CSI camera at all — see §4). Plausible this beats the 40.7 ms USB floor,
-but unmeasured — needs the hardware wired up and a second capture code path added (`picamera2`
-returns frames differently than `cv2.VideoCapture`, so this isn't a config tweak). This is the
-same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already planned for the
-96-ch host, so implementing it here means not doing this work twice.
+Implemented (`--csi` flag, see §4) and confirmed on hardware. A CSI-attached Camera
+Module bypasses USB and GStreamer entirely, talking to the Pi's ISP/DMA pipeline
+directly via `picamera2` rather than `cv2.VideoCapture` (which cannot open a CSI camera
+at all). Same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already
+planned for the 96-ch host — implemented here first instead of doing the work twice.
+
+| Camera | `cam.read()` |
+|---|---|
+| USB webcam (`cv2.VideoCapture`, default backend) | 40.7 ms |
+| MIPI-CSI (`picamera2`, `--csi`) | **0.6 ms** |
+
+Total per-frame work with CSI: ~30.8 ms (buf_copy 6.5, CSM+D&S 13.2, overlay 6.2, imshow
+4.3) — under the 50 ms budget, so the adaptive pacing fix sleeps out the ~19 ms
+remainder and this hits the full **~20 fps** target, vs. ~14 fps with the USB webcam.
+Colors confirmed correct with no `cv2.cvtColor` needed (see §4's `RGB888`/BGR note).
 
 ## 8. Known Issues Summary
 
@@ -342,7 +354,7 @@ same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already p
 |---|---|---|
 | `sounddevice` import error | missing `libportaudio2` | `apt install libportaudio2` |
 | `cv2.imshow` errors "not implemented" | headless OpenCV wheel from `pip` | use apt `python3-opencv`, venv with `--system-site-packages` |
-| Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or add `picamera2` support (see §7 — in progress) |
+| Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or pass `--csi` for `picamera2` (see §4/§7) |
 | `cv2.imshow` hangs / X errors over SSH | no display session, or SSH session not attached to the Pi's local desktop session | log in locally/VNC, or export `DISPLAY=:0` + `XAUTHORITY=~/.Xauthority` (see §5) |
 | `ssh -Y` window appears on your own machine, not the Pi's monitor | `-Y` tunnels a **new** X display back to your client; it never touches the Pi's HDMI output | use the `DISPLAY`/`XAUTHORITY` attach recipe in §5 instead of `-Y` |
 | Low fps at default settings | 0.5°/pt grid + MVDR/MUSIC/CLEAN-SC too heavy for Pi 5 | `--grid_deg 1.0`, start with `--algo ds` |
