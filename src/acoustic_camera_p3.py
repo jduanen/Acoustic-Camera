@@ -244,6 +244,32 @@ def _on_mouse(event, x, y, flags, _param):
 
 # --- Main ---
 
+class Picam2Capture:
+    """Wraps picamera2 to match the cv2.VideoCapture .read()/.release() interface
+    used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam."""
+
+    def __init__(self, size=(640, 480)):
+        try:
+            from picamera2 import Picamera2
+        except ImportError as e:
+            raise RuntimeError(
+                'picamera2 not found — install it with: sudo apt install python3-picamera2 '
+                '(and create the venv with --system-site-packages, same as for cv2)'
+            ) from e
+        self._picam2 = Picamera2()
+        # NB: picamera2's "RGB888" format is actually packed BGR in memory, which
+        # happens to be exactly what cv2 wants — no cvtColor needed.
+        config = self._picam2.create_video_configuration(main={'size': size, 'format': 'RGB888'})
+        self._picam2.configure(config)
+        self._picam2.start()
+
+    def read(self):
+        return True, self._picam2.capture_array()
+
+    def release(self):
+        self._picam2.stop()
+
+
 def find_device():
     for i, d in enumerate(sd.query_devices()):
         if d['max_input_channels'] >= 16 and 'uma' in d['name'].lower():
@@ -264,7 +290,8 @@ def main():
     ap.add_argument('--grid_deg', type=float, default=0.5,   help='beamforming grid spacing (deg); 0.5=181×121, 1.0=91×61')
     ap.add_argument('--alpha',    type=float, default=0.5,   help='acoustic overlay opacity (0–1)')
     ap.add_argument('--smooth',   type=float, default=0.7,   help='temporal smoothing factor (0=none, 0.9=heavy)')
-    ap.add_argument('--video',    type=int,   default=4,     help='cv2.VideoCapture device index')
+    ap.add_argument('--video',    type=int,   default=4,     help='cv2.VideoCapture device index (ignored if --csi)')
+    ap.add_argument('--csi',       action='store_true',      help='use MIPI-CSI camera via picamera2 instead of a USB webcam')
     ap.add_argument('--fullscreen', action='store_true',     help='show the display fullscreen (borderless)')
     ap.add_argument('--profile', action='store_true',        help='print per-stage timing breakdown to stderr')
     args = ap.parse_args()
@@ -301,10 +328,13 @@ def main():
         device=dev_idx, blocksize=256, callback=audio_cb,
     )
 
-    cam = cv2.VideoCapture(args.video)
-    if not cam.isOpened():
-        print('No webcam — showing audio-only overlay on black frame')
-        cam = None
+    if args.csi:
+        cam = Picam2Capture()
+    else:
+        cam = cv2.VideoCapture(args.video)
+        if not cam.isOpened():
+            print('No webcam — showing audio-only overlay on black frame')
+            cam = None
 
     print(f'algo={args.algo}  freq={args.freq:.0f}Hz  '
           f'az_fov=±{args.az_fov/2:.0f}°  el_fov=±{args.el_fov/2:.0f}°  '
