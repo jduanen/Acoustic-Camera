@@ -198,50 +198,72 @@ def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6
 
 _SLIDER_H = 44          # height of each individual slider strip
 _SPECTRUM_H = 90        # height of the spectrum panel between the two slider strips
-_FLO_MAX  = 5000
-_FHI_MAX  = 8000
+_FREQ_MAX = 8000        # shared max for both sliders, so the same track position means the same Hz on either
 _TRACK_X0 = 92          # left edge of slider track
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640}
+# Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
+# callbacks off the main loop's thread) and read/corrected by the main loop each frame.
+_sliders_lock = threading.Lock()
 
 
-def _slider_strip(w, label, val, vmax, color):
+_TRACK_X0_RIGHT = 8   # left margin for a mirrored (label-on-right) track
+
+
+def _track_x0(label_right):
+    """Shared between drawing and touch hit-testing so they never disagree."""
+    return _TRACK_X0_RIGHT if label_right else _TRACK_X0
+
+
+def _slider_strip(w, label, val, vmax, color, label_right=False):
+    """label_right puts the text at the right edge instead of the left and mirrors
+    the track to the left side of the strip (small margin left, large margin right
+    for the label) — matches Flo's left-label/left-margin layout, mirrored."""
     strip = np.full((_SLIDER_H, w, 3), 28, dtype=np.uint8)
     track_w = max(w - _TRACK_X0 - 8, 1)
+    track_x0 = _track_x0(label_right)
     yc = _SLIDER_H // 2
-    cv2.rectangle(strip, (_TRACK_X0, yc - 3), (_TRACK_X0 + track_w, yc + 3), (80, 80, 80), -1)
-    xh = _TRACK_X0 + int(val / vmax * track_w)
+    cv2.rectangle(strip, (track_x0, yc - 3), (track_x0 + track_w, yc + 3), (80, 80, 80), -1)
+    xh = track_x0 + int(val / vmax * track_w)
     cv2.rectangle(strip, (xh - 5, yc - 7), (xh + 5, yc + 7), color, -1)
-    cv2.putText(strip, f'{label}: {val} Hz', (4, yc + 4),
+    text = f'{label}: {val} Hz'
+    if label_right:
+        (text_w, _), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+        tx = w - text_w - 6
+    else:
+        tx = 4
+    cv2.putText(strip, text, (tx, yc + 4),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
     return strip
 
 
 def _on_mouse(event, x, y, flags, _param):
-    if event == cv2.EVENT_LBUTTONUP:
-        _sliders['drag'] = None
-        return
-    rel_y = y - _sliders['frame_h']
-    if rel_y < 0:
-        return
-    pressing = (event == cv2.EVENT_LBUTTONDOWN or
-                (event == cv2.EVENT_MOUSEMOVE and bool(flags & cv2.EVENT_FLAG_LBUTTON)))
-    if not pressing:
-        return
-    if event == cv2.EVENT_LBUTTONDOWN:
-        if rel_y < _SLIDER_H:
-            _sliders['drag'] = 'hi'
-        elif rel_y < _SLIDER_H + _SPECTRUM_H:
-            _sliders['drag'] = None   # tapped the (non-interactive) spectrum plot
+    with _sliders_lock:
+        if event == cv2.EVENT_LBUTTONUP:
+            _sliders['drag'] = None
             return
-        else:
-            _sliders['drag'] = 'lo'
-    if _sliders['drag']:
-        track_w = max(_sliders['frame_w'] - _TRACK_X0 - 8, 1)
-        frac = max(0.0, min(1.0, (x - _TRACK_X0) / track_w))
-        if _sliders['drag'] == 'lo':
-            _sliders['flo'] = max(100, min(_sliders['fhi'] - 100, int(frac * _FLO_MAX)))
-        else:
-            _sliders['fhi'] = max(_sliders['flo'] + 100, int(frac * _FHI_MAX))
+        rel_y = y - _sliders['frame_h']
+        if rel_y < 0:
+            return
+        pressing = (event == cv2.EVENT_LBUTTONDOWN or
+                    (event == cv2.EVENT_MOUSEMOVE and bool(flags & cv2.EVENT_FLAG_LBUTTON)))
+        if not pressing:
+            return
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if rel_y < _SLIDER_H:
+                _sliders['drag'] = 'hi'
+            elif rel_y < _SLIDER_H + _SPECTRUM_H:
+                _sliders['drag'] = None   # tapped the (non-interactive) spectrum plot
+                return
+            else:
+                _sliders['drag'] = 'lo'
+        if _sliders['drag']:
+            track_w = max(_sliders['frame_w'] - _TRACK_X0 - 8, 1)
+            track_x0 = _track_x0(_sliders['drag'] == 'hi')
+            frac = max(0.0, min(1.0, (x - track_x0) / track_w))
+            if _sliders['drag'] == 'lo':
+                _sliders['flo'] = max(100, min(_sliders['fhi'] - 100, int(frac * _FREQ_MAX)))
+            else:
+                _sliders['fhi'] = max(_sliders['flo'] + 100, int(frac * _FREQ_MAX))
 
 
 # --- Main ---
@@ -378,8 +400,16 @@ def main():
                 frame = np.zeros((480, 640, 3), dtype=np.uint8)
             t1 = time.monotonic()
 
-            flo  = _sliders['flo']
-            fhi  = _sliders['fhi']
+            with _sliders_lock:
+                flo = _sliders['flo']
+                fhi = _sliders['fhi']
+                if flo > fhi - 100:
+                    # Self-healing ordering guarantee, kept under the same lock as
+                    # _on_mouse's writes so this can't race with a concurrent update.
+                    if _sliders['drag'] == 'lo':
+                        fhi = _sliders['fhi'] = flo + 100
+                    else:
+                        flo = _sliders['flo'] = fhi - 100
             freq = (flo + fhi) / 2
 
             with buf_lock:
@@ -433,14 +463,23 @@ def main():
             cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
             h_f, w_f = frame.shape[:2]
-            _sliders['frame_h'] = h_f
-            _sliders['frame_w'] = w_f
-            spec_panel_img = spectrum_panel(latest_arr, w_f, freq, height=_SPECTRUM_H, fmin=flo, fmax=fhi)
+            with _sliders_lock:
+                _sliders['frame_h'] = h_f
+                _sliders['frame_w'] = w_f
+                # Re-read live values for display: `flo`/`fhi` above were snapshotted
+                # before this frame's CSM/beamform work (~15-30 ms), and _on_mouse can
+                # update the real sliders during that window via touch events. Drawing
+                # the stale snapshot here would visibly lag the user's actual finger
+                # position, which looks like the handles crossing during a fast drag.
+                disp_flo = _sliders['flo']
+                disp_fhi = _sliders['fhi']
+            spec_panel_img = spectrum_panel(latest_arr, w_f, freq, height=_SPECTRUM_H,
+                                             fmin=disp_flo, fmax=disp_fhi)
             display = np.vstack([
                 frame,
-                _slider_strip(w_f, 'F hi', fhi, _FHI_MAX, (80, 160, 220)),
+                _slider_strip(w_f, 'F hi', disp_fhi, _FREQ_MAX, (80, 160, 220), label_right=True),
                 spec_panel_img,
-                _slider_strip(w_f, 'F lo', flo, _FLO_MAX, (80, 200, 80)),
+                _slider_strip(w_f, 'F lo', disp_flo, _FREQ_MAX, (80, 200, 80)),
             ])
             cv2.imshow(win, display)
             if not mouse_registered:
