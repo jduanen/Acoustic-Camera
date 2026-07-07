@@ -175,7 +175,7 @@ def spectrum_overlay(audio_arr, frame, freq_mark, n_bars=64, height=90, fmin=0, 
     cv2.line(strip, (xf, 0), (xf, bar_top), (255, 255, 255), 2)
     if fmin < NYQUIST < fmax:
         xn = max(1, min(w - 2, int((NYQUIST - fmin) / span * w)))
-        cv2.line(strip, (xn, 0), (xn, bar_top), (255, 100, 0), 1)
+        cv2.line(strip, (xn, 0), (xn, bar_top), (255, 0, 255), 1)
 
     # Frequency axis ticks and labels
     steps = [100, 200, 500, 1000, 2000, 5000]
