@@ -238,6 +238,36 @@ Lite-based headless deployment later (e.g. a lighter Phase 4 field unit), start 
 but expect to need this driver fix, and confirm `/dev/dri/card0` is actually the right
 device (`ls /dev/dri/`) before assuming it.
 
+### DSI Display
+
+Tested first using HDMI-attached display. Now using the Raspberry Pi Touch Display 2
+(https://www.raspberrypi.com/documentation/accessories/touch-display-2.html#raspberry-pi-touch-display-2),
+connected via the DSI port. Touch works out of the box as mouse input for the script's
+frequency sliders — no config needed there.
+
+The panel's native orientation is portrait; rotate it to landscape at login. Raspberry
+Pi OS Desktop on Trixie runs **Wayland (`labwc`)**, with `:0` served via XWayland for X11
+compatibility — so this must be done with `wlr-randr` (the Wayland-native output tool),
+**not** `xrandr`: `xrandr` talks to XWayland's emulated root window, which can't be
+resized/rotated and fails with a RandR `BadMatch` error for this. `wlr-randr` talks to
+the compositor directly and works.
+
+First confirm your actual output name (`wlr-randr` with no arguments lists all outputs —
+this DSI port enumerated as `DSI-2`, not `DSI-1`, on this hardware; don't assume it
+matches without checking), then add the rotation to `labwc`'s autostart script so it
+applies on every login, not just the current session:
+
+```bash
+wlr-randr                      # confirm the output name first
+mkdir -p ~/.config/labwc
+echo 'wlr-randr --output DSI-2 --transform 90 &' >> ~/.config/labwc/autostart
+chmod +x ~/.config/labwc/autostart
+```
+
+`--transform` takes `90`/`180`/`270` (or `flipped-90` etc. for mirrored orientations) —
+adjust if the picture comes up rotated the wrong way. Reboot (or log out/in) to confirm
+it persists; a manually-run `wlr-randr` command only affects the current session.
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
