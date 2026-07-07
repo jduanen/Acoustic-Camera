@@ -310,9 +310,10 @@ same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already p
 |---|---|---|
 | `sounddevice` import error | missing `libportaudio2` | `apt install libportaudio2` |
 | `cv2.imshow` errors "not implemented" | headless OpenCV wheel from `pip` | use apt `python3-opencv`, venv with `--system-site-packages` |
-| Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or add `picamera2` support (Phase 4 work) |
+| Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or add `picamera2` support (see §7 — in progress) |
 | `cv2.imshow` hangs / X errors over SSH | no display session, or SSH session not attached to the Pi's local desktop session | log in locally/VNC, or export `DISPLAY=:0` + `XAUTHORITY=~/.Xauthority` (see §5) |
 | `ssh -Y` window appears on your own machine, not the Pi's monitor | `-Y` tunnels a **new** X display back to your client; it never touches the Pi's HDMI output | use the `DISPLAY`/`XAUTHORITY` attach recipe in §5 instead of `-Y` |
 | Low fps at default settings | 0.5°/pt grid + MVDR/MUSIC/CLEAN-SC too heavy for Pi 5 | `--grid_deg 1.0`, start with `--algo ds` |
+| Live fps much lower than §6 compute estimates suggest | camera capture (~40 ms) + a frame-pacing bug (fixed sleep added *on top of* work, not a target) both add cost the offline benchmark never measured | see §7; pacing bug is fixed in current code, camera cost is a hardware floor with this webcam |
 | MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
 | Xorg: `Cannot run in framebuffer mode...` (Lite only) | falling back to `fbdev` instead of `modesetting`/KMS | force `modesetting` via `/etc/X11/xorg.conf.d` (see §5, not fully validated) |
