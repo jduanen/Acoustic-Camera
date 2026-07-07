@@ -388,13 +388,19 @@ python src/acoustic_camera_p3.py --algo music --nsrc 2            # MUSIC, 2 sou
 python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy         # with calibration
 ```
 
+**TODO** Place a screengrab of the running application's display here.
+
 Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sliding CSM →
 2D beamform (azimuth × elevation grid) → COLORMAP_INFERNO full-frame overlay blended onto
 webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
-Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. Spatial Nyquist ~4.1 kHz; operate at
-2000-3700 Hz for meaningful 2D directionality. With *N*=16 mics, MVDR/MUSIC provide measurable
-super-resolution benefit over D&S.
+Below the video is a spectrum plot -- i.e., the set of green bars represent the energy in each of the frequency bins, from lowest (f_lo) on the left to the highest (f_hi) on the right. A pair of slider controls below the spectrum plot are used to select the value of f_lo and f_hi. The program defaults to f_lo=500Hz and f_hi=4000Hz.
+
+There is also a white vertical line in the center of the spectrum plot (by construction) that indicates the beamforming frequency. The value of this frequency is given in the status line at the top of the video pane. This is the frequency at which the CSM and beamforming algorithm is currently being run. The beamforming frequency is set to the midpoint between the current f_lo and f_hi frequencies (i.e., `freq = (f_lo + f_hi) / 2`).
+
+The algorithms that are implemented in this application are `ds`, `mvdr`, `clean` (CLEAN-SC), and `music`. The microphone array has a Spatial Nyquist frequency of ~4.1 kHz. This device should be operated at between 2000-3700 Hz for it to provide meaningful 2D directionality.
+
+With *N*=16 mics, the MVDR/MUSIC algorithms provide measurable super-resolution benefit over D&S.
 
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
