@@ -124,21 +124,45 @@ Use `v4l2-ctl --list-devices` to find the right `--video` index — it will very
 
 ## 5. Display
 
-`cv2.imshow` needs a real GUI session. The options below (HDMI/VNC "just work") assume
-the **Desktop** image, which auto-starts a GUI session on boot.
+`cv2.imshow` needs a real GUI session. The options below assume the **Desktop** image,
+which auto-starts a local GUI session (X11, confirmed by what worked below) on the
+HDMI-attached monitor at boot.
 
-- HDMI display attached directly to the Pi — works with no extra setup.
-- VNC (e.g. RealVNC, built into Raspberry Pi OS) — works.
-- Plain SSH with no X forwarding — **will fail** (`cv2.imshow` needs a display; there
-  isn't a "just print to terminal" fallback in this script).
-- SSH with `-X`/`-Y` forwarding — technically works but X11-forwards every video frame
-  over the network; expect it to be far too slow for a live 15-20 fps overlay. Only
-  useful for a one-off sanity check, not real use.
+**Important distinction confirmed on hardware**: "a desktop session is running on the
+Pi" is not the same as "your shell can draw to it." A plain SSH login is a separate
+session (`XDG_SESSION_TYPE=tty`, no `DISPLAY`/`XAUTHORITY` set) from the auto-started
+local desktop session on `seat0` — even though both exist on the same machine at the
+same time (check with `loginctl list-sessions`). Three distinct scenarios:
 
-### Raspberry Pi OS Lite
+- **Logged in locally** (keyboard/monitor directly on the Pi, or VNC into that same
+  session) — just works, `DISPLAY` is already set correctly in that session's own
+  terminal.
+- **SSH with `-X`/`-Y` forwarding** — works, but *not* by drawing on the Pi's monitor:
+  it creates a **new**, separate X11 display on the Pi that tunnels every frame back
+  over the network to your own machine's X server. The window appears on your laptop,
+  not the Pi's HDMI output. Also far too slow for live 15-20 fps video — useful only
+  for a one-off sanity check.
+- **SSH, no `-Y`, attaching to the Pi's own already-running local desktop session** —
+  this is what actually renders on the Pi's physical HDMI monitor while running the
+  command remotely. **Confirmed working recipe:**
 
-**Confirmed on hardware**: Lite has no display server running at all — no X11, no
-Wayland compositor. `cv2.imshow` fails with something like:
+  ```bash
+  export DISPLAY=:0
+  export XAUTHORITY=/home/pi/.Xauthority   # your actual home dir
+  python acoustic_camera_p3.py --video 0 --grid_deg 1.0
+  ```
+
+  Both variables are required — `DISPLAY=:0` alone fails with "could not connect to
+  display" (Qt still needs the auth cookie to attach to someone else's X session).
+  This is a plain X11 session using the standard per-user `~/.Xauthority` — simpler
+  than initially expected; no Xwayland-specific rootless auth file hunting needed.
+
+Add `--fullscreen` to fill the whole monitor (borderless window) — see §6.
+
+### Raspberry Pi OS Lite (partial — not fully validated)
+
+Lite has no display server running at all — no X11, no Wayland compositor. `cv2.imshow`
+fails with:
 
 ```
 qt.qpa.xcb: could not connect to display
@@ -147,25 +171,36 @@ qt.qpa.plugin: Could not load the Qt platform plugin "xcb" ...
 
 This looks like a GTK-vs-Qt OpenCV backend problem (the plugin list even offers
 `wayland`), but it isn't — there is simply no compositor for any backend to attach to.
-Installing a full desktop environment works but is heavier than necessary for a
-Pi that's just driving a single fixed camera display. The minimal fix is a bare X
-server with no window manager, using `xinit` to launch the script as the sole X
-client:
+The lightest fix, in principle, is a bare X server with no window manager, using
+`xinit` to launch the script as the sole X client:
 
 ```bash
 sudo apt install --no-install-recommends xserver-xorg xinit x11-xserver-utils
-```
-
-Then, from the Pi's own console (HDMI + keyboard — `xinit` needs to own the real
-display, this does not work over plain SSH):
-
-```bash
 xinit /path/to/venv/bin/python /path/to/acoustic_camera_p3.py --video 0 --grid_deg 1.0 -- :0
 ```
 
-No window manager is needed — the script's OpenCV window fills the display and the
-mouse-drag frequency sliders still work, just without title bars/borders. Pressing
-`q` in the window quits the app and the X server exits with it, back to the console.
+**This was not fully validated**: on real hardware this hit `Fatal server error:
+Cannot run in framebuffer mode. Please specify busIDs for all framebuffer devices` —
+Xorg falling back to the `fbdev` driver instead of `modesetting`/KMS (the Pi 5 has no
+non-KMS mode). The likely fix is forcing the driver explicitly:
+
+```bash
+sudo mkdir -p /etc/X11/xorg.conf.d
+sudo tee /etc/X11/xorg.conf.d/10-modesetting.conf <<'EOF'
+Section "Device"
+    Identifier "Pi5"
+    Driver "modesetting"
+    Option "kmsdev" "/dev/dri/card0"
+EndSection
+EOF
+```
+
+(`modesetting` is built into `xserver-xorg-core`, not a separate package — no install
+needed for the driver itself.) This was not re-tested — the Pi was reinstalled with
+the Desktop image instead, which avoids the whole class of problem. If you need a
+Lite-based headless deployment later (e.g. a lighter Phase 4 field unit), start here
+but expect to need this driver fix, and confirm `/dev/dri/card0` is actually the right
+device (`ls /dev/dri/`) before assuming it.
 
 ## 6. Performance expectations
 
@@ -191,6 +226,14 @@ before turning up resolution or trying MVDR/MUSIC/CLEAN-SC:
 python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0
 ```
 
+For a fixed HDMI-monitor "camera appliance" deployment, add `--fullscreen` to fill the
+whole screen with a borderless window (see §5 for how to get the display attached in
+the first place):
+
+```bash
+python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0 --fullscreen
+```
+
 If you want real numbers instead of estimates before wiring up the camera/display,
 run the existing benchmark script directly on the Pi first — it needs no camera, no
 display, and no live mic input (it loads `test/UMA16/capture_nb16.wav`):
@@ -209,6 +252,8 @@ trustworthy than the estimates in the table above.
 | `sounddevice` import error | missing `libportaudio2` | `apt install libportaudio2` |
 | `cv2.imshow` errors "not implemented" | headless OpenCV wheel from `pip` | use apt `python3-opencv`, venv with `--system-site-packages` |
 | Camera won't open / wrong device | Pi Camera Module (CSI), not a USB webcam | use a USB webcam, or add `picamera2` support (Phase 4 work) |
-| `cv2.imshow` hangs / X errors over SSH | no display session | attach HDMI or use VNC |
+| `cv2.imshow` hangs / X errors over SSH | no display session, or SSH session not attached to the Pi's local desktop session | log in locally/VNC, or export `DISPLAY=:0` + `XAUTHORITY=~/.Xauthority` (see §5) |
+| `ssh -Y` window appears on your own machine, not the Pi's monitor | `-Y` tunnels a **new** X display back to your client; it never touches the Pi's HDMI output | use the `DISPLAY`/`XAUTHORITY` attach recipe in §5 instead of `-Y` |
 | Low fps at default settings | 0.5°/pt grid + MVDR/MUSIC/CLEAN-SC too heavy for Pi 5 | `--grid_deg 1.0`, start with `--algo ds` |
 | MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
+| Xorg: `Cannot run in framebuffer mode...` (Lite only) | falling back to `fbdev` instead of `modesetting`/KMS | force `modesetting` via `/etc/X11/xorg.conf.d` (see §5, not fully validated) |
