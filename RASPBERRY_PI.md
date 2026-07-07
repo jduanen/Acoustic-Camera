@@ -214,10 +214,11 @@ analysis for the 96-ch Phase 4 host). Scaling the existing 16-ch desktop benchma
 | 0.5°/pt (181×121 = 21,901 pts) | ~21 ms | ~70-85 ms | ~75-90 ms | ~300-350 ms |
 | 1.0°/pt (91×61 = 5,551 pts)   | ~7 ms  | ~20-25 ms | ~20-25 ms | ~55-65 ms |
 
-At 1.0°/pt, D&S/MVDR/MUSIC should sustain roughly 15-20 fps on the Pi 5, which is comfortably
-inside the script's own frame pacing (`time.sleep(0.05)` caps display at 20 fps
-regardless). At the default 0.5°/pt, D&S is likely still fine but MVDR/MUSIC and
-especially CLEAN-SC will visibly lag.
+At 1.0°/pt, D&S/MVDR/MUSIC should sustain roughly 15-20 fps on the Pi 5 *purely on compute
+cost*. At the default 0.5°/pt, D&S is likely still fine but MVDR/MUSIC and especially
+CLEAN-SC will visibly lag. **These estimates only cover the CSM+beamform math** — see §7
+for what the live script actually costs end-to-end, which is substantially more than this
+table alone would suggest.
 
 **Recommended starting command**: coarser grid, cheapest algorithm, confirm it runs
 before turning up resolution or trying MVDR/MUSIC/CLEAN-SC:
@@ -246,6 +247,62 @@ That gives per-algorithm mean time and RT% on the actual Pi 5 hardware, which is
 trustworthy than the estimates in the table above.
 
 ## 7. Performance Measurements
+
+The §6 estimates come from the offline `benchmark_algos.py` script, which only measures
+CSM + beamform math. The live script (`acoustic_camera_p3.py`) also does camera capture,
+overlay rendering, and `cv2.imshow`, none of which appear in that benchmark — and on real
+hardware, those turned out to matter more than the compute estimates did. The script has a
+`--profile` flag that prints a per-stage timing breakdown to stderr every 20 frames:
+
+```bash
+python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0 --video 0 --profile
+```
+
+**Confirmed on hardware** (Pi 5, D&S, 1.0°/pt, real UMA-16 + USB webcam):
+
+| Stage | With camera | No camera (`--video 99`) |
+|---|---|---|
+| `cam.read()` | 40.7 ms | 0.1 ms |
+| audio buffer → array | 6.2 ms | 6.0 ms |
+| CSM + D&S | 13.1 ms | 12.6 ms |
+| overlay render | 6.3 ms | 5.7 ms |
+| `cv2.imshow` + `waitKey` | 4.0 ms | 3.9 ms |
+| **compute total** | **70.3 ms** | **28.2 ms** |
+
+`--fullscreen` made no measurable difference to any of these — the source frame `cv2.imshow`
+receives is the same size either way; only the window-manager-side scale-to-screen changes,
+which isn't where the cost is.
+
+- No camera: 28.2 ms of work + ~21.8 ms sleep ≈ 50 ms/frame → **~20 fps** (hits the intended target after fixing loop delay bug)
+- With camera: 70.3 ms of work already exceeds the 50 ms budget → sleep contributes ~0 →
+  **~14 fps** (up from the original ~8 fps), now limited purely by camera capture cost
+
+### Camera Backend: default auto-selection was already the best option
+
+`cam.read()`'s ~40 ms floor was tried two ways to reduce, both regressions on this hardware:
+
+| Backend | `cam.read()` |
+|---|---|
+| Default (`cv2.VideoCapture(idx)`, auto-selects GStreamer) | **40.7 ms** |
+| Forced `cv2.CAP_V4L2`, no format hint | 65.2 ms |
+| Forced `cv2.CAP_V4L2` + explicit `cv2.VideoWriter_fourcc(*'MJPG')` | 64.0 ms |
+
+Likely explanation: GStreamer's auto-negotiated pipeline was probably already requesting a
+compressed (MJPEG) format from the webcam, while raw V4L2 without an explicit format request
+defaulted to something uncompressed (e.g. YUYV) — roughly double the bytes over USB plus more
+software color-conversion work. **Reverted to the plain default** (`cv2.VideoCapture(args.video)`,
+no explicit backend/format) — confirmed the fastest of the three on this specific webcam/Pi
+combination. This is device-specific; a different USB webcam could behave differently.
+
+### Next Step: MIPI-CSI camera via `picamera2`
+
+Not yet implemented. A CSI-attached Camera Module bypasses USB and GStreamer entirely,
+talking to the Pi's ISP/DMA pipeline directly via `picamera2` rather than `cv2.VideoCapture`
+(which cannot open a CSI camera at all — see §4). Plausible this beats the 40.7 ms USB floor,
+but unmeasured — needs the hardware wired up and a second capture code path added (`picamera2`
+returns frames differently than `cv2.VideoCapture`, so this isn't a config tweak). This is the
+same direction [PHASE4.md](./PHASE4.md#camera-pi-camera-module-3-wide) already planned for the
+96-ch host, so implementing it here means not doing this work twice.
 
 ## 8. Known Issues Summary
 
