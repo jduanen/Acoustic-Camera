@@ -248,7 +248,7 @@ class Picam2Capture:
     """Wraps picamera2 to match the cv2.VideoCapture .read()/.release() interface
     used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam."""
 
-    def __init__(self, size=(640, 480)):
+    def __init__(self, size=(1280, 720)):
         try:
             from picamera2 import Picamera2
         except ImportError as e:
