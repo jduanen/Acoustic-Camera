@@ -157,6 +157,11 @@ adaptive pacing fix (§7) sleeps out the remainder and this hits the full **~20 
 target — a large improvement over the USB webcam's ~14 fps. See §7 for the full
 before/after comparison.
 
+Default capture size is `1280x542`, not the panel's native `1280x720` — the missing
+`178px` (`2*44 + 90`) is reserved for the Fhi slider strip, spectrum plot, and Flo
+slider strip stacked below the video (see README.md's Phase 3 "Touch UI" writeup for
+why they're laid out that way), so the combined display still exactly fills the
+1280x720 panel with no letterboxing.
 
 ## 5. Display
 
@@ -382,7 +387,6 @@ Furthermore, even with a large heatsink with a fan, the CPU temperature gets up 
 
 ?
 
-
 ## 9. Known Issues Summary
 
 | Symptom | Cause | Fix |
@@ -396,3 +400,4 @@ Furthermore, even with a large heatsink with a fan, the CPU temperature gets up 
 | Live fps much lower than §6 compute estimates suggest | camera capture (~40 ms) + a frame-pacing bug (fixed sleep added *on top of* work, not a target) both add cost the offline benchmark never measured | see §7; pacing bug is fixed in current code, camera cost is a hardware floor with this webcam |
 | MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
 | Xorg: `Cannot run in framebuffer mode...` (Lite only) | falling back to `fbdev` instead of `modesetting`/KMS | force `modesetting` via `/etc/X11/xorg.conf.d` (see §5, not fully validated) |
+| Touch sliders felt laggy / seemed to cross despite clamping | stale read used for display, not the clamp math | see README.md's Phase 3 "Touch UI" section |

@@ -394,13 +394,68 @@ Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sli
 2D beamform (azimuth × elevation grid) → COLORMAP_INFERNO full-frame overlay blended onto
 webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
-Below the video is a spectrum plot -- i.e., the set of green bars represent the energy in each of the frequency bins, from lowest (f_lo) on the left to the highest (f_hi) on the right. A pair of slider controls below the spectrum plot are used to select the value of f_lo and f_hi. The program defaults to f_lo=500Hz and f_hi=4000Hz.
-
-There is also a white vertical line in the center of the spectrum plot (by construction) that indicates the beamforming frequency. The value of this frequency is given in the status line at the top of the video pane. This is the frequency at which the CSM and beamforming algorithm is currently being run. The beamforming frequency is set to the midpoint between the current f_lo and f_hi frequencies (i.e., `freq = (f_lo + f_hi) / 2`).
+Below the video, top to bottom: an **Fhi** slider strip, a spectrum plot, then an **Flo**
+slider strip (the two are on opposite sides of the plot, not stacked together — see
+"Touch UI" below for why). The green bars in the spectrum plot show energy per frequency
+bin, from `f_lo` on the left to `f_hi` on the right; a white vertical line at the center
+marks the current beamforming frequency (`freq = (f_lo + f_hi) / 2`), also shown in the
+status line at the top of the video pane. Defaults: `f_lo=500Hz`, `f_hi=4000Hz`. Dragging
+the spectrum plot itself (rather than either slider) pans `f_lo`/`f_hi` together,
+preserving the gap between them, instead of resizing the range.
 
 The algorithms that are implemented in this application are `ds`, `mvdr`, `clean` (CLEAN-SC), and `music`. The microphone array has a Spatial Nyquist frequency of ~4.1 kHz. This device should be operated at between 2000-3700 Hz for it to provide meaningful 2D directionality.
 
 With *N*=16 mics, the MVDR/MUSIC algorithms provide measurable super-resolution benefit over D&S.
+
+#### Touch UI: Frequency Sliders & Spectrum Pan
+
+Getting the Fhi/Flo sliders right on a real touchscreen (Raspberry Pi Touch Display 2,
+see [RASPBERRY_PI.md](./RASPBERRY_PI.md)) took several rounds — worth documenting since
+none of these were visible on desktop/mouse testing, only on hardware:
+
+**Touch targets too close together.** The original design had both sliders stacked in
+one 44px panel (22px per row) — too small a target for a finger. Fix: split them onto
+opposite sides of the spectrum plot, each with its own full 44px strip.
+
+**Displayed slider position lagged the actual touch position.** `flo`/`fhi` were read
+from the shared `_sliders` dict once at the top of the main loop (before the ~15-30 ms
+of CSM/beamform work), and that stale snapshot was still what got drawn at the bottom
+of the loop — so during an active drag, the on-screen handle visibly lagged the live
+value by up to one frame, which looked like the handles crossing. Fixed by re-reading
+live values immediately before drawing, separate from the early snapshot used for that
+frame's beamforming frequency (which intentionally stays tied to what was actually
+computed that frame).
+
+**Race condition on `_sliders`.** It's written by `_on_mouse` (OpenCV's Qt backend can
+dispatch input callbacks off the main loop's thread) and read by the main loop, with no
+lock — unlike `audio_buf` elsewhere in this file, which already uses `buf_lock` for
+exactly this reason. Added `_sliders_lock` around all reads/writes, mirroring that
+existing pattern.
+
+**Different max ranges made the two sliders behave inconsistently.** `flo`/`fhi`
+originally had different maxima (5000 / 8000 Hz), so the same finger position meant a
+different Hz value on each — confusing, and made the ordering clamp feel like it was
+failing even when it wasn't. Unified to one shared `_FREQ_MAX = 8000` for both.
+
+**Track geometry didn't line up.** Flo's label is on the left, Fhi's on the right (so
+the label side visually reinforces which direction is "higher" on the shared scale) —
+but that means their tracks need mirrored margins (`[92, w-8]` vs `[8, w-92]`), which
+are the *same length* but not the *same interval*, so identical Hz values landed at
+different x-pixels on each slider. Fixed by using the intersection of both margins,
+`[92, w-92]`, as the single shared track for both — see `_track_geom()`.
+
+**Spectrum-plot pan.** Dragging horizontally on the spectrum plot itself (not the
+slider strips) shifts `flo` and `fhi` together by the same amount, preserving the gap
+between them — i.e. it pans the visible range rather than resizing it. Clamped at both
+ends so the window snaps to sit exactly at 100 Hz or `_FREQ_MAX` rather than partially
+clipping. Uses the same `_track_geom()`-derived scale as the sliders, so pan speed
+matches slider-drag speed.
+
+**Nyquist marker color.** The vertical line marking spatial Nyquist (~4083 Hz for the
+UMA-16) on the spectrum plot was `(255, 100, 0)` in BGR — a blue, not orange as the name
+might suggest — which was hard to distinguish against the green spectrum bars. Changed
+to magenta `(255, 0, 255)` (zero green component, maximal contrast against a
+green-dominated background).
 
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
