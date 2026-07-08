@@ -3,15 +3,19 @@
 
 Usage:
     python src/acoustic_camera_p3.py
-    python src/acoustic_camera_p3.py --algo mvdr --freq 3000
-    python src/acoustic_camera_p3.py --algo music --freq 2000 --nsrc 2
+    python src/acoustic_camera_p3.py --algo mvdr
+    python src/acoustic_camera_p3.py --algo music --nsrc 2
     python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy --video 4
+
+The beamforming frequency is set live by the on-screen F lo / F hi sliders
+(freq = midpoint of the selected band), not by a CLI argument.
 """
 import argparse
 import collections
 import sys
 import threading
 import time
+from pathlib import Path
 
 import cv2
 import numpy as np
@@ -224,7 +228,6 @@ def find_device():
 def main():
     ap = argparse.ArgumentParser(description='Phase 3 acoustic camera — UMA-16 v2')
     ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds')
-    ap.add_argument('--freq',   type=float, default=3000.0,  help='beamforming frequency (Hz)')
     ap.add_argument('--snap',   type=int,   default=128,     help='CSM blocks to average')
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
     ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
@@ -240,7 +243,17 @@ def main():
     ap.add_argument('--profile', action='store_true',        help='print per-stage timing breakdown to stderr')
     args = ap.parse_args()
 
-    cal_e = np.load(args.cal) if args.cal else None
+    cal_e = None
+    if args.cal:
+        if not Path(args.cal).exists():
+            sys.exit(f'ERROR: calibration file not found: {args.cal}')
+        cal_e = np.load(args.cal)
+        if cal_e.shape != (N_MICS,):
+            sys.exit(f'ERROR: calibration must have shape ({N_MICS},), '
+                     f'got {cal_e.shape}: {args.cal}')
+        if np.any(cal_e == 0):
+            sys.exit(f'ERROR: calibration contains zero entries '
+                     f'(would divide by zero): {args.cal}')
     az_grid = np.linspace(-args.az_fov / 2, args.az_fov / 2,
                           round(args.az_fov / args.grid_deg) + 1)
     el_grid = np.linspace(-args.el_fov / 2, args.el_fov / 2,
@@ -280,9 +293,10 @@ def main():
             print('No webcam — showing audio-only overlay on black frame')
             cam = None
 
-    print(f'algo={args.algo}  freq={args.freq:.0f}Hz  '
+    print(f'algo={args.algo}  '
           f'az_fov=±{args.az_fov/2:.0f}°  el_fov=±{args.el_fov/2:.0f}°  '
-          f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}')
+          f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}  '
+          f'(freq set by on-screen sliders)')
     print('Press q to quit.')
 
     P = None
@@ -304,131 +318,133 @@ def main():
     prof = collections.defaultdict(float)
     prof_n = 0
 
-    with stream:
-        while True:
-            loop_start = time.monotonic()
+    try:
+        with stream:
+            while True:
+                loop_start = time.monotonic()
 
-            t0 = time.monotonic()
-            if cam is not None:
-                ret, frame = cam.read()
-                if not ret:
-                    frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            else:
-                frame = np.zeros((480, 640, 3), dtype=np.uint8)
-            t1 = time.monotonic()
-
-            with _sliders_lock:
-                flo = _sliders['flo']
-                fhi = _sliders['fhi']
-                if flo > fhi - 100:
-                    # Self-healing ordering guarantee, kept under the same lock as
-                    # _on_mouse's writes so this can't race with a concurrent update.
-                    if _sliders['drag'] == 'lo':
-                        fhi = _sliders['fhi'] = flo + 100
-                    else:
-                        flo = _sliders['flo'] = fhi - 100
-            freq = (flo + fhi) / 2
-
-            with buf_lock:
-                n_avail = len(audio_buf)
-
-            if n_avail >= n_buf:
-                with buf_lock:
-                    arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
-                latest_arr = arr
-                t2 = time.monotonic()
-
-                R = compute_csm(arr, freq)
-                if cal_e is not None:
-                    c = 1.0 / cal_e
-                    R = np.outer(c, c.conj()) * R
-
-                P = ALGO(R, freq)
-                # Temporal smoothing: reduces frame-to-frame jitter
-                if P_smooth is None:
-                    P_smooth = P.copy()
+                t0 = time.monotonic()
+                if cam is not None:
+                    ret, frame = cam.read()
+                    if not ret:
+                        frame = np.zeros((480, 640, 3), dtype=np.uint8)
                 else:
-                    P_smooth = args.smooth * P_smooth + (1 - args.smooth) * P
-                ref_power = max(ref_power * 0.98, P_smooth.max())
+                    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                t1 = time.monotonic()
 
-                k = np.argmax(P_smooth)
-                az_peak = az_grid[k // N_el]
-                el_peak = el_grid[k % N_el]
-                label = (f'{args.algo.upper()}  {freq:.0f}Hz  '
-                         f'az={az_peak:.1f}°  el={el_peak:.1f}°')
-                t3 = time.monotonic()
-            else:
-                t2 = t3 = time.monotonic()
+                with _sliders_lock:
+                    flo = _sliders['flo']
+                    fhi = _sliders['fhi']
+                    if flo > fhi - 100:
+                        # Self-healing ordering guarantee, kept under the same lock as
+                        # _on_mouse's writes so this can't race with a concurrent update.
+                        if _sliders['drag'] == 'lo':
+                            fhi = _sliders['fhi'] = flo + 100
+                        else:
+                            flo = _sliders['flo'] = fhi - 100
+                freq = (flo + fhi) / 2
 
-            if P_smooth is not None:
-                frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
+                with buf_lock:
+                    n_avail = len(audio_buf)
 
-                # Cross-hair at peak direction
-                h, w = frame.shape[:2]
-                px = int((az_peak + args.az_fov / 2) / args.az_fov * w)
-                py = int((args.el_fov / 2 - el_peak) / args.el_fov * h)
-                px = max(1, min(w - 2, px))
-                py = max(1, min(h - 2, py))
-                cv2.line(frame, (px, 0), (px, h), (0, 255, 0), 1)
-                cv2.line(frame, (0, py), (w, py), (0, 255, 0), 1)
-            t4 = time.monotonic()
+                if n_avail >= n_buf:
+                    with buf_lock:
+                        arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
+                    latest_arr = arr
+                    t2 = time.monotonic()
 
-            now = time.monotonic()
-            fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
-            t_last = now
+                    R = compute_csm(arr, freq)
+                    if cal_e is not None:
+                        c = 1.0 / cal_e
+                        R = np.outer(c, c.conj()) * R
 
-            cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
-            h_f, w_f = frame.shape[:2]
-            with _sliders_lock:
-                _sliders['frame_h'] = h_f
-                _sliders['frame_w'] = w_f
-                # Re-read live values for display: `flo`/`fhi` above were snapshotted
-                # before this frame's CSM/beamform work (~15-30 ms), and _on_mouse can
-                # update the real sliders during that window via touch events. Drawing
-                # the stale snapshot here would visibly lag the user's actual finger
-                # position, which looks like the handles crossing during a fast drag.
-                disp_flo = _sliders['flo']
-                disp_fhi = _sliders['fhi']
-            spec_panel_img = spectrum_panel(latest_arr, w_f, freq, height=_SPECTRUM_H,
-                                             fmin=disp_flo, fmax=disp_fhi)
-            display = np.vstack([
-                frame,
-                _slider_strip(w_f, 'F hi', disp_fhi, _FREQ_MAX, (80, 160, 220), label_right=True),
-                spec_panel_img,
-                _slider_strip(w_f, 'F lo', disp_flo, _FREQ_MAX, (80, 200, 80)),
-            ])
-            cv2.imshow(win, display)
-            if not mouse_registered:
-                cv2.setMouseCallback(win, _on_mouse)
-                mouse_registered = True
-            key_result = cv2.waitKey(1) & 0xFF
-            t5 = time.monotonic()
+                    P = ALGO(R, freq)
+                    # Temporal smoothing: reduces frame-to-frame jitter
+                    if P_smooth is None:
+                        P_smooth = P.copy()
+                    else:
+                        P_smooth = args.smooth * P_smooth + (1 - args.smooth) * P
+                    ref_power = max(ref_power * 0.98, P_smooth.max())
 
-            # Adaptive pacing: sleep only the remainder of the 50 ms (20 fps) budget,
-            # rather than always sleeping the full 50 ms on top of the work above.
-            time.sleep(max(0.0, 0.05 - (t5 - loop_start)))
+                    k = np.argmax(P_smooth)
+                    az_peak = az_grid[k // N_el]
+                    el_peak = el_grid[k % N_el]
+                    label = (f'{args.algo.upper()}  {freq:.0f}Hz  '
+                             f'az={az_peak:.1f}°  el={el_peak:.1f}°')
+                    t3 = time.monotonic()
+                else:
+                    t2 = t3 = time.monotonic()
 
-            if args.profile:
-                prof['cam']      += t1 - t0
-                prof['buf_copy'] += t2 - t1
-                prof['csm_algo'] += t3 - t2
-                prof['overlay']  += t4 - t3
-                prof['imshow']   += t5 - t4
-                prof_n += 1
-                if prof_n >= 20:
-                    parts = '  '.join(f'{k}={1000 * v / prof_n:5.1f}ms' for k, v in prof.items())
-                    print(f'[profile] {parts}  total={1000 * sum(prof.values()) / prof_n:5.1f}ms',
-                          file=sys.stderr)
-                    prof.clear()
-                    prof_n = 0
+                if P_smooth is not None:
+                    frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
 
-            if key_result == ord('q'):
-                break
+                    # Cross-hair at peak direction
+                    h, w = frame.shape[:2]
+                    px = int((az_peak + args.az_fov / 2) / args.az_fov * w)
+                    py = int((args.el_fov / 2 - el_peak) / args.el_fov * h)
+                    px = max(1, min(w - 2, px))
+                    py = max(1, min(h - 2, py))
+                    cv2.line(frame, (px, 0), (px, h), (0, 255, 0), 1)
+                    cv2.line(frame, (0, py), (w, py), (0, 255, 0), 1)
+                t4 = time.monotonic()
 
-    if cam is not None:
-        cam.release()
-    cv2.destroyAllWindows()
+                now = time.monotonic()
+                fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
+                t_last = now
+
+                cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+                h_f, w_f = frame.shape[:2]
+                with _sliders_lock:
+                    _sliders['frame_h'] = h_f
+                    _sliders['frame_w'] = w_f
+                    # Re-read live values for display: `flo`/`fhi` above were snapshotted
+                    # before this frame's CSM/beamform work (~15-30 ms), and _on_mouse can
+                    # update the real sliders during that window via touch events. Drawing
+                    # the stale snapshot here would visibly lag the user's actual finger
+                    # position, which looks like the handles crossing during a fast drag.
+                    disp_flo = _sliders['flo']
+                    disp_fhi = _sliders['fhi']
+                spec_panel_img = spectrum_panel(latest_arr, w_f, freq, height=_SPECTRUM_H,
+                                                 fmin=disp_flo, fmax=disp_fhi)
+                display = np.vstack([
+                    frame,
+                    _slider_strip(w_f, 'F hi', disp_fhi, _FREQ_MAX, (80, 160, 220), label_right=True),
+                    spec_panel_img,
+                    _slider_strip(w_f, 'F lo', disp_flo, _FREQ_MAX, (80, 200, 80)),
+                ])
+                cv2.imshow(win, display)
+                if not mouse_registered:
+                    cv2.setMouseCallback(win, _on_mouse)
+                    mouse_registered = True
+                key_result = cv2.waitKey(1) & 0xFF
+                t5 = time.monotonic()
+
+                # Adaptive pacing: sleep only the remainder of the 50 ms (20 fps) budget,
+                # rather than always sleeping the full 50 ms on top of the work above.
+                time.sleep(max(0.0, 0.05 - (t5 - loop_start)))
+
+                if args.profile:
+                    prof['cam']      += t1 - t0
+                    prof['buf_copy'] += t2 - t1
+                    prof['csm_algo'] += t3 - t2
+                    prof['overlay']  += t4 - t3
+                    prof['imshow']   += t5 - t4
+                    prof_n += 1
+                    if prof_n >= 20:
+                        parts = '  '.join(f'{k}={1000 * v / prof_n:5.1f}ms' for k, v in prof.items())
+                        print(f'[profile] {parts}  total={1000 * sum(prof.values()) / prof_n:5.1f}ms',
+                              file=sys.stderr)
+                        prof.clear()
+                        prof_n = 0
+
+                if key_result == ord('q'):
+                    break
+
+    finally:
+        if cam is not None:
+            cam.release()
+        cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':

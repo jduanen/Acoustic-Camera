@@ -382,11 +382,16 @@ https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array
 ### Live Script
 
 ```bash
-python src/acoustic_camera_p3.py                                  # D&S, 2000 Hz
-python src/acoustic_camera_p3.py --algo mvdr --freq 3000          # MVDR, 3 kHz
+python src/acoustic_camera_p3.py                                  # D&S
+python src/acoustic_camera_p3.py --algo mvdr                      # MVDR
 python src/acoustic_camera_p3.py --algo music --nsrc 2            # MUSIC, 2 sources
 python src/acoustic_camera_p3.py --cal test/UMA16/cal.npy         # with calibration
 ```
+
+The beamforming frequency is set live by the on-screen F lo / F hi sliders (there is no
+`--freq` argument). The shared beamforming math (geometry, steering matrix, D&S/MVDR/
+CLEAN-SC/MUSIC, CSM) lives in `src/beamforming.py`, used by both this script and
+`src/benchmark_algos.py`, with a pytest suite in `tests/`.
 
 **TODO** Place a screengrab of the running application's display here.
 

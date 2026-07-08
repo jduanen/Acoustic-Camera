@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Phase 2 live acoustic camera: ReSpeaker 4-mic → beamform → OpenCV overlay.
 
+Historical Phase 2 pipeline (retired ReSpeaker hardware, 1D azimuth-only);
+kept as-is. The shared Phase 3+ beamforming math lives in beamforming.py.
+
 Usage:
     python src/acoustic_camera_p2.py
     python src/acoustic_camera_p2.py --algo mvdr --freq 2000
