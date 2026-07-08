@@ -130,6 +130,33 @@ Install 22-pin ribbon cable on one of the connectors near RJ45 connector (contac
 Earlier Raspberry Pis used 15-pin ribbon cables, can use adaptors to make some of these cameras work with Raspberry Pi 5 boards.
 Use camera with M12 lens mount so I can select a lens with the desired FOV.
 
+**Lens choice: 100° FOV.** Two reasons this beats both narrower and wider options on hand
+(80/100/120/140/160/200°):
+
+- **Matches the beamforming display window.** The overlay/crosshair math
+  (`px = (az_peak + az_fov/2) / az_fov * w`) is a *linear* angle-to-pixel mapping, so the
+  camera's real FOV needs to match `--az_fov`/`--el_fov` (defaults 90°/60°) for the
+  overlay to land on the correct pixel. 100° needs only a small `--az_fov` tweak to match
+  exactly, rather than a redesign.
+- **Avoids fisheye distortion.** Lenses above ~100-120° horizontal FOV are essentially
+  always fisheye/equidistant-projection, not rectilinear — the linear pixel mapping above
+  would be systematically wrong (worse toward the frame edges) without adding a lens
+  calibration + `cv2.remap()` undistortion step, which isn't implemented. 100° is the
+  widest of the available lenses still likely to be genuinely rectilinear; 80° would be
+  the more conservative/certain choice at the cost of a narrower view.
+
+If the wider lenses (120°+) end up preferred later for scene coverage, undistortion is
+cheap to add if needed: a one-time `cv2.fisheye.initUndistortRectifyMap()` at startup,
+then `cv2.remap()` per frame (~5-8ms at 1280x720 on this hardware, extrapolating from
+the comparable-cost `cv2.resize` step already measured in §7 — fits easily in the ~19 ms
+of slack under the 50 ms/20 fps budget). The lens calibration itself (checkerboard
+capture + `cv2.fisheye.calibrate`) is a one-time setup cost, not a runtime one.
+
+Sensor resolution: no reason to exceed the Touch Display 2's own **1280x720** — the
+pipeline never uses more pixels than it displays (no zoom/pan on the video), and §7
+already shows overlay-render/`cv2.imshow` cost scaling with pixel count. Target the
+sensor's 720p output mode rather than its highest native resolution.
+
 **Software**: `cv2.VideoCapture` cannot open a CSI camera directly (see above), so the
 script uses `picamera2` as a second, alternate capture path — pass `--csi` to select it
 (`--video` is ignored in that case):
