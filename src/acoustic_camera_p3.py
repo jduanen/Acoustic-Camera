@@ -200,27 +200,25 @@ _SLIDER_H = 44          # height of each individual slider strip
 _SPECTRUM_H = 90        # height of the spectrum panel between the two slider strips
 _FREQ_MAX = 8000        # shared max for both sliders, so the same track position means the same Hz on either
 _TRACK_X0 = 92          # left edge of slider track
-_sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640}
+_sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
+             'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
 
 
-_TRACK_X0_RIGHT = 8   # left margin for a mirrored (label-on-right) track
-
-
-def _track_x0(label_right):
-    """Shared between drawing and touch hit-testing so they never disagree."""
-    return _TRACK_X0_RIGHT if label_right else _TRACK_X0
+def _track_geom(w):
+    """Shared by both sliders (and _on_mouse) so Flo/Hi always agree on where a
+    given Hz value sits on screen: the intersection of the two labels' margins,
+    i.e. a track inset by _TRACK_X0 on *both* sides regardless of label side."""
+    return _TRACK_X0, max(w - 2 * _TRACK_X0, 1)
 
 
 def _slider_strip(w, label, val, vmax, color, label_right=False):
-    """label_right puts the text at the right edge instead of the left and mirrors
-    the track to the left side of the strip (small margin left, large margin right
-    for the label) — matches Flo's left-label/left-margin layout, mirrored."""
+    """label_right puts the text at the right edge instead of the left; the track
+    itself (see _track_geom) is identical either way, so Flo and Fhi line up."""
     strip = np.full((_SLIDER_H, w, 3), 28, dtype=np.uint8)
-    track_w = max(w - _TRACK_X0 - 8, 1)
-    track_x0 = _track_x0(label_right)
+    track_x0, track_w = _track_geom(w)
     yc = _SLIDER_H // 2
     cv2.rectangle(strip, (track_x0, yc - 3), (track_x0 + track_w, yc + 3), (80, 80, 80), -1)
     xh = track_x0 + int(val / vmax * track_w)
@@ -252,18 +250,33 @@ def _on_mouse(event, x, y, flags, _param):
             if rel_y < _SLIDER_H:
                 _sliders['drag'] = 'hi'
             elif rel_y < _SLIDER_H + _SPECTRUM_H:
-                _sliders['drag'] = None   # tapped the (non-interactive) spectrum plot
-                return
+                # Dragging the spectrum plot pans both sliders together, preserving
+                # the Fhi-Flo gap, instead of resizing the range.
+                _sliders['drag'] = 'pan'
+                _sliders['pan_x0'] = x
+                _sliders['pan_flo0'] = _sliders['flo']
+                _sliders['pan_fhi0'] = _sliders['fhi']
             else:
                 _sliders['drag'] = 'lo'
-        if _sliders['drag']:
-            track_w = max(_sliders['frame_w'] - _TRACK_X0 - 8, 1)
-            track_x0 = _track_x0(_sliders['drag'] == 'hi')
+        if _sliders['drag'] in ('lo', 'hi'):
+            track_x0, track_w = _track_geom(_sliders['frame_w'])
             frac = max(0.0, min(1.0, (x - track_x0) / track_w))
             if _sliders['drag'] == 'lo':
                 _sliders['flo'] = max(100, min(_sliders['fhi'] - 100, int(frac * _FREQ_MAX)))
             else:
                 _sliders['fhi'] = max(_sliders['flo'] + 100, int(frac * _FREQ_MAX))
+        elif _sliders['drag'] == 'pan':
+            _, track_w = _track_geom(_sliders['frame_w'])
+            dx_hz = (x - _sliders['pan_x0']) / track_w * _FREQ_MAX
+            gap = _sliders['pan_fhi0'] - _sliders['pan_flo0']
+            new_flo = _sliders['pan_flo0'] + dx_hz
+            new_fhi = _sliders['pan_fhi0'] + dx_hz
+            if new_flo < 100:
+                new_flo, new_fhi = 100, 100 + gap
+            if new_fhi > _FREQ_MAX:
+                new_flo, new_fhi = _FREQ_MAX - gap, _FREQ_MAX
+            _sliders['flo'] = int(new_flo)
+            _sliders['fhi'] = int(new_fhi)
 
 
 # --- Main ---
