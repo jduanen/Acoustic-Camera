@@ -1,37 +1,15 @@
-# Acoustic Camera — Phase 1 & 2 dependencies
-# Activate environment: workon ACOUSTIC_CAMERA
-# Install: pip install -r requirements.txt
+# Acoustic Camera — Phase 3 runtime dependencies (live script + benchmark)
+#
+# On the Raspberry Pi deployment (see RASPBERRY_PI.md):
+#   - create the venv with --system-site-packages
+#   - cv2 comes from apt (python3-opencv — the pip wheel is often headless on ARM)
+#   - picamera2 (for --csi) comes from apt (python3-picamera2), not pip
+#   - OpenBLAS must be installed: sudo apt install libopenblas0-pthread
+# On a desktop, `pip install -r requirements.txt` inside a plain venv is enough.
+#
+# Notebook / simulation / test dependencies: requirements-dev.txt
 
-# Beamforming core
-acoular
-
-# Room acoustics simulation (synthetic source data)
-pyroomacoustics
-
-# ML dataset generation for Phase 5 training (not on PyPI; install from GitHub)
-git+https://github.com/adku1173/acoupipe.git
-
-# Numerical / signal processing
 numpy
 scipy
-h5py          # Acoular uses HDF5 for data I/O
-
-# Visualization
-matplotlib
-seaborn
-
-# Notebooks (Phase 1 deliverables are Jupyter notebooks)
-jupyterlab
-ipywidgets
-jupyter  #### ?
-ipkernel #### ?
-
-# Utilities
-pandas        # tabular results / sweep data
-tqdm          # progress bars for long simulations
-
-# Phase 2 — real hardware pipeline
-sounddevice       # USB audio capture (ReSpeaker 4-ch input)
-opencv-python     # video capture and energy map overlay
-pyusb             # XVF3800 USB control (AEC_ASROUTONOFF configuration)
-libusb-package    # pyusb backend (cross-platform libusb)
+sounddevice       # USB audio capture (UMA-16); needs libportaudio2 from apt
+opencv-python     # skip on the Pi — use apt python3-opencv instead (see above)
