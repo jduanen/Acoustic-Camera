@@ -2,9 +2,9 @@
 import numpy as np
 import pytest
 
-from acoustic_camera_p3 import (C, FS, N_MICS, MIC_X, MIC_Y,
-                                beamform_ds, beamform_mvdr, beamform_clean,
-                                beamform_music, compute_csm)
+from beamforming import (C, FS, N_MICS, MIC_X, MIC_Y,
+                         beamform_ds, beamform_mvdr, beamform_clean,
+                         beamform_music, compute_csm)
 
 AZ_GRID = np.linspace(-45.0, 45.0, 91)   # 1.0 deg/pt
 EL_GRID = np.linspace(-30.0, 30.0, 61)

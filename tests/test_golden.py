@@ -12,8 +12,8 @@ import numpy as np
 import pytest
 import scipy.io.wavfile as wavfile
 
-from acoustic_camera_p3 import (beamform_ds, beamform_mvdr, beamform_clean,
-                                beamform_music, compute_csm)
+from beamforming import (beamform_ds, beamform_mvdr, beamform_clean,
+                         beamform_music, compute_csm)
 
 REPO = Path(__file__).parent.parent
 WAV = REPO / 'test' / 'UMA16' / 'capture_nb16.wav'
