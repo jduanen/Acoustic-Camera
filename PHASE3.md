@@ -294,7 +294,7 @@ python src/acoustic_camera_p3.py --alpha 0.7 --video 4        # higher opacity, 
 
 Key CLI options: `--algo {ds,mvdr,clean,music}`, `--snap N` (default 128),
 `--smooth 0-1` (default 0.7), `--nsrc N` (MUSIC only), `--device idx`, `--video idx` (default 4),
-`--cal path`, `--az_fov deg` (default 90), `--el_fov deg` (default 60), `--alpha 0-1` (default 0.5)
+`--cal path`, `--az_fov deg` (default 100, matches the 100° CSI lens), `--el_fov deg` (default 42), `--alpha 0-1` (default 0.5)
 
 ### Display Layout
 

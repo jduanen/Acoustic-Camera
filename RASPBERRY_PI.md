@@ -135,9 +135,13 @@ Use camera with M12 lens mount so I can select a lens with the desired FOV.
 
 - **Matches the beamforming display window.** The overlay/crosshair math
   (`px = (az_peak + az_fov/2) / az_fov * w`) is a *linear* angle-to-pixel mapping, so the
-  camera's real FOV needs to match `--az_fov`/`--el_fov` (defaults 90°/60°) for the
-  overlay to land on the correct pixel. 100° needs only a small `--az_fov` tweak to match
-  exactly, rather than a redesign.
+  camera's real FOV needs to match `--az_fov`/`--el_fov` for the overlay to land on the
+  correct pixel. **Confirmed**: switched to this lens, and the code defaults are now
+  `az_fov=100°` (matches the lens spec directly) and `el_fov=42°` (scaled from `az_fov`
+  by the frame's pixel aspect ratio, `542/1280`, rather than assuming a vertical-FOV
+  spec — consistent with the code's own linear-degrees-per-pixel convention, but still
+  an approximation pending an empirical check: point the camera at two reference points
+  a known angle apart and confirm the crosshair lands where expected).
 - **Avoids fisheye distortion.** Lenses above ~100-120° horizontal FOV are essentially
   always fisheye/equidistant-projection, not rectilinear — the linear pixel mapping above
   would be systematically wrong (worse toward the frame edges) without adding a lens

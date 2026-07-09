@@ -76,10 +76,10 @@ def main():
                     help='signal subspace dimension for MUSIC (default: 1)')
     ap.add_argument('--clean_iters', type=int,   default=20,
                     help='CLEAN-SC loop iterations (default: 20)')
-    ap.add_argument('--az_fov',      type=float, default=90.0,
-                    help='azimuth FOV in degrees (default: 90)')
-    ap.add_argument('--el_fov',      type=float, default=60.0,
-                    help='elevation FOV in degrees (default: 60)')
+    ap.add_argument('--az_fov',      type=float, default=100.0,
+                    help='azimuth FOV in degrees (default: 100, matches the 100° CSI lens)')
+    ap.add_argument('--el_fov',      type=float, default=42.0,
+                    help='elevation FOV in degrees (default: 42, see acoustic_camera_p3.py)')
     ap.add_argument('--grid_deg',    type=float, default=0.5,
                     help='grid spacing in degrees (default: 0.5 → 181×121; 1.0 → 91×61)')
     ap.add_argument('--fps',         type=float, default=20.0,

@@ -232,8 +232,12 @@ def main():
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
     ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
-    ap.add_argument('--az_fov',   type=float, default=90.0,  help='azimuth display FOV (deg)')
-    ap.add_argument('--el_fov',   type=float, default=60.0,  help='elevation display FOV (deg)')
+    # Matches the 100° CSI lens (see RASPBERRY_PI.md §4). el_fov is scaled from az_fov
+    # by the captured frame's pixel aspect ratio (542/1280) rather than a claimed
+    # vertical-FOV spec, for consistency with the linear degrees-per-pixel overlay
+    # mapping below — treat as an approximation pending empirical verification.
+    ap.add_argument('--az_fov',   type=float, default=100.0, help='azimuth display FOV (deg)')
+    ap.add_argument('--el_fov',   type=float, default=42.0,  help='elevation display FOV (deg)')
     ap.add_argument('--grid_deg', type=float, default=0.5,   help='beamforming grid spacing (deg); 0.5=181×121, 1.0=91×61')
     ap.add_argument('--alpha',    type=float, default=0.5,   help='acoustic overlay opacity (0–1)')
     ap.add_argument('--smooth',   type=float, default=0.7,   help='temporal smoothing factor (0=none, 0.9=heavy)')
