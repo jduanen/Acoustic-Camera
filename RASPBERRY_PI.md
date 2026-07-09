@@ -292,7 +292,7 @@ applies on every login, not just the current session:
 ```bash
 wlr-randr                      # confirm the output name first
 mkdir -p ~/.config/labwc
-echo 'wlr-randr --output DSI-2 --transform 90 &' >> ~/.config/labwc/autostart
+echo 'wlr-randr --output DSI-2 --transform 270 &' >> ~/.config/labwc/autostart
 chmod +x ~/.config/labwc/autostart
 ```
 
