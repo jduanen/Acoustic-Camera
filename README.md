@@ -576,18 +576,40 @@ Each phase delivers a working end-to-end system; never "not yet working" for mor
 | **4** | Custom PCB (96-mic, 300 mm, FPGA hub) | Full-performance system meeting all requirements | Not started |
 | **5** | Phase 3/4 hardware | ML-based beamformer (PILOT / CRNN); benchmark vs CLEAN-SC | Not started |
 
-**Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
-
-**Phase 5** requires real data from Phase 3/4 to train and validate ML models
-
 ## Implementation Details
-Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
 
 ### Hardware
 
-**Mic**: Infineon IM69D120V01XTSA1 PDM MEMS (~$0.76 each at Newark)
+#### Microphone Elements
 
-**FPGA candidates** (PDM decimation, GbE packetization):
+See [MICS](./MICS.md) for mic element details.
+
+**Chosen Mic**: Infineon IM69D120V01XTSA1 PDM MEMS
+  - Newark: $0.755 (unit 1)
+
+#### FPGAs and FPGA Development Boards
+
+Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous sampling, GbE packetization. See [DESIGN](./DESIGN.md) for details.
+
+##### Candidate FPGA Devices
+
+* Lattice ECP5
+  - preferred for open-source toolchain (Yosys / nextpnr / openFPGALoader)
+  - ECP5-85F: 84K LUTs, 3.4Mb BRAM, abundant I/O
+  - low power; actively supported by open-source community
+  - dev boards: OrangeCrab, ULX3S, Versa ECP5
+
+* Xilinx Artix-7
+  - preferred for resource headroom and mature ecosystem (Vivado)
+  - XC7A100T: 101K LUTs, 4.8Mb BRAM, up to 210 user I/O
+  - large library of IP cores (GbE MAC, PCIe, etc.)
+  - dev boards: Digilent Arty A7-100T, Nexys Video (chosen for Phase 4 — FMC LPC)
+
+* Intel Cyclone 10 LP
+  - alternative; good balance of cost and I/O count
+  - dev boards: Intel Cyclone 10 LP Evaluation Kit
+
+##### Candidate FPGA Dev Boards
 
 | Device | LUTs | BRAM | Toolchain | Dev board |
 |---|---|---|---|---|
@@ -595,7 +617,7 @@ Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
 | **Xilinx Artix-7 XC7A200T** | **134K** | **13.1 Mb** | **Vivado; chosen for Phase 4** | **Nexys Video (FMC LPC)** |
 | Intel Cyclone 10 LP | -- | -- | Quartus | Cyclone 10 LP Eval Kit |
 
-### Software stack
+### Software Stack Candidates
 
 | Package | Role |
 |---|---|
@@ -609,7 +631,29 @@ Full details: [IMPLEMENTATION](./IMPLEMENTATION.md)
 | h5py | HDF5 I/O (Acoular data format) |
 | jupyterlab | Notebooks (Phase 1 deliverable) |
 
-See also: [FOSS](./FOSS.md) for open-source beamforming software survey; [MICS](./MICS.md) for mic element details.
+#### Python Packages
+
+* acoular: Beamforming core (D&S, MVDR, CLEAN-SC, array geometry)
+* pyroomacoustics: Room acoustics simulation, synthetic source data
+* acoupipe: ML training dataset generation (from GitHub) 
+* numpy: Array math
+* scipy: Signal processing
+* matplotlib: Plotting
+* h5py: HDF5 I/O (Acoular data format)
+* jupyterlab: Notebooks (Phase 1 deliverable) 
+* pandas: Results tabulation
+* seaborn: Visualization
+* tqdm: Progress bars
+
+See also: [FOSS](./FOSS.md) for open-source beamforming software survey
+
+**TODO** put in final stack selection here
+
+---
+
+*Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
+
+**Phase 5** requires real data from Phase 3/4 to train and validate ML models
 
 ---
 
