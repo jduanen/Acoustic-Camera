@@ -513,6 +513,18 @@ extended-unicode symbols. The tab and popup are positioned from `frame_w`/`frame
 the same way the Flo/Fhi track position is derived in `_track_geom()` — no stored
 pixel coordinates — via `_popup_layout()`.
 
+#### Power/Throttle Indicator
+
+A background thread polls `vcgencmd get_throttled` every 3 s (bits 0-3 = currently
+active undervoltage/throttling/frequency-capping/soft-temp-limit; bits 16-19 = the
+same four latched since last boot — see the Raspberry Pi firmware docs). If any are
+currently active, a red `! LOW VOLTAGE / THROTTLED !` line is drawn below the main
+status line; if none are active now but one occurred earlier in the session, a dimmer
+orange `(low-voltage/throttle event occurred)` line is shown instead. Both are drawn
+directly on the video frame regardless of whether the settings popup is open, the same
+way `[PAUSED]` is. Off a Raspberry Pi (no `vcgencmd`), the poll thread exits quietly on
+its first attempt and the indicator simply never appears — see `_poll_throttled()`.
+
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
 

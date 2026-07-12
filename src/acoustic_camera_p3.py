@@ -12,6 +12,7 @@ The beamforming frequency is set live by the on-screen F lo / F hi sliders
 """
 import argparse
 import collections
+import subprocess
 import sys
 import threading
 import time
@@ -461,6 +462,34 @@ def find_device():
     return None
 
 
+# --- Pi power health (undervoltage/throttling) ---
+# Bit layout of `vcgencmd get_throttled`'s hex value (Raspberry Pi firmware docs):
+# bits 0-3 = currently active (undervoltage / arm freq capped / throttled / soft temp
+# limit); bits 16-19 = the same four conditions, latched since last reboot.
+_THROTTLE_NOW_MASK = 0xF
+_THROTTLE_EVER_MASK = 0xF0000
+
+_throttle_status = {'now': False, 'ever': False}
+_throttle_lock = threading.Lock()
+
+
+def _poll_throttled():
+    """Background thread: polls `vcgencmd get_throttled` every few seconds. Exits
+    quietly (leaving both flags False) if vcgencmd isn't available — e.g. running
+    off a Raspberry Pi, or the firmware tools aren't installed."""
+    while True:
+        try:
+            out = subprocess.run(['vcgencmd', 'get_throttled'], capture_output=True,
+                                  text=True, timeout=2, check=True).stdout.strip()
+            val = int(out.split('=')[1], 16)
+        except (OSError, subprocess.SubprocessError, IndexError, ValueError):
+            return
+        with _throttle_lock:
+            _throttle_status['now'] = bool(val & _THROTTLE_NOW_MASK)
+            _throttle_status['ever'] = bool(val & _THROTTLE_EVER_MASK)
+        time.sleep(3)
+
+
 def main():
     ap = argparse.ArgumentParser(description='Phase 3 acoustic camera — UMA-16 v2')
     ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds')
@@ -564,6 +593,7 @@ def main():
     _sliders['exit_requested'] = False
     _sliders['screenshot_requested'] = False
     mouse_registered = False
+    threading.Thread(target=_poll_throttled, daemon=True).start()
 
     prof = collections.defaultdict(float)
     prof_n = 0
@@ -681,6 +711,17 @@ def main():
                 status = f'{"[PAUSED] " if paused else ""}{label}  {fps:.1f}fps'
                 cv2.putText(frame, status, (10, 28),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
+
+                with _throttle_lock:
+                    throttled_now = _throttle_status['now']
+                    throttled_ever = _throttle_status['ever']
+                if throttled_now:
+                    cv2.putText(frame, '! LOW VOLTAGE / THROTTLED !', (10, 54),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                elif throttled_ever:
+                    cv2.putText(frame, '(low-voltage/throttle event occurred)', (10, 54),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.55, (0, 140, 255), 1)
+
                 h_f, w_f = frame.shape[:2]
                 with _sliders_lock:
                     _sliders['frame_h'] = h_f
