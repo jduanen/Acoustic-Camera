@@ -1,0 +1,18 @@
+[Unit]
+Description=Acoustic Camera (Phase 3 live UMA-16 + CSI overlay)
+After=graphical.target
+Wants=graphical.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=jdn
+WorkingDirectory=/home/jdn/Code/Acoustic-Camera
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/jdn/.Xauthority
+ExecStart=/home/jdn/Code/Acoustic-Camera/venv/bin/python src/acoustic_camera_p3.py --algo ds --grid_deg 1.0 --csi --fullscreen
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=graphical.target
