@@ -190,11 +190,13 @@ def _popup_layout(w):
     toggle = (popup[0] + _POPUP_PAD, popup[1] + _POPUP_PAD,
               popup[2] - _POPUP_PAD, popup[1] + _POPUP_PAD + _POPUP_BTN_H)
 
+    label_y = toggle[3] + _POPUP_ROW_GAP + 10
+
     track_x0 = toggle[0] + 4
     track_w = max((toggle[2] - 4) - track_x0, 1)
-    track_y = toggle[3] + _POPUP_ROW_GAP + 10
+    track_y = label_y + _POPUP_ROW_GAP + 10
 
-    return {'tab': tab, 'popup': popup, 'toggle': toggle,
+    return {'tab': tab, 'popup': popup, 'toggle': toggle, 'label_y': label_y,
             'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y}
 
 
@@ -223,12 +225,13 @@ def _draw_popup(frame, layout, auto_range, thresh_db):
     cv2.putText(frame, label, (bx0 + (bx1 - bx0 - tw) // 2, by0 + (by1 - by0 + th) // 2),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.38, (20, 20, 20), 1)
 
+    cv2.putText(frame, f'Thresh: {thresh_db:.0f} dB', (x0 + _POPUP_PAD, layout['label_y']),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+
     track_x0, track_w, track_y = layout['track_x0'], layout['track_w'], layout['track_y']
     cv2.rectangle(frame, (track_x0, track_y - 3), (track_x0 + track_w, track_y + 3), (80, 80, 80), -1)
     xh = track_x0 + int(thresh_db / _THRESH_MAX * track_w)
     cv2.rectangle(frame, (xh - 5, track_y - 7), (xh + 5, track_y + 7), (220, 160, 80), -1)
-    cv2.putText(frame, f'Thresh: {thresh_db:.0f} dB', (x0 + _POPUP_PAD, track_y + 22),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
 
 
 def _on_mouse(event, x, y, flags, _param):
