@@ -466,7 +466,8 @@ green-dominated background).
 #### Touch UI: Energy Threshold Tab & Auto/Manual Range
 
 A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with three controls:
+strip — the video/strip layout budget is unchanged) opens a popup with four controls
+(the fourth only appears when Algo is set to MUSIC):
 
 - **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
   auto-ranges every frame off a slowly-decaying running max of the beamformed power
@@ -483,6 +484,10 @@ strip — the video/strip layout budget is unchanged) opens a popup with three c
   an option selects it and collapses the list. Switches the live beamformer without
   restarting the script — same effect as `--algo` at launch, just changeable at
   runtime. The popup grows to fit the expanded list and shrinks back when collapsed.
+- **Nsrc** slider (1 to `N_MICS - 1` = 15, default from `--nsrc`, 1 unless overridden).
+  Only shown when Algo is MUSIC — sets the signal-subspace dimension (number of
+  sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
+  the row (and the popup's height) only appears while MUSIC is selected.
 
 Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
 by design, to keep the interaction minimal (the algo dropdown follows the same rule:

@@ -139,11 +139,12 @@ _POPUP_ROW_GAP = 8      # vertical gap between stacked popup rows
 _THRESH_MAX = 100       # thresh_db slider range: 0-100 dB
 _ALGOS = ['ds', 'mvdr', 'clean', 'music']  # algorithm dropdown order
 _ALGO_ROW_H = 26        # height of each option row in the expanded algorithm list
+_NSRC_MAX = N_MICS - 1  # beamform_music's own constraint: N_MICS - n_src >= 1
 
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
              'auto_range': True, 'thresh_db': 30, 'popup_open': False,
-             'algo': 'ds', 'algo_open': False}
+             'algo': 'ds', 'algo_open': False, 'nsrc': 1}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -176,10 +177,11 @@ def _slider_strip(w, label, val, vmax, color, label_right=False):
     return strip
 
 
-def _popup_layout(w, algo_open):
+def _popup_layout(w, algo_open, algo):
     """Settings tab + popup rects, in video-frame (x, y) coordinates, derived purely
-    from frame width w (and algo_open, for the expandable algorithm list) — mirrors
-    _track_geom's style so drawing and _on_mouse hit-testing can't disagree."""
+    from frame width w (and algo_open/algo, for the expandable algorithm list and the
+    MUSIC-only Nsrc row) — mirrors _track_geom's style so drawing and _on_mouse
+    hit-testing can't disagree."""
     tab_x1 = w - _TAB_MARGIN
     tab_x0 = tab_x1 - _TAB_SIZE
     tab = (tab_x0, _TAB_MARGIN, tab_x1, _TAB_MARGIN + _TAB_SIZE)
@@ -207,12 +209,24 @@ def _popup_layout(w, algo_open):
             algo_opts.append((algo_btn[0], oy, algo_btn[2], oy + _ALGO_ROW_H))
             oy += _ALGO_ROW_H
 
-    popup_bottom = (algo_opts[-1][3] if algo_opts else algo_btn[3]) + _POPUP_PAD
+    content_bottom = algo_opts[-1][3] if algo_opts else algo_btn[3]
+
+    nsrc_label_y = nsrc_track_x0 = nsrc_track_w = nsrc_track_y = None
+    if algo == 'music':
+        nsrc_label_y = content_bottom + _POPUP_ROW_GAP + 10
+        nsrc_track_x0 = toggle[0] + 4
+        nsrc_track_w = max((toggle[2] - 4) - nsrc_track_x0, 1)
+        nsrc_track_y = nsrc_label_y + _POPUP_ROW_GAP + 10
+        content_bottom = nsrc_track_y + 7  # handle half-height
+
+    popup_bottom = content_bottom + _POPUP_PAD
     popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
 
     return {'tab': tab, 'popup': popup, 'toggle': toggle, 'label_y': label_y,
             'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y,
-            'algo_btn': algo_btn, 'algo_opts': algo_opts}
+            'algo_btn': algo_btn, 'algo_opts': algo_opts,
+            'nsrc_label_y': nsrc_label_y, 'nsrc_track_x0': nsrc_track_x0,
+            'nsrc_track_w': nsrc_track_w, 'nsrc_track_y': nsrc_track_y}
 
 
 def _draw_tab(frame, layout):
@@ -226,9 +240,9 @@ def _draw_tab(frame, layout):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
 
 
-def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open):
-    """AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown, drawn on
-    top of the video frame."""
+def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc):
+    """AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown (+ MUSIC-only
+    Nsrc slider), drawn on top of the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
@@ -266,6 +280,14 @@ def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open):
                     cv2.FONT_HERSHEY_SIMPLEX, 0.34,
                     (230, 230, 230) if selected else (170, 170, 170), 1)
 
+    if layout['nsrc_track_y'] is not None:
+        cv2.putText(frame, f'Nsrc: {nsrc}', (x0 + _POPUP_PAD, layout['nsrc_label_y']),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+        nx0, nw, ny = layout['nsrc_track_x0'], layout['nsrc_track_w'], layout['nsrc_track_y']
+        cv2.rectangle(frame, (nx0, ny - 3), (nx0 + nw, ny + 3), (80, 80, 80), -1)
+        nh = nx0 + int(nsrc / _NSRC_MAX * nw)
+        cv2.rectangle(frame, (nh - 5, ny - 7), (nh + 5, ny + 7), (200, 120, 220), -1)
+
 
 def _on_mouse(event, x, y, flags, _param):
     with _sliders_lock:
@@ -280,7 +302,7 @@ def _on_mouse(event, x, y, flags, _param):
         if rel_y < 0:
             # Inside the video frame: hit-test the settings tab/popup in raw (x, y)
             # video-frame coordinates (not rel_y strip space).
-            layout = _popup_layout(_sliders['frame_w'], _sliders['algo_open'])
+            layout = _popup_layout(_sliders['frame_w'], _sliders['algo_open'], _sliders['algo'])
             if event == cv2.EVENT_LBUTTONDOWN:
                 tx0, ty0, tx1, ty1 = layout['tab']
                 if tx0 <= x <= tx1 and ty0 <= y <= ty1:
@@ -307,11 +329,17 @@ def _on_mouse(event, x, y, flags, _param):
                 px0, _, px1, _ = layout['popup']
                 if px0 <= x <= px1 and abs(y - layout['track_y']) <= 12:
                     _sliders['drag'] = 'thresh'
+                elif (layout['nsrc_track_y'] is not None and px0 <= x <= px1
+                      and abs(y - layout['nsrc_track_y']) <= 12):
+                    _sliders['drag'] = 'nsrc'
                 else:
                     return
             if _sliders['drag'] == 'thresh':
                 frac = max(0.0, min(1.0, (x - layout['track_x0']) / layout['track_w']))
                 _sliders['thresh_db'] = int(round(frac * _THRESH_MAX))
+            elif _sliders['drag'] == 'nsrc' and layout['nsrc_track_y'] is not None:
+                frac = max(0.0, min(1.0, (x - layout['nsrc_track_x0']) / layout['nsrc_track_w']))
+                _sliders['nsrc'] = max(1, min(_NSRC_MAX, int(round(frac * _NSRC_MAX))))
             return
         if event == cv2.EVENT_LBUTTONDOWN:
             if rel_y < _SLIDER_H:
@@ -428,10 +456,10 @@ def main():
         raise RuntimeError('UMA-16 not found — use --device IDX to specify')
 
     ALGO_FNS = {
-        'ds':    lambda R, f: beamform_ds(R, f, az_grid, el_grid),
-        'mvdr':  lambda R, f: beamform_mvdr(R, f, az_grid, el_grid),
-        'clean': lambda R, f: beamform_clean(R, f, az_grid, el_grid),
-        'music': lambda R, f: beamform_music(R, f, az_grid, el_grid, args.nsrc),
+        'ds':    lambda R, f, n: beamform_ds(R, f, az_grid, el_grid),
+        'mvdr':  lambda R, f, n: beamform_mvdr(R, f, az_grid, el_grid),
+        'clean': lambda R, f, n: beamform_clean(R, f, az_grid, el_grid),
+        'music': lambda R, f, n: beamform_music(R, f, az_grid, el_grid, n),
     }
 
     n_buf = args.snap * 128 + 256
@@ -456,10 +484,10 @@ def main():
             print('No webcam — showing audio-only overlay on black frame')
             cam = None
 
-    print(f'algo={args.algo}  '
+    print(f'algo={args.algo}  nsrc={args.nsrc}  '
           f'az_fov=±{args.az_fov/2:.0f}°  el_fov=±{args.el_fov/2:.0f}°  '
           f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}  '
-          f'(freq/algo set by on-screen controls)')
+          f'(freq/algo/nsrc set by on-screen controls)')
     print('Press q to quit.')
 
     P = None
@@ -478,6 +506,7 @@ def main():
     _sliders['flo'], _sliders['fhi'] = 500, 4000
     _sliders['auto_range'], _sliders['thresh_db'], _sliders['popup_open'] = True, 30, False
     _sliders['algo'], _sliders['algo_open'] = args.algo, False
+    _sliders['nsrc'] = max(1, min(_NSRC_MAX, args.nsrc))
     mouse_registered = False
 
     prof = collections.defaultdict(float)
@@ -508,6 +537,7 @@ def main():
                         else:
                             flo = _sliders['flo'] = fhi - 100
                     algo = _sliders['algo']
+                    nsrc = _sliders['nsrc']
                 freq = (flo + fhi) / 2
 
                 with buf_lock:
@@ -524,7 +554,7 @@ def main():
                         c = 1.0 / cal_e
                         R = np.outer(c, c.conj()) * R
 
-                    P = ALGO_FNS[algo](R, freq)
+                    P = ALGO_FNS[algo](R, freq, nsrc)
                     # Temporal smoothing: reduces frame-to-frame jitter
                     if P_smooth is None:
                         P_smooth = P.copy()
@@ -564,10 +594,10 @@ def main():
                 # Settings tab/popup live inside the video frame itself (not a new
                 # strip), drawn every frame regardless of P_smooth so the tab is
                 # visible even while the audio buffer is still filling.
-                popup_layout = _popup_layout(frame.shape[1], algo_open)
+                popup_layout = _popup_layout(frame.shape[1], algo_open, algo)
                 _draw_tab(frame, popup_layout)
                 if popup_open:
-                    _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open)
+                    _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open, nsrc)
                 t4 = time.monotonic()
 
                 now = time.monotonic()
