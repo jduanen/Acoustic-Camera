@@ -36,11 +36,12 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
                       auto=True, thresh_db=30.0):
     """Blend 2D power map onto video frame as full-frame overlay.
 
-    auto=True (default): percentile-stretch full-frame blend, ref-normalized against
-    the caller's running-max `ref_power` — original behavior.
-    auto=False: caller passes ref=_REF_POWER_FLOOR. Cells below thresh_db are fully
-    hidden (camera shows through, no tint); cells at/above it are colored over a
-    fixed db_range-wide span above the threshold.
+    auto=True (default): percentile-stretch, ref-normalized against the caller's
+    running-max `ref_power` — original behavior.
+    auto=False: caller passes ref=_REF_POWER_FLOOR. Rescales against a fixed
+    db_range-wide span starting at thresh_db instead of an auto-tracked percentile —
+    cells below thresh_db fade toward the colormap's coolest color (not hidden);
+    cells at/above thresh_db + db_range saturate at the hottest color.
     """
     h, w = frame.shape[:2]
     P_db = 10 * np.log10(np.maximum(P_flat.reshape(N_az, N_el) / max(ref, 1e-30), 1e-10))
@@ -50,29 +51,16 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
         p_lo = np.percentile(P_db, 10)
         p_hi = P_db.max()
         norm = np.clip((P_db - p_lo) / max(p_hi - p_lo, 1e-6), 0, 1)
-        # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
-        img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
-        colored = cv2.applyColorMap(
-            cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
-            cv2.COLORMAP_JET,
-        )
-        return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+    else:
+        norm = np.clip((P_db - thresh_db) / db_range, 0, 1)
 
-    # Manual mode: hard-gated at thresh_db — below-threshold cells are fully hidden,
-    # not dimmed.
-    norm = np.clip((P_db - thresh_db) / db_range, 0, 1)
-    mask = P_db >= thresh_db
+    # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
     img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
-    mask8 = mask.T[::-1, :].astype(np.uint8) * 255
     colored = cv2.applyColorMap(
         cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
         cv2.COLORMAP_JET,
     )
-    # Nearest-neighbor mask resize keeps a hard cut at each grid cell's edge, matching
-    # "fully hidden" rather than a blended fade at cell boundaries.
-    mask_full = cv2.resize(mask8, (w, h), interpolation=cv2.INTER_NEAREST) > 127
-    blended = cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
-    return np.where(mask_full[..., None], blended, frame)
+    return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
 
 
 def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):

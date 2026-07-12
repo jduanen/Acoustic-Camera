@@ -471,13 +471,13 @@ strip — the video/strip layout budget is unchanged) opens a popup with two con
 - **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
   auto-ranges every frame off a slowly-decaying running max of the beamformed power
   (`ref_power`), so relative "hot spots" stay visible regardless of absolute signal
-  level, but there's no way to hide quiet regions. Manual instead measures power
-  against a fixed reference floor and requires it to clear an absolute threshold
-  before any color is drawn there at all.
+  level. Manual instead measures power against a fixed reference floor and rescales
+  the color map against a fixed span starting at an absolute threshold, so the same
+  sound always maps to the same color run-to-run instead of adapting to whatever's
+  currently loudest.
 - **Thresh** slider (0–100 dB, default 30). Only takes effect in Manual mode. Grid
-  cells below the threshold are fully hidden — the camera image shows through with
-  no tint, not just dimmed — while cells at or above it are colored over a fixed
-  30 dB span above the threshold.
+  cells below the threshold fade toward the colormap's coolest color rather than
+  disappearing; cells at or above `thresh_db + 30 dB` saturate at the hottest color.
 
 Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
 by design, to keep the interaction minimal. Labeled with a plain ASCII "E" rather
