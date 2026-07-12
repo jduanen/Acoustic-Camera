@@ -144,7 +144,8 @@ _NSRC_MAX = N_MICS - 1  # beamform_music's own constraint: N_MICS - n_src >= 1
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
              'auto_range': True, 'thresh_db': 30, 'popup_open': False,
-             'algo': 'ds', 'algo_open': False, 'nsrc': 1, 'paused': False}
+             'algo': 'ds', 'algo_open': False, 'nsrc': 1, 'paused': False,
+             'exit_requested': False}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -222,6 +223,12 @@ def _popup_layout(w, algo_open, algo):
         nsrc_track_y = nsrc_label_y + _POPUP_ROW_GAP + 10
         content_bottom = nsrc_track_y + 7  # handle half-height
 
+    # Exit sits last, separated from the frequently-used controls above it, and is
+    # always present regardless of algo/algo_open state.
+    exit_btn = (toggle[0], content_bottom + _POPUP_ROW_GAP,
+                toggle[2], content_bottom + _POPUP_ROW_GAP + _POPUP_BTN_H)
+    content_bottom = exit_btn[3]
+
     popup_bottom = content_bottom + _POPUP_PAD
     popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
 
@@ -229,7 +236,8 @@ def _popup_layout(w, algo_open, algo):
             'label_y': label_y, 'track_x0': track_x0, 'track_w': track_w,
             'track_y': track_y, 'algo_btn': algo_btn, 'algo_opts': algo_opts,
             'nsrc_label_y': nsrc_label_y, 'nsrc_track_x0': nsrc_track_x0,
-            'nsrc_track_w': nsrc_track_w, 'nsrc_track_y': nsrc_track_y}
+            'nsrc_track_w': nsrc_track_w, 'nsrc_track_y': nsrc_track_y,
+            'exit_btn': exit_btn}
 
 
 def _draw_tab(frame, layout):
@@ -245,7 +253,7 @@ def _draw_tab(frame, layout):
 
 def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused):
     """Pause/Resume button + AUTO/MANUAL toggle + energy threshold slider + algorithm
-    dropdown (+ MUSIC-only Nsrc slider), drawn on top of the video frame."""
+    dropdown (+ MUSIC-only Nsrc slider) + Exit button, drawn on top of the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
@@ -299,6 +307,12 @@ def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, pau
         nh = nx0 + int(nsrc / _NSRC_MAX * nw)
         cv2.rectangle(frame, (nh - 5, ny - 7), (nh + 5, ny + 7), (200, 120, 220), -1)
 
+    ex0, ey0, ex1, ey1 = layout['exit_btn']
+    cv2.rectangle(frame, (ex0, ey0), (ex1, ey1), (50, 50, 220), -1)  # strong red, distinct from Pause's dimmer red
+    (ew, eh), _ = cv2.getTextSize('EXIT', cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+    cv2.putText(frame, 'EXIT', (ex0 + (ex1 - ex0 - ew) // 2, ey0 + (ey1 - ey0 + eh) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (255, 255, 255), 1)
+
 
 def _on_mouse(event, x, y, flags, _param):
     with _sliders_lock:
@@ -341,6 +355,10 @@ def _on_mouse(event, x, y, flags, _param):
                             _sliders['algo'] = name
                             _sliders['algo_open'] = False
                             return
+                ex0, ey0, ex1, ey1 = layout['exit_btn']
+                if ex0 <= x <= ex1 and ey0 <= y <= ey1:
+                    _sliders['exit_requested'] = True
+                    return
                 px0, _, px1, _ = layout['popup']
                 if px0 <= x <= px1 and abs(y - layout['track_y']) <= 12:
                     _sliders['drag'] = 'thresh'
@@ -524,6 +542,7 @@ def main():
     _sliders['algo'], _sliders['algo_open'] = args.algo, False
     _sliders['nsrc'] = max(1, min(_NSRC_MAX, args.nsrc))
     _sliders['paused'] = False
+    _sliders['exit_requested'] = False
     mouse_registered = False
 
     prof = collections.defaultdict(float)
@@ -606,6 +625,7 @@ def main():
                     thresh_db = _sliders['thresh_db']
                     popup_open = _sliders['popup_open']
                     algo_open = _sliders['algo_open']
+                    exit_requested = _sliders['exit_requested']
 
                 if P_smooth is not None:
                     ref = ref_power if auto_range else _REF_POWER_FLOOR
@@ -682,7 +702,7 @@ def main():
                         prof.clear()
                         prof_n = 0
 
-                if key_result == ord('q'):
+                if key_result == ord('q') or exit_requested:
                     break
 
     finally:

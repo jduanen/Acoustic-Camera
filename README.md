@@ -466,8 +466,8 @@ green-dominated background).
 #### Touch UI: Energy Threshold Tab & Auto/Manual Range
 
 A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with five controls
-(the last only appears when Algo is set to MUSIC):
+strip — the video/strip layout budget is unchanged) opens a popup with six controls
+(Nsrc only appears when Algo is set to MUSIC):
 
 - **PAUSE / RESUME** button, at the top of the popup. Freezes the video frame and the
   acoustic overlay in place (camera capture and the CSM/beamform update are both
@@ -494,6 +494,10 @@ strip — the video/strip layout budget is unchanged) opens a popup with five co
   Only shown when Algo is MUSIC — sets the signal-subspace dimension (number of
   sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
   the row (and the popup's height) only appears while MUSIC is selected.
+- **EXIT** button, at the bottom of the popup, separated from the other controls (and
+  colored a stronger red) since it's destructive and infrequently used. Cleanly shuts
+  the script down — same effect as pressing `q`, runs the same `cam.release()`/
+  `cv2.destroyAllWindows()` cleanup — just reachable without a keyboard.
 
 Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
 by design, to keep the interaction minimal (the algo dropdown follows the same rule:
