@@ -141,6 +141,8 @@ _THRESH_MAX = 100       # thresh_db slider range: 0-100 dB
 _ALGOS = ['ds', 'mvdr', 'clean', 'music']  # algorithm dropdown order
 _ALGO_ROW_H = 26        # height of each option row in the expanded algorithm list
 _NSRC_MAX = N_MICS - 1  # beamform_music's own constraint: N_MICS - n_src >= 1
+_SNAP_FLASH_S = 0.15    # duration of the on-screen "camera flash" after a screenshot
+_SNAP_TEXT_S = 1.5      # duration of the "Saved ..." confirmation text
 
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
@@ -575,6 +577,8 @@ def main():
     P_smooth = None
     latest_arr = None
     last_frame = None
+    snap_saved_at = -1e9   # far enough in the past that no flash/text shows at startup
+    snap_filename = ''
     ref_power = _REF_POWER_FLOOR
     az_peak = el_peak = 0.0
     label = 'Filling buffer...'
@@ -749,8 +753,24 @@ def main():
                     while snap_path.exists():
                         snap_path = screengrabs_dir / f'screengrab_{ts}_{n}.png'
                         n += 1
-                    cv2.imwrite(str(snap_path), display)
+                    cv2.imwrite(str(snap_path), display)  # save before the flash/text below — the file stays clean
                     print(f'Saved screenshot: {snap_path}')
+                    snap_saved_at = time.monotonic()
+                    snap_filename = snap_path.name
+
+                # On-screen confirmation: a brief camera-style flash plus a longer-lived
+                # "Saved ..." caption, both drawn only on the live preview (after the
+                # imwrite above), never baked into the saved file itself.
+                snap_elapsed = time.monotonic() - snap_saved_at
+                if snap_elapsed < _SNAP_FLASH_S:
+                    flash_alpha = 1.0 - snap_elapsed / _SNAP_FLASH_S
+                    white = np.full_like(display, 255)
+                    display = cv2.addWeighted(display, 1 - flash_alpha, white, flash_alpha, 0)
+                if snap_elapsed < _SNAP_TEXT_S:
+                    snap_text = f'Saved {snap_filename}'
+                    (stw, sth), _ = cv2.getTextSize(snap_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    cv2.putText(display, snap_text, ((display.shape[1] - stw) // 2, sth + 16),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (80, 255, 80), 2)
 
                 cv2.imshow(win, display)
                 if not mouse_registered:

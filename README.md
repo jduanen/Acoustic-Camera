@@ -499,6 +499,10 @@ strip — the video/strip layout budget is unchanged) opens a popup with seven c
   `~/Code/Acoustic-Camera/screengrabs/` (created on startup if missing), named
   `screengrab_<timestamp>.png`; a numeric suffix is appended if a file with that
   second's timestamp already exists, so rapid taps don't silently overwrite each other.
+  Confirmation is on-screen, not just the console print: a brief (150 ms) full-screen
+  white flash — camera-shutter style — followed by a green "Saved &lt;filename&gt;"
+  caption for 1.5 s. Both are drawn only on the live preview *after* the file is
+  written, so neither ever ends up baked into the saved PNG itself.
 - **EXIT** button, at the bottom of the popup, separated from the other controls (and
   colored a stronger red) since it's destructive and infrequently used. Cleanly shuts
   the script down — same effect as pressing `q`, runs the same `cam.release()`/
