@@ -466,7 +466,7 @@ green-dominated background).
 #### Touch UI: Energy Threshold Tab & Auto/Manual Range
 
 A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with six controls
+strip — the video/strip layout budget is unchanged) opens a popup with seven controls
 (Nsrc only appears when Algo is set to MUSIC):
 
 - **PAUSE / RESUME** button, at the top of the popup. Freezes the video frame and the
@@ -494,6 +494,11 @@ strip — the video/strip layout budget is unchanged) opens a popup with six con
   Only shown when Algo is MUSIC — sets the signal-subspace dimension (number of
   sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
   the row (and the popup's height) only appears while MUSIC is selected.
+- **SNAP** button. Saves the exact composite currently on screen (video + overlay +
+  the Fhi/spectrum/Flo strips below it, not just the video pane) as a PNG to
+  `~/Code/Acoustic-Camera/screengrabs/` (created on startup if missing), named
+  `screengrab_<timestamp>.png`; a numeric suffix is appended if a file with that
+  second's timestamp already exists, so rapid taps don't silently overwrite each other.
 - **EXIT** button, at the bottom of the popup, separated from the other controls (and
   colored a stronger red) since it's destructive and infrequently used. Cleanly shuts
   the script down — same effect as pressing `q`, runs the same `cam.release()`/
