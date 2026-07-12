@@ -304,6 +304,32 @@ chmod +x ~/.config/labwc/autostart
 adjust if the picture comes up rotated the wrong way. Reboot (or log out/in) to confirm
 it persists; a manually-run `wlr-randr` command only affects the current session.
 
+### Auto-start on boot
+
+A system-level systemd unit ([systemd/acoustic-camera.service](./systemd/acoustic-camera.service))
+launches the script automatically once the Desktop image's auto-login GUI session comes
+up, using the same `DISPLAY=:0` / `XAUTHORITY` recipe confirmed above. It's a system
+unit rather than a `~/.config/systemd/user/` one so it doesn't depend on whether
+labwc's autologin session actually signals `graphical-session.target` for the user's
+systemd instance — instead it targets `graphical.target` (reached once any display
+manager/session starts) and leans on `Restart=on-failure` + `RestartSec=5` (with the
+`[Unit]` start-limit disabled) to self-heal through the boot race if it launches before
+the desktop session has actually finished coming up, rather than a bespoke wait-for-X
+script. Pressing `q` to quit exits 0, so it won't auto-relaunch after a deliberate quit.
+
+Install:
+
+```bash
+sudo cp systemd/acoustic-camera.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now acoustic-camera.service
+```
+
+The unit hardcodes user `jdn` and path `/home/jdn/Code/Acoustic-Camera` — edit
+`User=`, `WorkingDirectory=`, `XAUTHORITY=`, and `ExecStart=` if deploying under a
+different account or checkout path. Check status/logs with
+`systemctl status acoustic-camera.service` / `journalctl -u acoustic-camera.service -f`.
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
