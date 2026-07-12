@@ -28,21 +28,51 @@ from beamforming import (FS, N_MICS, NYQUIST,
 
 # --- Overlay rendering ---
 
-def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30):
-    """Blend 2D power map onto video frame as full-frame overlay."""
+_REF_POWER_FLOOR = 1e-10  # shared 0 dB reference: auto-mode's initial ref_power AND
+                           # manual-mode's fixed reference
+
+
+def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
+                      auto=True, thresh_db=30.0):
+    """Blend 2D power map onto video frame as full-frame overlay.
+
+    auto=True (default): percentile-stretch full-frame blend, ref-normalized against
+    the caller's running-max `ref_power` — original behavior.
+    auto=False: caller passes ref=_REF_POWER_FLOOR. Cells below thresh_db are fully
+    hidden (camera shows through, no tint); cells at/above it are colored over a
+    fixed db_range-wide span above the threshold.
+    """
     h, w = frame.shape[:2]
     P_db = 10 * np.log10(np.maximum(P_flat.reshape(N_az, N_el) / max(ref, 1e-30), 1e-10))
-    # Percentile stretch: maps 10th–100th percentile to full colormap range
-    p_lo = np.percentile(P_db, 10)
-    p_hi = P_db.max()
-    norm = np.clip((P_db - p_lo) / max(p_hi - p_lo, 1e-6), 0, 1)
-    # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
+
+    if auto:
+        # Percentile stretch: maps 10th–100th percentile to full colormap range
+        p_lo = np.percentile(P_db, 10)
+        p_hi = P_db.max()
+        norm = np.clip((P_db - p_lo) / max(p_hi - p_lo, 1e-6), 0, 1)
+        # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
+        img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
+        colored = cv2.applyColorMap(
+            cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
+            cv2.COLORMAP_JET,
+        )
+        return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+
+    # Manual mode: hard-gated at thresh_db — below-threshold cells are fully hidden,
+    # not dimmed.
+    norm = np.clip((P_db - thresh_db) / db_range, 0, 1)
+    mask = P_db >= thresh_db
     img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
+    mask8 = mask.T[::-1, :].astype(np.uint8) * 255
     colored = cv2.applyColorMap(
         cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
         cv2.COLORMAP_JET,
     )
-    return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+    # Nearest-neighbor mask resize keeps a hard cut at each grid cell's edge, matching
+    # "fully hidden" rather than a blended fade at cell boundaries.
+    mask_full = cv2.resize(mask8, (w, h), interpolation=cv2.INTER_NEAREST) > 127
+    blended = cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+    return np.where(mask_full[..., None], blended, frame)
 
 
 def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):
@@ -108,8 +138,22 @@ _SLIDER_H = 44          # height of each individual slider strip
 _SPECTRUM_H = 90        # height of the spectrum panel between the two slider strips
 _FREQ_MAX = 8000        # shared max for both sliders, so the same track position means the same Hz on either
 _TRACK_X0 = 92          # left edge of slider track
+
+# Settings tab + popup (auto/manual range toggle + energy threshold), drawn inside the
+# video frame itself rather than as a new full-width strip, since the display is fit
+# exactly to a 1280x720 touch panel (see Picam2Capture's size comment below).
+_TAB_SIZE = 36          # settings tab is a square button in the video frame's corner
+_TAB_MARGIN = 8         # inset from the video frame's top-right corner
+_POPUP_W = 260          # popup panel size
+_POPUP_H = 110
+_POPUP_PAD = 8          # inner padding for popup contents
+_POPUP_BTN_H = 28       # AUTO/MANUAL toggle button height
+_POPUP_ROW_GAP = 8      # vertical gap between toggle button and threshold slider
+_THRESH_MAX = 100       # thresh_db slider range: 0-100 dB
+
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
-             'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000}
+             'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
+             'auto_range': True, 'thresh_db': 30, 'popup_open': False}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -142,17 +186,96 @@ def _slider_strip(w, label, val, vmax, color, label_right=False):
     return strip
 
 
+def _popup_layout(w):
+    """Settings tab + popup rects, in video-frame (x, y) coordinates, derived purely
+    from frame width w — mirrors _track_geom's style so drawing and _on_mouse
+    hit-testing can't disagree."""
+    tab_x1 = w - _TAB_MARGIN
+    tab_x0 = tab_x1 - _TAB_SIZE
+    tab = (tab_x0, _TAB_MARGIN, tab_x1, _TAB_MARGIN + _TAB_SIZE)
+
+    popup_x1 = tab_x1
+    popup_x0 = max(popup_x1 - _POPUP_W, 0)
+    popup_y0 = tab[3] + 4
+    popup = (popup_x0, popup_y0, popup_x1, popup_y0 + _POPUP_H)
+
+    toggle = (popup[0] + _POPUP_PAD, popup[1] + _POPUP_PAD,
+              popup[2] - _POPUP_PAD, popup[1] + _POPUP_PAD + _POPUP_BTN_H)
+
+    track_x0 = toggle[0] + 4
+    track_w = max((toggle[2] - 4) - track_x0, 1)
+    track_y = toggle[3] + _POPUP_ROW_GAP + 10
+
+    return {'tab': tab, 'popup': popup, 'toggle': toggle,
+            'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y}
+
+
+def _draw_tab(frame, layout):
+    """Small always-visible tab in the video frame's corner; tapping it opens/closes
+    the settings popup. Plain ASCII label — OpenCV's Hershey fonts don't reliably
+    render gear/settings glyphs."""
+    x0, y0, x1, y1 = layout['tab']
+    fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
+    frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.35, fill, 0.65, 0)
+    cv2.putText(frame, 'E', (x0 + 11, y1 - 12),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+
+
+def _draw_popup(frame, layout, auto_range, thresh_db):
+    """AUTO/MANUAL toggle + energy threshold slider, drawn on top of the video frame."""
+    x0, y0, x1, y1 = layout['popup']
+    fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
+    frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
+
+    bx0, by0, bx1, by1 = layout['toggle']
+    btn_color = (80, 160, 220) if auto_range else (80, 200, 80)  # echoes Fhi-blue / Flo-green
+    cv2.rectangle(frame, (bx0, by0), (bx1, by1), btn_color, -1)
+    label = 'AUTO' if auto_range else 'MANUAL'
+    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+    cv2.putText(frame, label, (bx0 + (bx1 - bx0 - tw) // 2, by0 + (by1 - by0 + th) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (20, 20, 20), 1)
+
+    track_x0, track_w, track_y = layout['track_x0'], layout['track_w'], layout['track_y']
+    cv2.rectangle(frame, (track_x0, track_y - 3), (track_x0 + track_w, track_y + 3), (80, 80, 80), -1)
+    xh = track_x0 + int(thresh_db / _THRESH_MAX * track_w)
+    cv2.rectangle(frame, (xh - 5, track_y - 7), (xh + 5, track_y + 7), (220, 160, 80), -1)
+    cv2.putText(frame, f'Thresh: {thresh_db:.0f} dB', (x0 + _POPUP_PAD, track_y + 22),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+
+
 def _on_mouse(event, x, y, flags, _param):
     with _sliders_lock:
         if event == cv2.EVENT_LBUTTONUP:
             _sliders['drag'] = None
             return
-        rel_y = y - _sliders['frame_h']
-        if rel_y < 0:
-            return
         pressing = (event == cv2.EVENT_LBUTTONDOWN or
                     (event == cv2.EVENT_MOUSEMOVE and bool(flags & cv2.EVENT_FLAG_LBUTTON)))
         if not pressing:
+            return
+        rel_y = y - _sliders['frame_h']
+        if rel_y < 0:
+            # Inside the video frame: hit-test the settings tab/popup in raw (x, y)
+            # video-frame coordinates (not rel_y strip space).
+            layout = _popup_layout(_sliders['frame_w'])
+            if event == cv2.EVENT_LBUTTONDOWN:
+                tx0, ty0, tx1, ty1 = layout['tab']
+                if tx0 <= x <= tx1 and ty0 <= y <= ty1:
+                    _sliders['popup_open'] = not _sliders['popup_open']
+                    return
+                if not _sliders['popup_open']:
+                    return
+                bx0, by0, bx1, by1 = layout['toggle']
+                if bx0 <= x <= bx1 and by0 <= y <= by1:
+                    _sliders['auto_range'] = not _sliders['auto_range']
+                    return
+                px0, _, px1, _ = layout['popup']
+                if px0 <= x <= px1 and abs(y - layout['track_y']) <= 12:
+                    _sliders['drag'] = 'thresh'
+                else:
+                    return
+            if _sliders['drag'] == 'thresh':
+                frac = max(0.0, min(1.0, (x - layout['track_x0']) / layout['track_w']))
+                _sliders['thresh_db'] = int(round(frac * _THRESH_MAX))
             return
         if event == cv2.EVENT_LBUTTONDOWN:
             if rel_y < _SLIDER_H:
@@ -306,7 +429,7 @@ def main():
     P = None
     P_smooth = None
     latest_arr = None
-    ref_power = 1e-10
+    ref_power = _REF_POWER_FLOOR
     az_peak = el_peak = 0.0
     label = 'Filling buffer...'
     t_last = time.monotonic()
@@ -317,6 +440,7 @@ def main():
     if args.fullscreen:
         cv2.setWindowProperty(win, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     _sliders['flo'], _sliders['fhi'] = 500, 4000
+    _sliders['auto_range'], _sliders['thresh_db'], _sliders['popup_open'] = True, 30, False
     mouse_registered = False
 
     prof = collections.defaultdict(float)
@@ -379,8 +503,15 @@ def main():
                 else:
                     t2 = t3 = time.monotonic()
 
+                with _sliders_lock:
+                    auto_range = _sliders['auto_range']
+                    thresh_db = _sliders['thresh_db']
+                    popup_open = _sliders['popup_open']
+
                 if P_smooth is not None:
-                    frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref_power, alpha=args.alpha)
+                    ref = ref_power if auto_range else _REF_POWER_FLOOR
+                    frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref, alpha=args.alpha,
+                                              auto=auto_range, thresh_db=thresh_db)
 
                     # Cross-hair at peak direction
                     h, w = frame.shape[:2]
@@ -390,6 +521,14 @@ def main():
                     py = max(1, min(h - 2, py))
                     cv2.line(frame, (px, 0), (px, h), (0, 255, 0), 1)
                     cv2.line(frame, (0, py), (w, py), (0, 255, 0), 1)
+
+                # Settings tab/popup live inside the video frame itself (not a new
+                # strip), drawn every frame regardless of P_smooth so the tab is
+                # visible even while the audio buffer is still filling.
+                popup_layout = _popup_layout(frame.shape[1])
+                _draw_tab(frame, popup_layout)
+                if popup_open:
+                    _draw_popup(frame, popup_layout, auto_range, thresh_db)
                 t4 = time.monotonic()
 
                 now = time.monotonic()

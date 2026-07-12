@@ -396,8 +396,9 @@ CLEAN-SC/MUSIC, CSM) lives in `src/beamforming.py`, used by both this script and
 **TODO** Place a screengrab of the running application's display here.
 
 Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sliding CSM →
-2D beamform (azimuth × elevation grid) → COLORMAP_INFERNO full-frame overlay blended onto
-webcam video. Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
+2D beamform (azimuth × elevation grid) → COLORMAP_JET full-frame overlay blended onto
+webcam video, in one of two modes (Auto/Manual — see "Touch UI: Energy Threshold Tab"
+below). Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
 Below the video, top to bottom: an **Fhi** slider strip, a spectrum plot, then an **Flo**
 slider strip (the two are on opposite sides of the plot, not stacked together — see
@@ -461,6 +462,29 @@ UMA-16) on the spectrum plot was `(255, 100, 0)` in BGR — a blue, not orange a
 might suggest — which was hard to distinguish against the green spectrum bars. Changed
 to magenta `(255, 0, 255)` (zero green component, maximal contrast against a
 green-dominated background).
+
+#### Touch UI: Energy Threshold Tab & Auto/Manual Range
+
+A small "E" tab in the top-right corner of the video frame (not a new full-width
+strip — the video/strip layout budget is unchanged) opens a popup with two controls:
+
+- **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
+  auto-ranges every frame off a slowly-decaying running max of the beamformed power
+  (`ref_power`), so relative "hot spots" stay visible regardless of absolute signal
+  level, but there's no way to hide quiet regions. Manual instead measures power
+  against a fixed reference floor and requires it to clear an absolute threshold
+  before any color is drawn there at all.
+- **Thresh** slider (0–100 dB, default 30). Only takes effect in Manual mode. Grid
+  cells below the threshold are fully hidden — the camera image shows through with
+  no tint, not just dimmed — while cells at or above it are colored over a fixed
+  30 dB span above the threshold.
+
+Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
+by design, to keep the interaction minimal. Labeled with a plain ASCII "E" rather
+than a gear/settings glyph, since OpenCV's Hershey fonts (used everywhere else in
+this UI) don't reliably render extended-unicode symbols. The tab and popup are
+positioned from `frame_w`/`frame_h` the same way the Flo/Fhi track position is
+derived in `_track_geom()` — no stored pixel coordinates — via `_popup_layout()`.
 
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
