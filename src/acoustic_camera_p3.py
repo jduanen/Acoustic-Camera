@@ -144,7 +144,7 @@ _NSRC_MAX = N_MICS - 1  # beamform_music's own constraint: N_MICS - n_src >= 1
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
              'auto_range': True, 'thresh_db': 30, 'popup_open': False,
-             'algo': 'ds', 'algo_open': False, 'nsrc': 1}
+             'algo': 'ds', 'algo_open': False, 'nsrc': 1, 'paused': False}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -190,8 +190,11 @@ def _popup_layout(w, algo_open, algo):
     popup_x0 = max(popup_x1 - _POPUP_W, 0)
     popup_y0 = tab[3] + 4
 
-    toggle = (popup_x0 + _POPUP_PAD, popup_y0 + _POPUP_PAD,
-              popup_x1 - _POPUP_PAD, popup_y0 + _POPUP_PAD + _POPUP_BTN_H)
+    pause_btn = (popup_x0 + _POPUP_PAD, popup_y0 + _POPUP_PAD,
+                 popup_x1 - _POPUP_PAD, popup_y0 + _POPUP_PAD + _POPUP_BTN_H)
+
+    toggle = (pause_btn[0], pause_btn[3] + _POPUP_ROW_GAP,
+              pause_btn[2], pause_btn[3] + _POPUP_ROW_GAP + _POPUP_BTN_H)
 
     label_y = toggle[3] + _POPUP_ROW_GAP + 10
 
@@ -222,9 +225,9 @@ def _popup_layout(w, algo_open, algo):
     popup_bottom = content_bottom + _POPUP_PAD
     popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
 
-    return {'tab': tab, 'popup': popup, 'toggle': toggle, 'label_y': label_y,
-            'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y,
-            'algo_btn': algo_btn, 'algo_opts': algo_opts,
+    return {'tab': tab, 'popup': popup, 'pause_btn': pause_btn, 'toggle': toggle,
+            'label_y': label_y, 'track_x0': track_x0, 'track_w': track_w,
+            'track_y': track_y, 'algo_btn': algo_btn, 'algo_opts': algo_opts,
             'nsrc_label_y': nsrc_label_y, 'nsrc_track_x0': nsrc_track_x0,
             'nsrc_track_w': nsrc_track_w, 'nsrc_track_y': nsrc_track_y}
 
@@ -240,12 +243,20 @@ def _draw_tab(frame, layout):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
 
 
-def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc):
-    """AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown (+ MUSIC-only
-    Nsrc slider), drawn on top of the video frame."""
+def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused):
+    """Pause/Resume button + AUTO/MANUAL toggle + energy threshold slider + algorithm
+    dropdown (+ MUSIC-only Nsrc slider), drawn on top of the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
+
+    px0, py0, px1, py1 = layout['pause_btn']
+    pause_color = (60, 60, 200) if paused else (70, 70, 70)  # red while paused, neutral while running
+    cv2.rectangle(frame, (px0, py0), (px1, py1), pause_color, -1)
+    pause_label = 'RESUME' if paused else 'PAUSE'
+    (pw, ph), _ = cv2.getTextSize(pause_label, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+    cv2.putText(frame, pause_label, (px0 + (px1 - px0 - pw) // 2, py0 + (py1 - py0 + ph) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
 
     bx0, by0, bx1, by1 = layout['toggle']
     btn_color = (80, 160, 220) if auto_range else (80, 200, 80)  # echoes Fhi-blue / Flo-green
@@ -311,6 +322,10 @@ def _on_mouse(event, x, y, flags, _param):
                         _sliders['algo_open'] = False
                     return
                 if not _sliders['popup_open']:
+                    return
+                pbx0, pby0, pbx1, pby1 = layout['pause_btn']
+                if pbx0 <= x <= pbx1 and pby0 <= y <= pby1:
+                    _sliders['paused'] = not _sliders['paused']
                     return
                 bx0, by0, bx1, by1 = layout['toggle']
                 if bx0 <= x <= bx1 and by0 <= y <= by1:
@@ -493,6 +508,7 @@ def main():
     P = None
     P_smooth = None
     latest_arr = None
+    last_frame = None
     ref_power = _REF_POWER_FLOOR
     az_peak = el_peak = 0.0
     label = 'Filling buffer...'
@@ -507,6 +523,7 @@ def main():
     _sliders['auto_range'], _sliders['thresh_db'], _sliders['popup_open'] = True, 30, False
     _sliders['algo'], _sliders['algo_open'] = args.algo, False
     _sliders['nsrc'] = max(1, min(_NSRC_MAX, args.nsrc))
+    _sliders['paused'] = False
     mouse_registered = False
 
     prof = collections.defaultdict(float)
@@ -518,12 +535,25 @@ def main():
                 loop_start = time.monotonic()
 
                 t0 = time.monotonic()
-                if cam is not None:
-                    ret, frame = cam.read()
-                    if not ret:
+                with _sliders_lock:
+                    paused = _sliders['paused']
+                if not paused:
+                    if cam is not None:
+                        ret, frame = cam.read()
+                        if not ret:
+                            frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                    else:
                         frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                    # Copy (not alias): later drawing (overlay/crosshair/tab/popup)
+                    # mutates `frame` in place when P_smooth is still None, and must
+                    # not also mutate the cached copy this pause freezes on.
+                    last_frame = frame.copy()
                 else:
-                    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                    # Frozen: reuse the last captured frame instead of grabbing a new
+                    # one, and (below) skip the CSM/beamform update too, so the whole
+                    # picture — video and overlay — stays still while paused.
+                    frame = (last_frame.copy() if last_frame is not None
+                              else np.zeros((480, 640, 3), dtype=np.uint8))
                 t1 = time.monotonic()
 
                 with _sliders_lock:
@@ -543,7 +573,7 @@ def main():
                 with buf_lock:
                     n_avail = len(audio_buf)
 
-                if n_avail >= n_buf:
+                if n_avail >= n_buf and not paused:
                     with buf_lock:
                         arr = np.array(list(audio_buf), dtype=np.float32)  # (n_buf, 16)
                     latest_arr = arr
@@ -597,14 +627,16 @@ def main():
                 popup_layout = _popup_layout(frame.shape[1], algo_open, algo)
                 _draw_tab(frame, popup_layout)
                 if popup_open:
-                    _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open, nsrc)
+                    _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open,
+                                nsrc, paused)
                 t4 = time.monotonic()
 
                 now = time.monotonic()
                 fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
                 t_last = now
 
-                cv2.putText(frame, f'{label}  {fps:.1f}fps', (10, 28),
+                status = f'{"[PAUSED] " if paused else ""}{label}  {fps:.1f}fps'
+                cv2.putText(frame, status, (10, 28),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
                 h_f, w_f = frame.shape[:2]
                 with _sliders_lock:

@@ -466,9 +466,15 @@ green-dominated background).
 #### Touch UI: Energy Threshold Tab & Auto/Manual Range
 
 A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with four controls
-(the fourth only appears when Algo is set to MUSIC):
+strip — the video/strip layout budget is unchanged) opens a popup with five controls
+(the last only appears when Algo is set to MUSIC):
 
+- **PAUSE / RESUME** button, at the top of the popup. Freezes the video frame and the
+  acoustic overlay in place (camera capture and the CSM/beamform update are both
+  skipped while paused; the mic stream itself keeps running in the background, so
+  resuming picks back up on live audio rather than a stale buffer). The status line
+  in the top-left of the video is prefixed `[PAUSED]` even when the popup is closed,
+  so the paused state is visible without opening it.
 - **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
   auto-ranges every frame off a slowly-decaying running max of the beamformed power
   (`ref_power`), so relative "hot spots" stay visible regardless of absolute signal
