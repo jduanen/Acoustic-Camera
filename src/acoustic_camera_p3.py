@@ -132,16 +132,18 @@ _TRACK_X0 = 92          # left edge of slider track
 # exactly to a 1280x720 touch panel (see Picam2Capture's size comment below).
 _TAB_SIZE = 36          # settings tab is a square button in the video frame's corner
 _TAB_MARGIN = 8         # inset from the video frame's top-right corner
-_POPUP_W = 260          # popup panel size
-_POPUP_H = 110
+_POPUP_W = 260          # popup panel width (height is derived — see _popup_layout)
 _POPUP_PAD = 8          # inner padding for popup contents
 _POPUP_BTN_H = 28       # AUTO/MANUAL toggle button height
-_POPUP_ROW_GAP = 8      # vertical gap between toggle button and threshold slider
+_POPUP_ROW_GAP = 8      # vertical gap between stacked popup rows
 _THRESH_MAX = 100       # thresh_db slider range: 0-100 dB
+_ALGOS = ['ds', 'mvdr', 'clean', 'music']  # algorithm dropdown order
+_ALGO_ROW_H = 26        # height of each option row in the expanded algorithm list
 
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
-             'auto_range': True, 'thresh_db': 30, 'popup_open': False}
+             'auto_range': True, 'thresh_db': 30, 'popup_open': False,
+             'algo': 'ds', 'algo_open': False}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -174,10 +176,10 @@ def _slider_strip(w, label, val, vmax, color, label_right=False):
     return strip
 
 
-def _popup_layout(w):
+def _popup_layout(w, algo_open):
     """Settings tab + popup rects, in video-frame (x, y) coordinates, derived purely
-    from frame width w — mirrors _track_geom's style so drawing and _on_mouse
-    hit-testing can't disagree."""
+    from frame width w (and algo_open, for the expandable algorithm list) — mirrors
+    _track_geom's style so drawing and _on_mouse hit-testing can't disagree."""
     tab_x1 = w - _TAB_MARGIN
     tab_x0 = tab_x1 - _TAB_SIZE
     tab = (tab_x0, _TAB_MARGIN, tab_x1, _TAB_MARGIN + _TAB_SIZE)
@@ -185,10 +187,9 @@ def _popup_layout(w):
     popup_x1 = tab_x1
     popup_x0 = max(popup_x1 - _POPUP_W, 0)
     popup_y0 = tab[3] + 4
-    popup = (popup_x0, popup_y0, popup_x1, popup_y0 + _POPUP_H)
 
-    toggle = (popup[0] + _POPUP_PAD, popup[1] + _POPUP_PAD,
-              popup[2] - _POPUP_PAD, popup[1] + _POPUP_PAD + _POPUP_BTN_H)
+    toggle = (popup_x0 + _POPUP_PAD, popup_y0 + _POPUP_PAD,
+              popup_x1 - _POPUP_PAD, popup_y0 + _POPUP_PAD + _POPUP_BTN_H)
 
     label_y = toggle[3] + _POPUP_ROW_GAP + 10
 
@@ -196,8 +197,22 @@ def _popup_layout(w):
     track_w = max((toggle[2] - 4) - track_x0, 1)
     track_y = label_y + _POPUP_ROW_GAP + 10
 
+    algo_btn = (toggle[0], track_y + 7 + _POPUP_ROW_GAP,
+                toggle[2], track_y + 7 + _POPUP_ROW_GAP + _POPUP_BTN_H)
+
+    algo_opts = []
+    if algo_open:
+        oy = algo_btn[3]
+        for _ in _ALGOS:
+            algo_opts.append((algo_btn[0], oy, algo_btn[2], oy + _ALGO_ROW_H))
+            oy += _ALGO_ROW_H
+
+    popup_bottom = (algo_opts[-1][3] if algo_opts else algo_btn[3]) + _POPUP_PAD
+    popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
+
     return {'tab': tab, 'popup': popup, 'toggle': toggle, 'label_y': label_y,
-            'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y}
+            'track_x0': track_x0, 'track_w': track_w, 'track_y': track_y,
+            'algo_btn': algo_btn, 'algo_opts': algo_opts}
 
 
 def _draw_tab(frame, layout):
@@ -211,8 +226,9 @@ def _draw_tab(frame, layout):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
 
 
-def _draw_popup(frame, layout, auto_range, thresh_db):
-    """AUTO/MANUAL toggle + energy threshold slider, drawn on top of the video frame."""
+def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open):
+    """AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown, drawn on
+    top of the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
@@ -233,6 +249,23 @@ def _draw_popup(frame, layout, auto_range, thresh_db):
     xh = track_x0 + int(thresh_db / _THRESH_MAX * track_w)
     cv2.rectangle(frame, (xh - 5, track_y - 7), (xh + 5, track_y + 7), (220, 160, 80), -1)
 
+    ax0, ay0, ax1, ay1 = layout['algo_btn']
+    cv2.rectangle(frame, (ax0, ay0), (ax1, ay1), (70, 70, 70), -1)
+    # Plain ASCII caret ('v'/'^') for the same reason the tab uses "E" instead of a
+    # gear glyph — OpenCV's Hershey fonts don't reliably render unicode symbols.
+    algo_label = f'Algo: {algo.upper()}  {"^" if algo_open else "v"}'
+    (aw, ah), _ = cv2.getTextSize(algo_label, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+    cv2.putText(frame, algo_label, (ax0 + (ax1 - ax0 - aw) // 2, ay0 + (ay1 - ay0 + ah) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (220, 220, 220), 1)
+
+    for name, (ox0, oy0, ox1, oy1) in zip(_ALGOS, layout['algo_opts']):
+        selected = name == algo
+        cv2.rectangle(frame, (ox0, oy0), (ox1, oy1), (90, 90, 60) if selected else (45, 45, 45), -1)
+        (ow, oh), _ = cv2.getTextSize(name.upper(), cv2.FONT_HERSHEY_SIMPLEX, 0.34, 1)
+        cv2.putText(frame, name.upper(), (ox0 + 10, oy0 + (oy1 - oy0 + oh) // 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.34,
+                    (230, 230, 230) if selected else (170, 170, 170), 1)
+
 
 def _on_mouse(event, x, y, flags, _param):
     with _sliders_lock:
@@ -247,11 +280,13 @@ def _on_mouse(event, x, y, flags, _param):
         if rel_y < 0:
             # Inside the video frame: hit-test the settings tab/popup in raw (x, y)
             # video-frame coordinates (not rel_y strip space).
-            layout = _popup_layout(_sliders['frame_w'])
+            layout = _popup_layout(_sliders['frame_w'], _sliders['algo_open'])
             if event == cv2.EVENT_LBUTTONDOWN:
                 tx0, ty0, tx1, ty1 = layout['tab']
                 if tx0 <= x <= tx1 and ty0 <= y <= ty1:
                     _sliders['popup_open'] = not _sliders['popup_open']
+                    if not _sliders['popup_open']:
+                        _sliders['algo_open'] = False
                     return
                 if not _sliders['popup_open']:
                     return
@@ -259,6 +294,16 @@ def _on_mouse(event, x, y, flags, _param):
                 if bx0 <= x <= bx1 and by0 <= y <= by1:
                     _sliders['auto_range'] = not _sliders['auto_range']
                     return
+                ax0, ay0, ax1, ay1 = layout['algo_btn']
+                if ax0 <= x <= ax1 and ay0 <= y <= ay1:
+                    _sliders['algo_open'] = not _sliders['algo_open']
+                    return
+                if _sliders['algo_open']:
+                    for name, (ox0, oy0, ox1, oy1) in zip(_ALGOS, layout['algo_opts']):
+                        if ox0 <= x <= ox1 and oy0 <= y <= oy1:
+                            _sliders['algo'] = name
+                            _sliders['algo_open'] = False
+                            return
                 px0, _, px1, _ = layout['popup']
                 if px0 <= x <= px1 and abs(y - layout['track_y']) <= 12:
                     _sliders['drag'] = 'thresh'
@@ -382,12 +427,12 @@ def main():
     if dev_idx is None:
         raise RuntimeError('UMA-16 not found — use --device IDX to specify')
 
-    ALGO = {
+    ALGO_FNS = {
         'ds':    lambda R, f: beamform_ds(R, f, az_grid, el_grid),
         'mvdr':  lambda R, f: beamform_mvdr(R, f, az_grid, el_grid),
         'clean': lambda R, f: beamform_clean(R, f, az_grid, el_grid),
         'music': lambda R, f: beamform_music(R, f, az_grid, el_grid, args.nsrc),
-    }[args.algo]
+    }
 
     n_buf = args.snap * 128 + 256
     audio_buf: collections.deque = collections.deque(maxlen=n_buf)
@@ -414,7 +459,7 @@ def main():
     print(f'algo={args.algo}  '
           f'az_fov=±{args.az_fov/2:.0f}°  el_fov=±{args.el_fov/2:.0f}°  '
           f'snap={args.snap}  cal={"yes" if cal_e is not None else "no"}  '
-          f'(freq set by on-screen sliders)')
+          f'(freq/algo set by on-screen controls)')
     print('Press q to quit.')
 
     P = None
@@ -432,6 +477,7 @@ def main():
         cv2.setWindowProperty(win, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
     _sliders['flo'], _sliders['fhi'] = 500, 4000
     _sliders['auto_range'], _sliders['thresh_db'], _sliders['popup_open'] = True, 30, False
+    _sliders['algo'], _sliders['algo_open'] = args.algo, False
     mouse_registered = False
 
     prof = collections.defaultdict(float)
@@ -461,6 +507,7 @@ def main():
                             fhi = _sliders['fhi'] = flo + 100
                         else:
                             flo = _sliders['flo'] = fhi - 100
+                    algo = _sliders['algo']
                 freq = (flo + fhi) / 2
 
                 with buf_lock:
@@ -477,7 +524,7 @@ def main():
                         c = 1.0 / cal_e
                         R = np.outer(c, c.conj()) * R
 
-                    P = ALGO(R, freq)
+                    P = ALGO_FNS[algo](R, freq)
                     # Temporal smoothing: reduces frame-to-frame jitter
                     if P_smooth is None:
                         P_smooth = P.copy()
@@ -488,7 +535,7 @@ def main():
                     k = np.argmax(P_smooth)
                     az_peak = az_grid[k // N_el]
                     el_peak = el_grid[k % N_el]
-                    label = (f'{args.algo.upper()}  {freq:.0f}Hz  '
+                    label = (f'{algo.upper()}  {freq:.0f}Hz  '
                              f'az={az_peak:.1f}°  el={el_peak:.1f}°')
                     t3 = time.monotonic()
                 else:
@@ -498,6 +545,7 @@ def main():
                     auto_range = _sliders['auto_range']
                     thresh_db = _sliders['thresh_db']
                     popup_open = _sliders['popup_open']
+                    algo_open = _sliders['algo_open']
 
                 if P_smooth is not None:
                     ref = ref_power if auto_range else _REF_POWER_FLOOR
@@ -516,10 +564,10 @@ def main():
                 # Settings tab/popup live inside the video frame itself (not a new
                 # strip), drawn every frame regardless of P_smooth so the tab is
                 # visible even while the audio buffer is still filling.
-                popup_layout = _popup_layout(frame.shape[1])
+                popup_layout = _popup_layout(frame.shape[1], algo_open)
                 _draw_tab(frame, popup_layout)
                 if popup_open:
-                    _draw_popup(frame, popup_layout, auto_range, thresh_db)
+                    _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open)
                 t4 = time.monotonic()
 
                 now = time.monotonic()

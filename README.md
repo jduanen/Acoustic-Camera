@@ -466,7 +466,7 @@ green-dominated background).
 #### Touch UI: Energy Threshold Tab & Auto/Manual Range
 
 A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with two controls:
+strip — the video/strip layout budget is unchanged) opens a popup with three controls:
 
 - **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
   auto-ranges every frame off a slowly-decaying running max of the beamformed power
@@ -478,13 +478,20 @@ strip — the video/strip layout budget is unchanged) opens a popup with two con
 - **Thresh** slider (0–100 dB, default 30). Only takes effect in Manual mode. Grid
   cells below the threshold fade toward the colormap's coolest color rather than
   disappearing; cells at or above `thresh_db + 30 dB` saturate at the hottest color.
+- **Algo** dropdown (`DS` / `MVDR` / `CLEAN` / `MUSIC`, default from `--algo`, `ds`
+  unless overridden). Tapping it expands a 4-row option list below the button; tapping
+  an option selects it and collapses the list. Switches the live beamformer without
+  restarting the script — same effect as `--algo` at launch, just changeable at
+  runtime. The popup grows to fit the expanded list and shrinks back when collapsed.
 
 Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
-by design, to keep the interaction minimal. Labeled with a plain ASCII "E" rather
-than a gear/settings glyph, since OpenCV's Hershey fonts (used everywhere else in
-this UI) don't reliably render extended-unicode symbols. The tab and popup are
-positioned from `frame_w`/`frame_h` the same way the Flo/Fhi track position is
-derived in `_track_geom()` — no stored pixel coordinates — via `_popup_layout()`.
+by design, to keep the interaction minimal (the algo dropdown follows the same rule:
+only the Algo button or picking an option closes it). Labeled with a plain ASCII "E"
+rather than a gear/settings glyph, and the dropdown's caret is a plain "v"/"^", since
+OpenCV's Hershey fonts (used everywhere else in this UI) don't reliably render
+extended-unicode symbols. The tab and popup are positioned from `frame_w`/`frame_h`
+the same way the Flo/Fhi track position is derived in `_track_geom()` — no stored
+pixel coordinates — via `_popup_layout()`.
 
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
