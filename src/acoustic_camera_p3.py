@@ -12,6 +12,7 @@ The beamforming frequency is set live by the on-screen F lo / F hi sliders
 """
 import argparse
 import collections
+import json
 import subprocess
 import sys
 import threading
@@ -492,12 +493,60 @@ def _poll_throttled():
         time.sleep(3)
 
 
+# --- Settings persistence ---
+# Only the touch-adjustable settings (frequency band, algorithm, source count,
+# auto-range, threshold) round-trip through the config file — everything else
+# (camera/display/hardware setup) stays CLI-only, same split as the settings popup.
+
+_CONFIG_KEYS = ('flo', 'fhi', 'algo', 'nsrc', 'auto_range', 'thresh_db')
+
+
+def _load_config(path):
+    """Return the persisted settings dict, or {} if the file is missing, unreadable,
+    or not a JSON object — never fatal (first run, corrupt/hand-edited file, etc.)."""
+    try:
+        with open(path) as f:
+            data = json.load(f)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return data if isinstance(data, dict) else {}
+
+
+def _cfg_int(config, key, default, lo, hi):
+    """Read an int setting from a loaded config dict, clamped to [lo, hi]; falls
+    back to `default` if the key is missing or not a valid number (e.g. hand-edited
+    to garbage) — config values are external input, never trusted blindly."""
+    try:
+        return max(lo, min(hi, int(config[key])))
+    except (KeyError, TypeError, ValueError):
+        return default
+
+
+def _save_config(path):
+    """Persist the current touch-adjustable settings so the next run resumes where
+    this one left off. Failure (e.g. read-only filesystem) is a warning, not fatal —
+    it happens during shutdown, where raising would just mask a clean exit."""
+    settings = {k: _sliders[k] for k in _CONFIG_KEYS}
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with open(path, 'w') as f:
+            json.dump(settings, f, indent=2)
+    except OSError as e:
+        print(f'[warn] could not save settings to {path}: {e}', file=sys.stderr)
+
+
 def main():
+    default_config = str(Path.home() / 'Code' / 'Acoustic-Camera' / 'config.json')
+
     ap = argparse.ArgumentParser(description='Phase 3 acoustic camera — UMA-16 v2')
-    ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds')
+    ap.add_argument('--algo',   choices=['ds', 'mvdr', 'clean', 'music'], default='ds',
+                    help='beamforming algorithm (default: ds; overridden by the saved '
+                         'config value if the config file has one)')
     ap.add_argument('--snap',   type=int,   default=128,     help='CSM blocks to average')
     ap.add_argument('--device', type=int,   default=None,    help='sounddevice index')
-    ap.add_argument('--nsrc',   type=int,   default=1,       help='number of sources (MUSIC only)')
+    ap.add_argument('--nsrc',   type=int,   default=1,
+                    help='number of sources, MUSIC only (default: 1; overridden by the '
+                         'saved config value if the config file has one)')
     ap.add_argument('--cal',    type=str,   default=None,    help='path to cal.npy')
     # Matches the 100° CSI lens (see RASPBERRY_PI.md §4). el_fov is scaled from az_fov
     # by the captured frame's pixel aspect ratio (542/1280) rather than a claimed
@@ -512,7 +561,18 @@ def main():
     ap.add_argument('--csi',       action='store_true',      help='use MIPI-CSI camera via picamera2 instead of a USB webcam')
     ap.add_argument('--fullscreen', action='store_true',     help='show the display fullscreen (borderless)')
     ap.add_argument('--profile', action='store_true',        help='print per-stage timing breakdown to stderr')
+    ap.add_argument('--config', type=str, default=default_config,
+                    help=f'settings file to load on startup and save on exit — freq band, '
+                         f'algo, nsrc, auto-range, threshold (default: {default_config})')
     args = ap.parse_args()
+
+    config_path = Path(args.config)
+    config = _load_config(config_path)
+    # Config wins over the CLI flag when the config file has a value for it — the CLI
+    # flag is only the fallback for a first run, before any config file exists.
+    if config.get('algo') in _ALGOS:
+        args.algo = config['algo']
+    args.nsrc = _cfg_int(config, 'nsrc', args.nsrc, 1, _NSRC_MAX)
 
     screengrabs_dir = Path.home() / 'Code' / 'Acoustic-Camera' / 'screengrabs'
     screengrabs_dir.mkdir(parents=True, exist_ok=True)
@@ -589,8 +649,11 @@ def main():
     cv2.namedWindow(win, cv2.WINDOW_NORMAL)
     if args.fullscreen:
         cv2.setWindowProperty(win, cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
-    _sliders['flo'], _sliders['fhi'] = 500, 4000
-    _sliders['auto_range'], _sliders['thresh_db'], _sliders['popup_open'] = True, 30, False
+    _sliders['flo'] = _cfg_int(config, 'flo', 500, 100, _FREQ_MAX)
+    _sliders['fhi'] = _cfg_int(config, 'fhi', 4000, 100, _FREQ_MAX)
+    _sliders['auto_range'] = bool(config.get('auto_range', True))
+    _sliders['thresh_db'] = _cfg_int(config, 'thresh_db', 30, 0, _THRESH_MAX)
+    _sliders['popup_open'] = False
     _sliders['algo'], _sliders['algo_open'] = args.algo, False
     _sliders['nsrc'] = max(1, min(_NSRC_MAX, args.nsrc))
     _sliders['paused'] = False
@@ -807,6 +870,7 @@ def main():
         if cam is not None:
             cam.release()
         cv2.destroyAllWindows()
+        _save_config(config_path)
 
 
 if __name__ == '__main__':

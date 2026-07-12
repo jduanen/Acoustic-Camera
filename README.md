@@ -485,14 +485,15 @@ strip — the video/strip layout budget is unchanged) opens a popup with seven c
 - **Thresh** slider (0–100 dB, default 30). Only takes effect in Manual mode. Grid
   cells below the threshold fade toward the colormap's coolest color rather than
   disappearing; cells at or above `thresh_db + 30 dB` saturate at the hottest color.
-- **Algo** dropdown (`DS` / `MVDR` / `CLEAN` / `MUSIC`, default from `--algo`, `ds`
-  unless overridden). Tapping it expands a 4-row option list below the button; tapping
-  an option selects it and collapses the list. Switches the live beamformer without
-  restarting the script — same effect as `--algo` at launch, just changeable at
-  runtime. The popup grows to fit the expanded list and shrinks back when collapsed.
-- **Nsrc** slider (1 to `N_MICS - 1` = 15, default from `--nsrc`, 1 unless overridden).
-  Only shown when Algo is MUSIC — sets the signal-subspace dimension (number of
-  sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
+- **Algo** dropdown (`DS` / `MVDR` / `CLEAN` / `MUSIC`; see "Settings Persistence"
+  below for how the starting value is chosen). Tapping it expands a 4-row option list
+  below the button; tapping an option selects it and collapses the list. Switches the
+  live beamformer without restarting the script — same effect as `--algo` at launch,
+  just changeable at runtime. The popup grows to fit the expanded list and shrinks
+  back when collapsed.
+- **Nsrc** slider (1 to `N_MICS - 1` = 15; see "Settings Persistence" for the starting
+  value). Only shown when Algo is MUSIC — sets the signal-subspace dimension (number
+  of sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
   the row (and the popup's height) only appears while MUSIC is selected.
 - **SNAP** button. Saves the exact composite currently on screen (video + overlay +
   the Fhi/spectrum/Flo strips below it, not just the video pane) as a PNG to
@@ -528,6 +529,31 @@ orange `(low-voltage/throttle event occurred)` line is shown instead. Both are d
 directly on the video frame regardless of whether the settings popup is open, the same
 way `[PAUSED]` is. Off a Raspberry Pi (no `vcgencmd`), the poll thread exits quietly on
 its first attempt and the indicator simply never appears — see `_poll_throttled()`.
+
+#### Settings Persistence
+
+`--config PATH` (default `~/Code/Acoustic-Camera/config.json`) is loaded on startup
+and saved on exit (both the `q` key and the popup's EXIT button go through the same
+`finally:` cleanup, so either one triggers a save — see `_save_config()`). Only the
+touch-adjustable settings round-trip: frequency band (`flo`/`fhi`), Algo, Nsrc,
+Auto/Manual, and Thresh — everything else (camera/display/hardware setup) stays
+CLI-only, matching the split already drawn by what's in the popup versus what's a
+plain CLI flag.
+
+Precedence for the two settings that are *also* CLI flags (`--algo`, `--nsrc`): the
+saved config value wins whenever the config file has one; the CLI flag is only the
+fallback for a first run, before any config file exists. So once you've picked MVDR
+via the popup, `--algo ds` on the next launch still starts as MVDR — the config file
+is the source of truth once it exists, not the command line. Delete or hand-edit the
+file (see below) to actually change it from outside the app. `flo`/`fhi`/
+`auto_range`/`thresh_db` have no CLI equivalents, so the saved value (or its
+hardcoded default) always applies to them regardless.
+
+The file is plain JSON and safe to hand-edit or delete; a missing, corrupt, or
+partially-invalid file (e.g. an out-of-range `thresh_db`, or an `algo` string that
+isn't one of the four real algorithms) is never fatal — each field falls back to its
+built-in default independently rather than rejecting the whole file (see
+`_load_config()`/`_cfg_int()`).
 
 Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
 for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
