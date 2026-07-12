@@ -768,8 +768,11 @@ def main():
                     display = cv2.addWeighted(display, 1 - flash_alpha, white, flash_alpha, 0)
                 if snap_elapsed < _SNAP_TEXT_S:
                     snap_text = f'Saved {snap_filename}'
-                    (stw, sth), _ = cv2.getTextSize(snap_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
-                    cv2.putText(display, snap_text, ((display.shape[1] - stw) // 2, sth + 16),
+                    (stw, _), _ = cv2.getTextSize(snap_text, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
+                    # Below the fps status line (y=28), and below the throttle line
+                    # too when that's also showing, so the two never overlap.
+                    snap_y = 80 if (throttled_now or throttled_ever) else 54
+                    cv2.putText(display, snap_text, ((display.shape[1] - stw) // 2, snap_y),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (80, 255, 80), 2)
 
                 cv2.imshow(win, display)
