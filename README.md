@@ -7,6 +7,72 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 
 See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
 
+# Outline
+
+* [Technical Background](#Technical Background)
+  - How Microphone Arrays Localize Sound Sources
+  - Selected Beamforming Algorithm Families
+  - Key Concepts in Beamforming
+    * Half-Power Bandwidth (HPBW)
+    * Max Sidelobe Level (MSL)
+    * Far-Field vs. Near-Field Effects
+    * Spatial Nyquist Frequency
+    * Low-frequency Limit
+    * Cross-Spectral Matrix (CSM)
+    * Point Spread Function (PSF)
+    * Incoherent Octave-band Averaging
+  - Microphone Array Configurations
+    * 2D patterns
+    * 3D patterns
+* [Design Trade-offs](Design Trade-offs)
+  - Core Tradeoffs/Tensions
+  - Key Specifications
+    * Spatial Nyquist Frequency
+    * Beamforming Sampling Grid Size
+    * Resolution vs. Aperture (HPBW ≈ 58° × λ/D)
+    * Array Pattern: Underbrink multi-arm log-spiral (chosen pattern)
+* [System Requirements](System Requirements)
+* [Target Design](Target Design)
+  - Microphone Array
+  - Interface
+  - Compute
+  - Software
+* [Development Plan](Development Plan)
+  - Phase 1: Simulation Findings
+    * Recommended Array Configuration
+    * Beamwidth vs Frequency
+    * Algorithm Selection
+    * Where This System Works Well
+    * Where This System is NOT Well-Suited
+  - Phase 2: Smoke Test: ReSpeaker 4-Mic Array
+    * Hardware Findings
+    * Pipeline Validation (nb13)
+    * Calibration (nb14)
+    * Live Script
+  - Phase 3: Intermediate Array Test: miniDSP UMA-16 v2
+    * Hardware Findings
+    * Live Script
+      - Touch UI: Frequency Sliders & Spectrum Pan
+      - Touch UI: Energy Threshold Tab & Auto/Manual Range
+      - Power/Throttle Indicator
+      - Settings Persistence
+    * Algorithm Benchmark Script
+    * Lessons from the UMA-16 Experiments
+      - Key Intuition
+      - Rule of Thumb
+      - UMA-16 Usable Frequency Range
+* [Acoustic Camera Products Overview](Acoustic Camera Products Overview)
+* [Beamforming Projects and Libraries](Beamforming Projects and Libraries)
+* [References](References)
+  - Beamforming Algorithms
+  - Microphone Array Patterns
+  - Commercial Acoustic Camera Products
+  - Open-Source Projects and Libraries
+* Docs
+* Notes
+
+---
+
 ## Technical Background
 
 ### How Microphone Arrays Localize Sound Sources
@@ -91,11 +157,13 @@ Commercial cameras compute one CSM per frequency bin, beamform each, then averag
 
 See [BACKGROUND.md](./BACKGROUND.md) for full algorithm descriptions and references.
 
-## Microphone Array Configurations
+### Microphone Array Configurations
+
+See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for more details on microphone arrays.
 
 Array geometry controls two things: **beam width** (set by aperture; larger = sharper) and **maximum side-lobe level / MSL** (set by mic distribution; irregular spacing suppresses aliasing artifacts). More mics improve both, but with diminishing returns and linear cost growth.
 
-### 2D patterns
+#### 2D patterns
 
 | Pattern | Spacing | Strengths | Weaknesses |
 |---|---|---|---|
@@ -113,7 +181,7 @@ Array geometry controls two things: **beam width** (set by aperture; larger = sh
 
 In the initial phases of this project, I will use a 2D microphone array. In later phases a 3D array might be used.
 
-### 3D patterns
+#### 3D patterns
 
 | Pattern | Coverage | Framework | Notes |
 |---|---|---|---|
@@ -122,11 +190,15 @@ In the initial phases of this project, I will use a 2D microphone array. In late
 | **Tetrahedral / Platonic solid** | 3D DoA | First-order Ambisonics (4 mics) up to HOA | Smallest 3D array; Zylia ZM-1 (19 mics) = 3rd-order |
 | **Nested / concentric spheres** | Full *4π sr* | Multi-shell HOA | Inner shell = high freq; outer shell = low freq; enables range estimation |
 
-See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
+---
 
 ## Design Trade-offs
 
+For more details, see: [TRADEOFFS](./TRADEOFFS.md)
+
 ### Core Tradeoffs/Tensions
+
+The core tradeoffs/tensions in this project's design have to do with the specifications of the microphone array as captured in the table below:
 
 | Parameter | Larger/More | Smaller/Fewer | Sweet spot |
 |---|---|---|---|
@@ -134,6 +206,8 @@ See [MIC_ARRAYS.md](./MIC_ARRAYS.md) for full details.
 | **Mic count** | Lower sidelobes, better SNR | Less compute and cost | **96 mics** (47% packing at 300 mm) |
 | **Mic spacing** | Better directionality at low freq | Aliasing-free to higher freq | **21 mm min** (Nyquist at 8 kHz) |
 | **Density** | Better high-freq detail | Lower cost | 96 mics at ~27 mm avg spacing |
+
+### Key Specifications
 
 #### Spatial Nyquist Frequency
 
@@ -152,7 +226,7 @@ matches the target upper limit exactly, and the aperture pulls the lower limit d
 Pushing spacing smaller would require ~400+ mics for marginal gain above 8 kHz, which is outside
 the target range.
 
-### Beamforming Sampling Grid Size
+#### Beamforming Sampling Grid Size
 
 The sampling grid used in the beamforming algorithms defines the limits to the achievable resolution of the device. It is chosen based on practical considerations and is not derived from the only meaningful limit, which is the HPBW. Practically speaking, two to three grid points per HPBW are needed to reliably capture a peak without aliasing. For example, with the UMA-16 mic array described below, at 3 KHz the HPBW is ~43°, so a grid of 0.5°/pt makes for ~86 samples across the full main lobe, which is about 30x oversampled for this array's resolution. Even at 4KHz (HPBW ~32°) there are 64 samples per lobe, which is more than enough.
 
@@ -164,7 +238,7 @@ Decreasing the sampling grid saves considerable time and memory. For example, go
 
 Grid resolution does become an issue with the Phase 4 array (300 mm aperture, HBPW ~5° @ 4 kHz), where a 0.5°/pt gives just 10 samples across the main lobe and finer grid is warranted.
 
-### Resolution vs. Aperture (HPBW ≈ 58° × λ/D)
+#### Resolution vs. Aperture (HPBW ≈ 58° × λ/D)
 
 | Aperture | @ 1 kHz | @ 4 kHz | @ 8 kHz |
 |---|---|---|---|
@@ -176,7 +250,7 @@ Grid resolution does become an issue with the Phase 4 array (300 mm aperture, HB
 CLEAN-SC, Functional BF) can recover some resolution beyond the physical aperture limit but
 cannot overcome the hard floor.
 
-### Array Pattern: Underbrink multi-arm log-spiral (chosen pattern)
+#### Array Pattern: Underbrink multi-arm log-spiral (chosen pattern)
 
 Outperforms concentric rings, cross arms, and simple spirals on both sidelobe level and spatial
 aliasing. The **gfai Mikado** commercial product uses exactly 96 mics in this pattern. Logarithmic
@@ -184,9 +258,11 @@ radial spacing naturally covers multiple spatial scales, which is well-suited fo
 target.
 For this project I've selected **8 arms × 12 mics**. I will simulate 6 × 16 as alternative in Phase 1.
 
-For full details, see: [TRADEOFFS](./TRADEOFFS.md)
+---
 
 ## System Requirements
+
+The basic requirements for this project are given in the following table:
 
 | Parameter | Value | Notes |
 |---|---|---|
@@ -198,61 +274,62 @@ For full details, see: [TRADEOFFS](./TRADEOFFS.md)
 | Frequency Range | 200 Hz - 8 kHz | Broadband; mic spacing ≤21 mm avoids spatial aliasing at 8 kHz |
 | Environment | General-purpose | Indoor/outdoor, low-to-moderate reverberation, single/multiple sources |
 
-## Acoustic Camera Products Overview
+---
 
-A number of existing commercial products were examined to get a sense of their specs, features, and costs.
+## Target Design
 
-| Vendor | Product | Mics | Aperture | Freq range | Interface | Notes |
-|---|---|---|---|---|---|---|
-| miniDSP | UMA-16 v2 | 16 (4×4 URA) | 42×42 mm | 8–48 kHz SR | USB | Phase 3 hardware; XMOS Xcore200 PDM→PCM |
-| Convergence Instruments | ACAM-64 | 64 (32×32) | ~187×182 mm | 20 Hz–8 kHz | USB | $2,100; open protocol; 16 kHz audio |
-| Sorama | CAM64 | 64 MEMS PDM | 160×160 mm | 1.2–15 kHz (FF) | PoE | Pyramid form factor with handle |
-| Sorama | CAM1K | 1024 MEMS | 640×640 mm | 300 Hz–15 kHz (FF) | PoE | Integrated HD camera; 5.5 kg |
-| gfai Tech | Mikado | 96 MEMS | hexagon | -- | -- | Also Ring32/48/72 and large wind-tunnel arrays |
-| Head acoustics | Visor VMA V | 60 or 120 MEMS | 0.3 m or 1 m disk | -- | -- | Depth camera at center; paired/irregular spacing |
-| mh Acoustics | Eigenmike em32/em64 | 32 or 64 | spherical | 20 Hz–20 kHz | USB/Dante | HOA reference platform; up to 7th-order Ambisonics |
-| Brüel & Kjær | various | -- | spherical/wheel/grid | -- | -- | Research-grade; many geometries |
-| Clockworks SP | A²B array | 8 | 100 mm ring | -- | A²B bus | Infineon IM68D130 PDM mics; twisted-pair daisy-chain |
-| introlab | 16SoundsUSB | 8 or 16 | configurable | 8–96 kHz SR | USB | Open hardware; XMOS xCORE-200; electret or MEMS |
+For full details on the design, see: [DESIGN](./DESIGN.md)
 
-Key observations from the survey:
-- **64-96 mics** is the commercial sweet spot for handheld far-field use (1-8 kHz, ~0.16-0.64 m aperture)
-- **USB** dominates for portable/desktop use; **PoE** for fixed installations; **A²B/Dante** for multi-node
-- **PDM MEMS mics** are standard; electret arrays appear only in large wind-tunnel configurations
-- **Integrated video camera** is universal in commercial products and is always co-located at array center
-- **Near-field acoustic holography** (25 Hz) requires much closer source distances and a separate processing path from far-field beamforming
+### Microphone Array
 
-See [PRODUCTS.md](./PRODUCTS.md) for full details.
+- **96× Infineon IM69D120** PDM MEMS mics: 69 dBA SNR, ±1 dB sensitivity, ±2° phase match (factory-calibrated)
+- **Underbrink multi-arm log-spiral**: 8 arms × 12 mics (simulate 6 × 16 as alternative in Phase 1)
+- **~300 mm diameter aperture; ~21 mm minimum mic spacing**: Spatial Nyquist at 8 kHz
+- **Custom PCB(s)**: mics share (carefully distributed) PDM clock, paired L/R → 48 DATA + 1 CLK to FPGA
 
-## Beamforming Projects and Libraries
+### Interface
 
-A number of open-source beamforming projects and software packages were also studied to get an idea of what can practically be accomplished in such a project.
+- prototype with embedded web UI over WiFi
+- 5-7" touchscreen
+- battery-powered operation
 
-| Project | Scale | Interface | Notable technique |
+### Compute
+
+- **Pipeline**: PDM mics → FPGA hub → GbE → Linux host PC with GPU
+- **FPGA** handles: PDM clock distribution, per-channel CIC + FIR decimation (3.072 MHz PDM → 48 kHz 24-bit PCM), synchronous sampling, GbE packetization (UDP, with sequence numbers)
+- **Data rate**: 96 ch × 48 kHz × 24 b ≈ 110 Mbps; fits within 1 GbE
+- **FPGA** candidates: Lattice ECP5 (open-source toolchain) or Xilinx Artix-7 XC7A100T (resource headroom)
+- inspired by Ben Wang's 192-mic FPGA design
+
+### Software
+
+- Python and Acoular for beamforming core; GPU acceleration via PyTorch/CuPy
+- Algorithm progression: D&S → MVDR → CLEAN-SC → ML
+- USB webcam at array center; OpenCV overlay of energy map on video
+- GUI Components: Live video overlay · frequency band selector · dynamic range sliders · algorithm selector ·
+persistence slider · record/stop · SPL meter · status bar
+
+---
+
+## Development Plan
+
+For additional details on the project plan, see: [PLAN](./PLAN.md)
+
+This project has been decomposed into multiple phases, each of which has a specific goal/output. Additionally, each phase delivers a working end-to-end system -- there will never be more than one phase in the "not yet working" state at any point in time.
+
+| Phase | Hardware | Goal | Status |
 |---|---|---|---|
-| Ben Wang (2023) | 192-mic MEMS, 24 radial arms, exponential spacing | FPGA → GbE → GPU host | GPU-fused cross-correlation calibration; PyTorch gradient descent for mic positions + speed of sound |
-| Sonicam / CMU ECE (2020) | 96-mic, 6× 4×4 MEMS panels | FPGA → Ethernet | TDK InvenSense mics; large-format panel array |
-| Kickstarter handheld (2018) | 64-mic, 3 concentric rings | ARM Cortex-A53, Linux | Battery-powered; 7" touchscreen; 10–24 kHz; 100 fps acoustic |
-| 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | -- | Early large-format MEMS grid demo |
+| **1** | None (simulation) | Validate algorithms and array geometry in simulation; generate training datasets | Complete |
+| **2** | ReSpeaker XVF3800 (4-mic, 90 mm) | End-to-end pipeline: capture → beamform → overlay; surface real-world issues | Complete |
+| **3** | miniDSP UMA-16 v2 (16-mic, 126 mm) | Scale to 16 channels; 2D Az × El beamforming; validate MVDR/MUSIC benefit | In progress |
+| **4** | Custom PCB (96-mic, 300 mm, FPGA hub) | Full-performance system meeting all requirements | Not started |
+| **5** | Phase 3/4 hardware | ML-based beamformer (PILOT / CRNN); benchmark vs CLEAN-SC | Not started |
 
-Key takeaways:
-- **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) -- offloads PDM decimation and keeps the host pipeline simple
-- **Calibration via cross-correlation** (Ben Wang's approach) is practical at scale: GPU-fused FFT pairs + gradient descent converges in seconds and recovers both mic positions and speed of sound simultaneously
-- **Concentric-ring and spiral geometries** appear in handheld products; rectangular grids appear in panel/tile designs
-- **Standalone operation** (ARM + touchscreen + battery) is achievable at 64 mics; larger arrays require tethered compute
-
-**acoular** is a Python open-source beamforming framework that includes a reference 64-mic demo.
-I'm using this package in some of this project's experiments.
-Matlab has a lot of support for beamforming, but I'm sticking with open-source software in this project,
-so I haven't really looked at what it has to offer.
-
-See [PROJECTS.md](./PROJECTS.md) for full details.
-
-## Phase 1: Simulation Findings
+### Phase 1: Simulation Findings
 
 Full results and methodology are in: [PHASE1](./PHASE1.md)
 
-### Recommended Array Configuration
+#### Recommended Array Configuration
 
 **Underbrink H=12×8, α=22°**: 96 mics, 300 mm aperture, 12.9 mm min spacing
 
@@ -262,7 +339,7 @@ Full results and methodology are in: [PHASE1](./PHASE1.md)
 
 Alternative: *H*=8×12, *α*=35° (-14.4 dB MSL, simpler layout, more uniform spacing, which is good if PCB routing is constrained)
 
-### Beamwidth vs Frequency
+#### Beamwidth vs Frequency
 
 | Frequency | HPBW | Practical meaning |
 |---|---|---|
@@ -272,7 +349,7 @@ Alternative: *H*=8×12, *α*=35° (-14.4 dB MSL, simpler layout, more uniform sp
 | 4 kHz | ~19° | Clear maps; commercial acoustic cameras primarily operate here |
 | 8 kHz | ~9° | High-resolution; closely-spaced sources resolvable |
 
-### Algorithm Selection
+#### Algorithm Selection
 
 | Use case | Recommended |
 |---|---|
@@ -285,7 +362,7 @@ Alternative: *H*=8×12, *α*=35° (-14.4 dB MSL, simpler layout, more uniform sp
 Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms converge at N_SNAP = 16
 (0.3 ms); 256 provides 16× margin while remaining below the ~10 ms perceptual latency threshold.
 
-### Where This System Works Well
+#### Where This System Works Well
 
 - **Mechanical/industrial source hunting at 2-8 kHz**: the primary sweet spot. Fan noise, gear mesh,
   bearing defect harmonics, structural resonances. MVDR/MUSIC resolve sources separated by 10-15° that
@@ -298,7 +375,7 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
   azimuth within grid quantization. Sub-centimeter range error at 1.5 m in simulation
 - **Outdoors or in treated spaces**: consistent strong performance; no special mitigation needed
 
-### Where This System is NOT Well-Suited
+#### Where This System is NOT Well-Suited
 
 - **Below 1 kHz**: the array is omnidirectional at 200–500 Hz and barely directional at 1 kHz
   A dedicated low-frequency array would need ~1.7 m aperture for 10° resolution at 1 kHz
@@ -315,23 +392,22 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
   at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable
 
-## Phase 2: Smoke Test: ReSpeaker 4-Mic Array
+### Phase 2: Smoke Test with ReSpeaker 4-Mic Array
 
 Full results and methodology: [PHASE2](./PHASE2.md)
 
 End-to-end pipeline validation on real hardware. The goal to create a fully functional (not high performance) pipeline: audio capture → beamforming → energy map → video overlay.
 
-
 Hardware: **ReSpeaker XVF3800 USB 4-Mic Array** (4 mics, 90mm aperture, 16 kHz, driverless USB).
 https://www.seeedstudio.com/ReSpeaker-XVF3800-USB-Mic-Array-p-6488.html
 
-### Hardware Findings
+#### Hardware Findings
 
 - USB device index 12; 6 channels at 16 kHz; 23.9 ms latency
 - Channel mapping: ch0 = Conference processed, ch1 = ASR processed, **ch2-5 = Mic 0-3 raw**
 - Mic gain imbalance up to ~3.6× across raw channels (Mic 1 consistently lower); motivates calibration
 
-### Pipeline Validation (nb13)
+#### Pipeline Validation (nb13)
 
 Welch-style CSM from 3 sec ambient recording (~373 blocks at 256-sample blocks, 128-sample hop):
 
@@ -345,11 +421,11 @@ All three agree within 5° -- **PASS**.
 
 Peaks are stable 500-1750 Hz; scatter increases at 2000-2250 Hz as expected near the 2695 Hz spatial Nyquist.
 
-### Calibration (nb14)
+#### Calibration (nb14)
 
 Cross-correlation-based gain and phase calibration. Run `notebooks/14_respeaker_calibration.ipynb` while playing a 1 kHz sine tone from boresight at 0.5-1 m to obtain valid calibration. Calibration vector saved to `test/ReSpeaker/cal.npy`.
 
-### Live Script
+#### Live Script
 
 ```bash
 python src/acoustic_camera_p2.py                              # D&S, 1000 Hz
@@ -362,7 +438,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
-## Phase 3: Intermediate Array Test: miniDSP UMA-16 v2
+### Phase 3: Intermediate Array Test: miniDSP UMA-16 v2
 
 Full results and methodology: [PHASE3](./PHASE3.md)
 
@@ -372,14 +448,14 @@ The goals of this phase include validating 2D beamforming, calibration, and vide
 Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
 https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array
 
-### Hardware Findings
+#### Hardware Findings
 
 - USB device index 12; 16 channels at 48 kHz; Knowles SPH1668LM4H-1 MEMS mics (65.5 dB SNR)
 - All 16 USB channels are raw mic data (no processed channels as in Phase 2)
 - RMS levels balanced across channels (~5e-5 ambient noise floor)
 - Channel ordering: PDM L/R pairs per data line (see [PHASE3](./PHASE3.md) for mapping)
 
-### Live Script
+#### Live Script
 
 ```bash
 python src/acoustic_camera_p3.py                                  # D&S
@@ -413,152 +489,7 @@ The algorithms that are implemented in this application are `ds`, `mvdr`, `clean
 
 With *N*=16 mics, the MVDR/MUSIC algorithms provide measurable super-resolution benefit over D&S.
 
-#### Touch UI: Frequency Sliders & Spectrum Pan
-
-Getting the Fhi/Flo sliders right on a real touchscreen (Raspberry Pi Touch Display 2,
-see [RASPBERRY_PI.md](./RASPBERRY_PI.md)) took several rounds — worth documenting since
-none of these were visible on desktop/mouse testing, only on hardware:
-
-**Touch targets too close together.** The original design had both sliders stacked in
-one 44px panel (22px per row) — too small a target for a finger. Fix: split them onto
-opposite sides of the spectrum plot, each with its own full 44px strip.
-
-**Displayed slider position lagged the actual touch position.** `flo`/`fhi` were read
-from the shared `_sliders` dict once at the top of the main loop (before the ~15-30 ms
-of CSM/beamform work), and that stale snapshot was still what got drawn at the bottom
-of the loop — so during an active drag, the on-screen handle visibly lagged the live
-value by up to one frame, which looked like the handles crossing. Fixed by re-reading
-live values immediately before drawing, separate from the early snapshot used for that
-frame's beamforming frequency (which intentionally stays tied to what was actually
-computed that frame).
-
-**Race condition on `_sliders`.** It's written by `_on_mouse` (OpenCV's Qt backend can
-dispatch input callbacks off the main loop's thread) and read by the main loop, with no
-lock — unlike `audio_buf` elsewhere in this file, which already uses `buf_lock` for
-exactly this reason. Added `_sliders_lock` around all reads/writes, mirroring that
-existing pattern.
-
-**Different max ranges made the two sliders behave inconsistently.** `flo`/`fhi`
-originally had different maxima (5000 / 8000 Hz), so the same finger position meant a
-different Hz value on each — confusing, and made the ordering clamp feel like it was
-failing even when it wasn't. Unified to one shared `_FREQ_MAX = 8000` for both.
-
-**Track geometry didn't line up.** Flo's label is on the left, Fhi's on the right (so
-the label side visually reinforces which direction is "higher" on the shared scale) —
-but that means their tracks need mirrored margins (`[92, w-8]` vs `[8, w-92]`), which
-are the *same length* but not the *same interval*, so identical Hz values landed at
-different x-pixels on each slider. Fixed by using the intersection of both margins,
-`[92, w-92]`, as the single shared track for both — see `_track_geom()`.
-
-**Spectrum-plot pan.** Dragging horizontally on the spectrum plot itself (not the
-slider strips) shifts `flo` and `fhi` together by the same amount, preserving the gap
-between them — i.e. it pans the visible range rather than resizing it. Clamped at both
-ends so the window snaps to sit exactly at 100 Hz or `_FREQ_MAX` rather than partially
-clipping. Uses the same `_track_geom()`-derived scale as the sliders, so pan speed
-matches slider-drag speed.
-
-**Nyquist marker color.** The vertical line marking spatial Nyquist (~4083 Hz for the
-UMA-16) on the spectrum plot was `(255, 100, 0)` in BGR — a blue, not orange as the name
-might suggest — which was hard to distinguish against the green spectrum bars. Changed
-to magenta `(255, 0, 255)` (zero green component, maximal contrast against a
-green-dominated background).
-
-#### Touch UI: Energy Threshold Tab & Auto/Manual Range
-
-A small "E" tab in the top-right corner of the video frame (not a new full-width
-strip — the video/strip layout budget is unchanged) opens a popup with seven controls
-(Nsrc only appears when Algo is set to MUSIC):
-
-- **PAUSE / RESUME** button, at the top of the popup. Freezes the video frame and the
-  acoustic overlay in place (camera capture and the CSM/beamform update are both
-  skipped while paused; the mic stream itself keeps running in the background, so
-  resuming picks back up on live audio rather than a stale buffer). The status line
-  in the top-left of the video is prefixed `[PAUSED]` even when the popup is closed,
-  so the paused state is visible without opening it.
-- **AUTO / MANUAL** toggle. Auto (default) is the original behavior: the color map
-  auto-ranges every frame off a slowly-decaying running max of the beamformed power
-  (`ref_power`), so relative "hot spots" stay visible regardless of absolute signal
-  level. Manual instead measures power against a fixed reference floor and rescales
-  the color map against a fixed span starting at an absolute threshold, so the same
-  sound always maps to the same color run-to-run instead of adapting to whatever's
-  currently loudest.
-- **Thresh** slider (0–100 dB, default 30). Only takes effect in Manual mode. Grid
-  cells below the threshold fade toward the colormap's coolest color rather than
-  disappearing; cells at or above `thresh_db + 30 dB` saturate at the hottest color.
-- **Algo** dropdown (`DS` / `MVDR` / `CLEAN` / `MUSIC`; see "Settings Persistence"
-  below for how the starting value is chosen). Tapping it expands a 4-row option list
-  below the button; tapping an option selects it and collapses the list. Switches the
-  live beamformer without restarting the script — same effect as `--algo` at launch,
-  just changeable at runtime. The popup grows to fit the expanded list and shrinks
-  back when collapsed.
-- **Nsrc** slider (1 to `N_MICS - 1` = 15; see "Settings Persistence" for the starting
-  value). Only shown when Algo is MUSIC — sets the signal-subspace dimension (number
-  of sources) `beamform_music` looks for; irrelevant to the other three algorithms, so
-  the row (and the popup's height) only appears while MUSIC is selected.
-- **SNAP** button. Saves the exact composite currently on screen (video + overlay +
-  the Fhi/spectrum/Flo strips below it, not just the video pane) as a PNG to
-  `~/Code/Acoustic-Camera/screengrabs/` (created on startup if missing), named
-  `screengrab_<timestamp>.png`; a numeric suffix is appended if a file with that
-  second's timestamp already exists, so rapid taps don't silently overwrite each other.
-  Confirmation is on-screen, not just the console print: a brief (150 ms) full-screen
-  white flash — camera-shutter style — followed by a green "Saved &lt;filename&gt;"
-  caption for 1.5 s. Both are drawn only on the live preview *after* the file is
-  written, so neither ever ends up baked into the saved PNG itself.
-- **EXIT** button, at the bottom of the popup, separated from the other controls (and
-  colored a stronger red) since it's destructive and infrequently used. Cleanly shuts
-  the script down — same effect as pressing `q`, runs the same `cam.release()`/
-  `cv2.destroyAllWindows()` cleanup — just reachable without a keyboard.
-
-Tapping the tab is the only way to open or close the popup — no outside-tap dismiss,
-by design, to keep the interaction minimal (the algo dropdown follows the same rule:
-only the Algo button or picking an option closes it). Labeled with a plain ASCII "E"
-rather than a gear/settings glyph, and the dropdown's caret is a plain "v"/"^", since
-OpenCV's Hershey fonts (used everywhere else in this UI) don't reliably render
-extended-unicode symbols. The tab and popup are positioned from `frame_w`/`frame_h`
-the same way the Flo/Fhi track position is derived in `_track_geom()` — no stored
-pixel coordinates — via `_popup_layout()`.
-
-#### Power/Throttle Indicator
-
-A background thread polls `vcgencmd get_throttled` every 3 s (bits 0-3 = currently
-active undervoltage/throttling/frequency-capping/soft-temp-limit; bits 16-19 = the
-same four latched since last boot — see the Raspberry Pi firmware docs). If any are
-currently active, a red `! LOW VOLTAGE / THROTTLED !` line is drawn below the main
-status line; if none are active now but one occurred earlier in the session, a dimmer
-orange `(low-voltage/throttle event occurred)` line is shown instead. Both are drawn
-directly on the video frame regardless of whether the settings popup is open, the same
-way `[PAUSED]` is. Off a Raspberry Pi (no `vcgencmd`), the poll thread exits quietly on
-its first attempt and the indicator simply never appears — see `_poll_throttled()`.
-
-#### Settings Persistence
-
-`--config PATH` (default `~/Code/Acoustic-Camera/config.json`) is loaded on startup
-and saved on exit (both the `q` key and the popup's EXIT button go through the same
-`finally:` cleanup, so either one triggers a save — see `_save_config()`). Only the
-touch-adjustable settings round-trip: frequency band (`flo`/`fhi`), Algo, Nsrc,
-Auto/Manual, and Thresh — everything else (camera/display/hardware setup) stays
-CLI-only, matching the split already drawn by what's in the popup versus what's a
-plain CLI flag.
-
-Precedence for the two settings that are *also* CLI flags (`--algo`, `--nsrc`): the
-saved config value wins whenever the config file has one; the CLI flag is only the
-fallback for a first run, before any config file exists. So once you've picked MVDR
-via the popup, `--algo ds` on the next launch still starts as MVDR — the config file
-is the source of truth once it exists, not the command line. Delete or hand-edit the
-file (see below) to actually change it from outside the app. `flo`/`fhi`/
-`auto_range`/`thresh_db` have no CLI equivalents, so the saved value (or its
-hardcoded default) always applies to them regardless.
-
-The file is plain JSON and safe to hand-edit or delete; a missing, corrupt, or
-partially-invalid file (e.g. an out-of-range `thresh_db`, or an `algo` string that
-isn't one of the four real algorithms) is never fatal — each field falls back to its
-built-in default independently rather than rejecting the whole file (see
-`_load_config()`/`_cfg_int()`).
-
-Running this script on a Raspberry Pi 5 instead of a desktop: see [RASPBERRY_PI.md](./RASPBERRY_PI.md)
-for OS packages, PortAudio/OpenCV gotchas, camera/display caveats, and performance expectations.
-
-### Algorithm Benchmark Script
+#### Algorithm Benchmark Script
 
 ```bash
 python src/benchmark_algos.py                             # all four algorithms, 3 kHz, 20 fps target
@@ -593,9 +524,9 @@ internal buffers.
 Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_iters`,
 `--nsrc`, `--grid_deg`, `--az_fov`, `--el_fov`, `--fps`, `--cal`.
 
-### Lessons from the UMA-16 Experiments
+#### Lessons from the UMA-16 Experiments
 
-#### Key Intuition
+##### Key Intuition
 - mic arrays figure out locations based on direction of arrival
   * they figure out direction of arrival based on the input signal's phase differences at different mics
   * at high frequency, a 10deg shift in angle of arrival results in a large, easily measureable phase difference 
@@ -605,7 +536,7 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
 - min spacing of mics defines Spatial Nyquist
   * can't go to higher frequency than this to get better localization
 
-#### Rule of Thumb
+##### Rule of Thumb
 - Useful directionality requires roughly *λ < D*, i.e.:
   * *f > c / D* = 343 / 0.126 ≈ 2.7 kHz for the UMA-16
 - Below that frequency, the HPBW exceeds ~57° and degrades fast:
@@ -617,136 +548,77 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
 | 1000 Hz| 116° | Poor               |
 |  500 Hz| 180° | Fully omni         |
 
-#### UMA-16 Usable Frequency Range
+##### UMA-16 Usable Frequency Range
 - for the UMA-16, the usable window is roughly 2–4 kHz
   * this is bounded below by aperture-limited directionality and above by spatial Nyquist aliasing
   * this happens to overlap well with speech consonants and many mechanical tones
      - this is why a 126 mm array is a practical choice for a desktop acoustic camera
 
-## Target Design
-Full details: [DESIGN](./DESIGN.md)
-
-### Microphone Array
-
-- **96× Infineon IM69D120** PDM MEMS mics: 69 dBA SNR, ±1 dB sensitivity, ±2° phase match (factory-calibrated)
-- **Underbrink multi-arm log-spiral**: 8 arms × 12 mics (simulate 6 × 16 as alternative in Phase 1)
-- **~300 mm diameter aperture; ~21 mm minimum mic spacing**: Spatial Nyquist at 8 kHz
-- **Custom PCB(s)**: mics share (carefully distributed) PDM clock, paired L/R → 48 DATA + 1 CLK to FPGA
-
-### Interface and Compute
-
-- **Pipeline**: PDM mics → FPGA hub → GbE → Linux host PC with GPU
-- **FPGA** handles: PDM clock distribution, per-channel CIC + FIR decimation (3.072 MHz PDM → 48 kHz 24-bit PCM), synchronous sampling, GbE packetization (UDP, with sequence numbers)
-- **Data rate**: 96 ch × 48 kHz × 24 b ≈ 110 Mbps; fits within 1 GbE
-- **FPGA** candidates: Lattice ECP5 (open-source toolchain) or Xilinx Artix-7 XC7A100T (resource headroom)
-- inspired by Ben Wang's 192-mic FPGA design
-
-### Software
-
-- Python and Acoular for beamforming core; GPU acceleration via PyTorch/CuPy
-- Algorithm progression: D&S → MVDR → CLEAN-SC → ML
-- USB webcam at array center; OpenCV overlay of energy map on video
-
-### GUI (Phase 2/3: USB-tethered)
-
-Live video overlay · frequency band selector · dynamic range sliders · algorithm selector ·
-persistence slider · record/stop · SPL meter · status bar
-
-### GUI (Phase 4b: standalone field use)
-
-Embedded web UI over WiFi (inclusive or) 7" touchscreen · physical record/stop button · battery operation.
-
-## Development Plan
-Full details: [PLAN](./PLAN.md)
-
-Each phase delivers a working end-to-end system; never "not yet working" for more than one phase at a time.
-
-| Phase | Hardware | Goal | Status |
-|---|---|---|---|
-| **1** | None (simulation) | Validate algorithms and array geometry in simulation; generate training datasets | Complete |
-| **2** | ReSpeaker XVF3800 (4-mic, 90 mm) | End-to-end pipeline: capture → beamform → overlay; surface real-world issues | Complete |
-| **3** | miniDSP UMA-16 v2 (16-mic, 126 mm) | Scale to 16 channels; 2D Az × El beamforming; validate MVDR/MUSIC benefit | In progress |
-| **4** | Custom PCB (96-mic, 300 mm, FPGA hub) | Full-performance system meeting all requirements | Not started |
-| **5** | Phase 3/4 hardware | ML-based beamformer (PILOT / CRNN); benchmark vs CLEAN-SC | Not started |
-
-## Implementation Details
-
-### Hardware
-
-#### Microphone Elements
-
-See [MICS](./MICS.md) for mic element details.
-
-**Chosen Mic**: Infineon IM69D120V01XTSA1 PDM MEMS
-  - Newark: $0.755 (unit 1)
-
-#### FPGAs and FPGA Development Boards
-
-Target use: PDM clock distribution, 96-channel CIC+FIR decimation, synchronous sampling, GbE packetization. See [DESIGN](./DESIGN.md) for details.
-
-##### Candidate FPGA Devices
-
-* Lattice ECP5
-  - preferred for open-source toolchain (Yosys / nextpnr / openFPGALoader)
-  - ECP5-85F: 84K LUTs, 3.4Mb BRAM, abundant I/O
-  - low power; actively supported by open-source community
-  - dev boards: OrangeCrab, ULX3S, Versa ECP5
-
-* Xilinx Artix-7
-  - preferred for resource headroom and mature ecosystem (Vivado)
-  - XC7A100T: 101K LUTs, 4.8Mb BRAM, up to 210 user I/O
-  - large library of IP cores (GbE MAC, PCIe, etc.)
-  - dev boards: Digilent Arty A7-100T, Nexys Video (chosen for Phase 4 — FMC LPC)
-
-* Intel Cyclone 10 LP
-  - alternative; good balance of cost and I/O count
-  - dev boards: Intel Cyclone 10 LP Evaluation Kit
-
-##### Candidate FPGA Dev Boards
-
-| Device | LUTs | BRAM | Toolchain | Dev board |
-|---|---|---|---|---|
-| Lattice ECP5-85F | 84K | 3.4 Mb | Yosys/nextpnr (open-source) | OrangeCrab, ULX3S |
-| **Xilinx Artix-7 XC7A200T** | **134K** | **13.1 Mb** | **Vivado; chosen for Phase 4** | **Nexys Video (FMC LPC)** |
-| Intel Cyclone 10 LP | -- | -- | Quartus | Cyclone 10 LP Eval Kit |
-
-### Software Stack Candidates
-
-| Package | Role |
-|---|---|
-| acoular | Beamforming core (D&S, MVDR, CLEAN-SC, array geometry) |
-| pyroomacoustics | Room acoustics simulation, synthetic source data |
-| acoupipe | ML training dataset generation |
-| sounddevice | Real-time USB audio capture (Phases 2/3) |
-| opencv-python | Video capture, overlay, display |
-| scipy / numpy | Signal processing, array math |
-| matplotlib / seaborn | Plotting and visualization |
-| h5py | HDF5 I/O (Acoular data format) |
-| jupyterlab | Notebooks (Phase 1 deliverable) |
-
-#### Python Packages
-
-* acoular: Beamforming core (D&S, MVDR, CLEAN-SC, array geometry)
-* pyroomacoustics: Room acoustics simulation, synthetic source data
-* acoupipe: ML training dataset generation (from GitHub) 
-* numpy: Array math
-* scipy: Signal processing
-* matplotlib: Plotting
-* h5py: HDF5 I/O (Acoular data format)
-* jupyterlab: Notebooks (Phase 1 deliverable) 
-* pandas: Results tabulation
-* seaborn: Visualization
-* tqdm: Progress bars
-
-See also: [FOSS](./FOSS.md) for open-source beamforming software survey
-
-**TODO** put in final stack selection here
-
 ---
+
+### Phase 4: ????
+
+????
 
 *Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
 
-**Phase 5** requires real data from Phase 3/4 to train and validate ML models
+### Phase 5: TBD
+
+This phase requires real data from Phase 3/4 to train and validate ML models.
+
+---
+
+## Acoustic Camera Products Overview
+
+See [PRODUCTS.md](./PRODUCTS.md) for full details.
+
+A number of existing commercial products were examined to get a sense of their specs, features, and costs.
+
+| Vendor | Product | Mics | Aperture | Freq range | Interface | Notes |
+|---|---|---|---|---|---|---|
+| miniDSP | UMA-16 v2 | 16 (4×4 URA) | 42×42 mm | 8–48 kHz SR | USB | Phase 3 hardware; XMOS Xcore200 PDM→PCM |
+| Convergence Instruments | ACAM-64 | 64 (32×32) | ~187×182 mm | 20 Hz–8 kHz | USB | $2,100; open protocol; 16 kHz audio |
+| Sorama | CAM64 | 64 MEMS PDM | 160×160 mm | 1.2–15 kHz (FF) | PoE | Pyramid form factor with handle |
+| Sorama | CAM1K | 1024 MEMS | 640×640 mm | 300 Hz–15 kHz (FF) | PoE | Integrated HD camera; 5.5 kg |
+| gfai Tech | Mikado | 96 MEMS | hexagon | -- | -- | Also Ring32/48/72 and large wind-tunnel arrays |
+| Head acoustics | Visor VMA V | 60 or 120 MEMS | 0.3 m or 1 m disk | -- | -- | Depth camera at center; paired/irregular spacing |
+| mh Acoustics | Eigenmike em32/em64 | 32 or 64 | spherical | 20 Hz–20 kHz | USB/Dante | HOA reference platform; up to 7th-order Ambisonics |
+| Brüel & Kjær | various | -- | spherical/wheel/grid | -- | -- | Research-grade; many geometries |
+| Clockworks SP | A²B array | 8 | 100 mm ring | -- | A²B bus | Infineon IM68D130 PDM mics; twisted-pair daisy-chain |
+| introlab | 16SoundsUSB | 8 or 16 | configurable | 8–96 kHz SR | USB | Open hardware; XMOS xCORE-200; electret or MEMS |
+
+Key observations from the survey:
+- **64-96 mics** is the commercial sweet spot for handheld far-field use (1-8 kHz, ~0.16-0.64 m aperture)
+- **USB** dominates for portable/desktop use; **PoE** for fixed installations; **A²B/Dante** for multi-node
+- **PDM MEMS mics** are standard; electret arrays appear only in large wind-tunnel configurations
+- **Integrated video camera** is universal in commercial products and is always co-located at array center
+- **Near-field acoustic holography** (25 Hz) requires much closer source distances and a separate processing path from far-field beamforming
+
+---
+
+## Beamforming Projects and Libraries
+
+See [PROJECTS.md](./PROJECTS.md) for additional details.
+
+A number of open-source beamforming projects and software packages were also studied to get an idea of what can practically be accomplished in such a project.
+
+| Project | Scale | Interface | Notable technique |
+|---|---|---|---|
+| Ben Wang (2023) | 192-mic MEMS, 24 radial arms, exponential spacing | FPGA → GbE → GPU host | GPU-fused cross-correlation calibration; PyTorch gradient descent for mic positions + speed of sound |
+| Sonicam / CMU ECE (2020) | 96-mic, 6× 4×4 MEMS panels | FPGA → Ethernet | TDK InvenSense mics; large-format panel array |
+| Kickstarter handheld (2018) | 64-mic, 3 concentric rings | ARM Cortex-A53, Linux | Battery-powered; 7" touchscreen; 10–24 kHz; 100 fps acoustic |
+| 1024-pixel sound camera (2016) | 32×32 MEMS (4× 8×8 tiles) | -- | Early large-format MEMS grid demo |
+
+Key takeaways:
+- **FPGA → GbE → GPU** is the established pattern for large arrays (96+ mics) -- offloads PDM decimation and keeps the host pipeline simple
+- **Calibration via cross-correlation** (Ben Wang's approach) is practical at scale: GPU-fused FFT pairs + gradient descent converges in seconds and recovers both mic positions and speed of sound simultaneously
+- **Concentric-ring and spiral geometries** appear in handheld products; rectangular grids appear in panel/tile designs
+- **Standalone operation** (ARM + touchscreen + battery) is achievable at 64 mics; larger arrays require tethered compute
+
+**acoular** is a Python open-source beamforming framework that includes a reference 64-mic demo.
+I'm using this package in some of this project's experiments.
+Matlab has a lot of support for beamforming, but I'm sticking with open-source software in this project,
+so I haven't really looked at what it has to offer.
 
 ---
 
@@ -832,7 +704,7 @@ See also: [FOSS](./FOSS.md) for open-source beamforming software survey
 
 ---
 
-# Docs
+## Docs -- to be sorted and annotated
 
 * 000405.pdf: On the Design of a MEMS Microphone Array for a Mobile Beamforming Application
   - built a mic array for the back of a smartphone
@@ -903,7 +775,7 @@ based on leaf-shaped microphone array [2022]
   - ?
 ---
 
-# Notes
+## Notes
 
 * Outstanding Questions
   - what camera/optics are needed to match the mic array's FOV and resolution?
