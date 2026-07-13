@@ -7,7 +7,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 
 See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
 
-# Outline
+# Table of Contents
 
 * [Technical Background](#technical-background)
   - How Microphone Arrays Localize Sound Sources

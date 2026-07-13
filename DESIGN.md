@@ -1,6 +1,38 @@
 # Acoustic Camera Design Target
 
-## Microphone Array
+## Table of Contents
+
+* Hardware
+  - Microphone Array
+  - FPGA Front-End
+    * FPGA Responsibilities (hard real-time, parallel)
+    * FPGA Choice
+      - Primary: Xilinx Artix-7 XC7A200T
+      - Alternate: Lattice ECP5-45F
+      - Considered and rejected: Zynq-7020
+  - Supporting ICs
+  - Touchscreen Display
+  - Power Supply
+* Host Configurations
+  - Config A — Standalone (Raspberry Pi 5, 8 GB)
+  - Config B — GbE-attached Host with GPU
+  - GbE interface (same for both)
+* Video
+* Software
+* Device Functions
+  - Core Functions
+  - Extended Functions
+* Interface Design
+  - Phase 2: Host-tethered (USB)
+  - Phase 3: Standalone (Pi 5, 5" touchscreen, battery-powered)
+  - Phase 4: Standalone Field Use (Pi 5, 7" touchscreen, battery-powered)
+  - Phase 5: **TBD**
+
+---
+
+## Hardware
+
+### Microphone Array
 
 * **96× Infineon IM72D128** PDM MEMS mics
   - 72 dB(A) SNR, 128 dBSPL AOP, IP57 ingress protection
@@ -14,9 +46,24 @@
 * **Custom PCB(s)**
   - Mics share PDM clock, paired L/R on data lines → 48 DATA + 1 CLK to FPGA
 
-## FPGA Front-End
+### FPGA Front-End
 
-### Primary: Xilinx Artix-7 XC7A200T
+#### FPGA responsibilities (hard real-time, parallel)
+
+| Block | Detail |
+|---|---|
+| PDM clock generation | 12.288 MHz TCXO → PLL → 3.072 MHz, fanned out to all 96 mics |
+| PDM capture | 48 input lines, latched at PDM clock edges |
+| L/R demux | Each line carries 2 mics; SEL low → even channel, SEL high → odd channel |
+| CIC decimation | 5-stage, 64:1 per channel; 3.072 MHz → 48 kHz |
+| FIR compensation | ~32-tap per channel; corrects CIC passband droop |
+| Sample alignment | All 96 PCM outputs locked to the same 48 kHz word-select boundary |
+| GbE/UDP packetization | N frames × 96 ch + sequence number + timestamp → RGMII → PHY |
+| PPS input (optional) | 1 Hz GPIO for absolute time-tagging; enables multi-unit sync |
+
+#### FPGA Choice
+
+##### Primary: Xilinx Artix-7 XC7A200T
 
 The 96-channel CIC + FIR + GbE pipeline requires ~40,000–43,000 LUTs. Several devices were
 evaluated; the XC7A200T was chosen for its headroom and DSP count.
@@ -40,13 +87,13 @@ Reasons for XC7A200T over XC7A100T:
   PCB connected via FMC cable — no BGA soldering until rev-2
 - **Rev-2**: bare XC7A200T-1FBG484C (484-pin FBGA) on custom PCB once pipeline is validated
 
-### Alternate: Lattice ECP5-45F
+##### Alternate: Lattice ECP5-45F
 
 Use only if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement.
 Fits 96 channels with ~5% LUT margin; does **not** fit 128 channels. GbE SerDes integration
 on the ECP5 open tools is harder (~4–6 weeks extra). Suitable for a rev-2 board.
 
-### Considered and rejected: Zynq-7020
+##### Considered and rejected: Zynq-7020
 
 The XC7Z020 combines 85,000 LUTs of FPGA fabric with a dual-core ARM Cortex-A9 processor on
 the same die. Potentially interesting for Config A (standalone) because the ARM could replace
@@ -66,18 +113,15 @@ the Pi 5. Rejected for the first board because:
   - × 4 via PLL = 49.152 MHz FPGA master; ÷ 1024 = 48.000 kHz word select (exact)
   - TCXO required (not plain crystal) — sample-rate drift accumulates in the CSM over long captures
 
-### FPGA responsibilities (hard real-time, parallel)
+### Touchscreen Display
 
-| Block | Detail |
-|---|---|
-| PDM clock generation | 12.288 MHz TCXO → PLL → 3.072 MHz, fanned out to all 96 mics |
-| PDM capture | 48 input lines, latched at PDM clock edges |
-| L/R demux | Each line carries 2 mics; SEL low → even channel, SEL high → odd channel |
-| CIC decimation | 5-stage, 64:1 per channel; 3.072 MHz → 48 kHz |
-| FIR compensation | ~32-tap per channel; corrects CIC passband droop |
-| Sample alignment | All 96 PCM outputs locked to the same 48 kHz word-select boundary |
-| GbE/UDP packetization | N frames × 96 ch + sequence number + timestamp → RGMII → PHY |
-| PPS input (optional) | 1 Hz GPIO for absolute time-tagging; enables multi-unit sync |
+**TBD**
+
+### Power Supply
+
+**TBD**
+
+---
 
 ## Host Configurations
 
@@ -112,6 +156,13 @@ Data rate: 96 ch × 48 kHz × 24 b = 110 Mbps — fits within 1 GbE.
 UDP packets carry: sequence number, timestamp, N frames × 96 channels PCM.
 Host ingestion: background thread → thread-safe deque → sliding audio buffer.
 
+## Video
+
+* **Config A**: Pi Camera Module 3 Wide (IMX708) via MIPI CSI; accessed via `picamera2`
+* **Config B**: USB 3.0 camera via OpenCV `VideoCapture`
+* Co-located at array center; FoV matched to array aperture at expected working distance
+* Real-time overlay of energy map on video stream
+
 ## Software
 
 * Custom Python pipeline (no Acoular dependency for Phase 4)
@@ -135,14 +186,7 @@ All beamforming functions operate on `xp` arrays transparently. Grid resolution 
   (D&S power map raised to exponent ν) for real-time GPU display. CLEAN-SC for offline.
 * Algorithm progression: D&S → MVDR → CLEAN-SC → Functional BF → ML (Phase 5)
 
-## Video
-
-* **Config A**: Pi Camera Module 3 Wide (IMX708) via MIPI CSI; accessed via `picamera2`
-* **Config B**: USB 3.0 camera via OpenCV `VideoCapture`
-* Co-located at array center; FoV matched to array aperture at expected working distance
-* Real-time overlay of energy map on video stream
-
-## Device Functions & Interface
+## Device Functions
 
 ### Core Functions
 
@@ -169,9 +213,9 @@ Features that differentiate higher-end products; implement progressively:
 * Depth/range estimation: estimate distance to source using a co-located depth camera (e.g., Intel RealSense); enables 3D source localization
 * Calibration mode: guided workflow to measure and store mic-to-mic sensitivity, phase, and position corrections
 
-### Interface Design
+## Interface Design
 
-#### Phase 2 / Phase 3: Host-tethered (USB)
+### Phase 2: Host-tethered (USB)
 
 Follow the ACAM_64 (Convergence Instruments) model: USB audio streaming to host PC, open protocol, Python-based desktop GUI.
 
@@ -186,12 +230,10 @@ GUI elements:
 * Real-time SPL meter and peak-hold indicator
 * Status bar: sample rate, latency, mic count, connection state
 
-#### Phase 4A: Standalone (Pi 5)
+### Phase 3: Standalone (Pi 5, 5" touchscreen, battery-powered)
 
 Same GUI elements as Phase 2/3, running on Pi 5. Display via HDMI touchscreen attached to
 housing, or web UI served over WiFi for phone/tablet access.
-
-#### Phase 4B: GbE + GPU workstation
 
 Full-resolution energy maps at all algorithms. GUI runs on workstation display.
 Additional elements:
@@ -199,9 +241,13 @@ Additional elements:
 * Calibration workflow UI (guided mic position / sensitivity estimation)
 * Offline playback and post-processing mode (load recorded audio, re-beamform at 0.5°/pt)
 
-#### Phase 4 Standalone Field Use
+### Phase 4: Standalone Field Use (Pi 5, 7" touchscreen, battery-powered)
 
 * Embedded web UI (served from Pi, accessed via phone or tablet over WiFi)
 * Small integrated touchscreen (7" is the commercial standard: HEAD VMA V pattern)
 * Physical record/stop button(s) on the housing
 * Battery-powered operation with charge indicator
+
+### Phase 5: TBD
+
+**TBD**

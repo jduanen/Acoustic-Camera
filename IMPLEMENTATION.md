@@ -1,6 +1,6 @@
 # Implementation Details
 
-# Outline
+# Table of Contents
 
 ### Hardware
 #### Microphone Elements
