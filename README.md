@@ -44,7 +44,7 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
     * Algorithm Selection
     * Where This System Works Well
     * Where This System is NOT Well-Suited
-  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase-2-smoke-test-respeaker-4-mic-array)
+  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase-2-smoke-test--respeaker-4-mic-array)
     * Hardware Findings
     * Pipeline Validation (nb13)
     * Calibration (nb14)
