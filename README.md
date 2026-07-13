@@ -38,18 +38,18 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
   - Compute
   - Software
 * [Development Plan](#development-plan)
-  - [Phase 1: Simulation Findings](#phase1)
+  - [Phase 1: Simulation Findings](#phase-1)
     * Recommended Array Configuration
     * Beamwidth vs Frequency
     * Algorithm Selection
     * Where This System Works Well
     * Where This System is NOT Well-Suited
-  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase2)
+  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase-2)
     * Hardware Findings
     * Pipeline Validation (nb13)
     * Calibration (nb14)
     * Live Script
-  - [Phase 3: Intermediate Array Test -- miniDSP UMA-16 v2](#phase3)
+  - [Phase 3: Intermediate Array Test -- miniDSP UMA-16 v2](#phase-3)
     * Hardware Findings
     * Live Script
       - Touch UI: Frequency Sliders & Spectrum Pan
@@ -61,8 +61,8 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
       - Key Intuition
       - Rule of Thumb
       - UMA-16 Usable Frequency Range
-  - [Phase 4: Custom Hardware -- 96-mic with FPGA on custom PCB](#phase4)
-  - [Phase 5: ML-based approach](#phase5)
+  - [Phase 4: Custom Hardware -- 96-mic with FPGA on custom PCB](#phase-4)
+  - [Phase 5: ML-based approach](#phase-5)
 * [Acoustic Camera Products Overview](#acoustic-camera-products-overview)
 * [Beamforming Projects and Libraries](#beamforming-projects-and-libraries)
 * [References](#references)
@@ -327,7 +327,7 @@ This project has been decomposed into multiple phases, each of which has a speci
 | **4** | Custom PCB (96-mic, 300 mm, FPGA hub) | Full-performance system meeting all requirements | Not started |
 | **5** | Phase 3/4 hardware | ML-based beamformer (PILOT / CRNN); benchmark vs CLEAN-SC | Not started |
 
-<a id="phase1"></a>
+<a id="phase-1"></a>
 ### Phase 1: Simulation Findings
 
 Full results and methodology are in: [PHASE1](./PHASE1.md)
@@ -395,7 +395,7 @@ Recommended snapshot count: **N_SNAP = 256** (5.3 ms, 188 fps). All algorithms c
 - **Sources beyond ~3-4 m**: range estimation degrades sharply beyond the Fraunhofer distance (2.1 m
   at 4 kHz). Far-field azimuth-only mode still works at long range; range information is unavailable
 
-<a id="phase2"></a>
+<a id="phase-2"></a>
 ### Phase 2: Smoke Test -- ReSpeaker 4-Mic Array
 
 Full results and methodology: [PHASE2](./PHASE2.md)
@@ -442,7 +442,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` → sliding CSM → bea
 
 Algorithms: `ds`, `mvdr`, `clean` (CLEAN-SC), `music`. For MUSIC, `--nsrc` sets the signal subspace dimension (default 1); noise subspace = N − n_src eigenvectors. Use 1500–2000 Hz for meaningful directionality with this 4-mic array.
 
-<a id="phase3"></a>
+<a id="phase-3"></a>
 ### Phase 3: Intermediate Array Test -- miniDSP UMA-16 v2
 
 Full results and methodology: [PHASE3](./PHASE3.md)
@@ -561,14 +561,14 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
 
 ---
 
-<a id="phase4"></a>
+<a id="phase-4"></a>
 ### Phase 4: Custom Hardware -- 96-mic with FPGA on custom PCB
 
 **WIP**
 
 *Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
 
-<a id="phase5"></a>
+<a id="phase-5"></a>
 ### Phase 5: ML-based approach
 
 This phase requires real data from Phase 3/4 to train and validate ML models.
