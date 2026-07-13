@@ -9,7 +9,7 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
 
 # Outline
 
-* [Technical Background](#Technical Background)
+* [Technical Background](#technical-background)
   - How Microphone Arrays Localize Sound Sources
   - Selected Beamforming Algorithm Families
   - Key Concepts in Beamforming
@@ -24,20 +24,20 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
   - Microphone Array Configurations
     * 2D patterns
     * 3D patterns
-* [Design Trade-offs](Design Trade-offs)
+* [Design Trade-offs](#design-trade-offs)
   - Core Tradeoffs/Tensions
   - Key Specifications
     * Spatial Nyquist Frequency
     * Beamforming Sampling Grid Size
     * Resolution vs. Aperture (HPBW ≈ 58° × λ/D)
     * Array Pattern: Underbrink multi-arm log-spiral (chosen pattern)
-* [System Requirements](System Requirements)
-* [Target Design](Target Design)
+* [System Requirements](#system-requirements)
+* [Target Design](#target-design)
   - Microphone Array
   - Interface
   - Compute
   - Software
-* [Development Plan](Development Plan)
+* [Development Plan](#development-plan)
   - Phase 1: Simulation Findings
     * Recommended Array Configuration
     * Beamwidth vs Frequency
@@ -61,9 +61,9 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
       - Key Intuition
       - Rule of Thumb
       - UMA-16 Usable Frequency Range
-* [Acoustic Camera Products Overview](Acoustic Camera Products Overview)
-* [Beamforming Projects and Libraries](Beamforming Projects and Libraries)
-* [References](References)
+* [Acoustic Camera Products Overview](#acoustic-camera-products-overview)
+* [Beamforming Projects and Libraries](#beamforming-projects-and-libraries)
+* [References](#references)
   - Beamforming Algorithms
   - Microphone Array Patterns
   - Commercial Acoustic Camera Products
