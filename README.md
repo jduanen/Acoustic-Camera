@@ -38,18 +38,18 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
   - Compute
   - Software
 * [Development Plan](#development-plan)
-  - [Phase 1: Simulation Findings](#phase-1:-simulation-findings)
+  - [Phase 1: Simulation Findings](#phase-1-simulation-findings)
     * Recommended Array Configuration
     * Beamwidth vs Frequency
     * Algorithm Selection
     * Where This System Works Well
     * Where This System is NOT Well-Suited
-  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase-2:-smoke-test--respeaker-4-mic-array)
+  - [Phase 2: Smoke Test -- ReSpeaker 4-Mic Array](#phase-2-smoke-test-respeaker-4-mic-array)
     * Hardware Findings
     * Pipeline Validation (nb13)
     * Calibration (nb14)
     * Live Script
-  - [Phase 3: Intermediate Array Test -- miniDSP UMA-16 v2](#phase-3:-intermediate-array-test--minidsp-uma-16-v2)
+  - [Phase 3: Intermediate Array Test -- miniDSP UMA-16 v2](#phase-3-intermediate-array-test-minidsp-uma-16-v2)
     * Hardware Findings
     * Live Script
       - Touch UI: Frequency Sliders & Spectrum Pan
@@ -61,8 +61,8 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
       - Key Intuition
       - Rule of Thumb
       - UMA-16 Usable Frequency Range
-  - [Phase 4: Custom Hardware -- 96-mic with FPGA on custom PCB](#phase-4:-custom-hardware--96-mic-with-fpga-on-custom-pcb)
-  - [Phase 5: ML-based approach](#phase-5:-ml-based-approach)
+  - [Phase 4: Custom Hardware -- 96-mic with FPGA on custom PCB](#phase-4-custom-hardware-96-mic-with-fpga-on-custom-pcb)
+  - [Phase 5: ML-based approach](#phase-5-ml-based-approach)
 * [Acoustic Camera Products Overview](#acoustic-camera-products-overview)
 * [Beamforming Projects and Libraries](#beamforming-projects-and-libraries)
 * [References](#references)
