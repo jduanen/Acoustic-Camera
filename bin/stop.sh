@@ -2,4 +2,4 @@
 #
 # Script to stop the Acoustic Camera service
 
-systemctl stop acoustic-camera.service
+sudo systemctl stop acoustic-camera.service
