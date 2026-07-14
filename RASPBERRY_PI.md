@@ -304,6 +304,10 @@ chmod +x ~/.config/labwc/autostart
 adjust if the picture comes up rotated the wrong way. Reboot (or log out/in) to confirm
 it persists; a manually-run `wlr-randr` command only affects the current session.
 
+#### Touchscreen
+
+Edit `/etc/xdg/libfm/libfm.conf` and change `single_click=0` to `single_click=1`.
+
 ### Auto-start on boot
 
 A system-level systemd unit ([systemd/acoustic-camera.service](./systemd/acoustic-camera.service))
