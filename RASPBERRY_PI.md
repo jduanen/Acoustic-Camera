@@ -475,7 +475,17 @@ This means that not only do I have to power this with a (ideally battery) source
 
 Furthermore, even with a large heatsink with a fan, the CPU temperature gets up to ~60C (with ~25C ambient).
 
-?
+### Power Supply
+
+The system is powered by three 18650 Li batteries in a series configuration and managed by a Waveshare UPS 3S module (see https://www.waveshare.com/ups-module-3s.htm).
+
+The Battery Management System (BMS) provides balanced charging, reverse warning, and battery protection for the Li batteries, as well as voltage and current monitoring, 3.3V and 5V regulation, and an I2C bus interface to the Raspberry Pi.
+
+The Raspberry Pi's I2C interface must first be enabled by running `raspi-config` and selecting `Options -> I2C -> Yes`.
+
+A Waveshare-provided program that prints the current voltage, current, power, and remaining battery percentage is found in https://files.waveshare.com/upload/e/ea/UPS_Module_3S_Code.zip.
+
+N.B. It is important to source the Li batteries from a well-known reliable source as they are very energetic and could cause a problem if they were to malfunction.
 
 ## 9. Known Issues Summary
 
