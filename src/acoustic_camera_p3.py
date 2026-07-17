@@ -142,8 +142,11 @@ _TRACK_X0 = 92          # left edge of slider track
 # Settings tab + popup (auto/manual range toggle + energy threshold), drawn inside the
 # video frame itself rather than as a new full-width strip, since the display is fit
 # exactly to a 1280x720 touch panel (see Picam2Capture's size comment below).
-_TAB_SIZE = 36          # settings tab is a square button in the video frame's corner
+_TAB_SIZE = 48          # settings tab is a square button in the video frame's corner
+                        # (sized for a comfortable touch target, not just a mouse click)
 _TAB_MARGIN = 8         # inset from the video frame's top-right corner
+_BATT_TAB_GAP = 16      # horizontal gap between the battery indicator and the tab,
+                        # wider than _TAB_MARGIN so the tab keeps clear touch space
 _POPUP_W = 260          # popup panel width (height is derived — see _popup_layout)
 _POPUP_PAD = 8          # inner padding for popup contents
 _POPUP_BTN_H = 28       # AUTO/MANUAL toggle button height
@@ -260,14 +263,17 @@ def _popup_layout(w, algo_open, algo):
 
 
 def _draw_tab(frame, layout):
-    """Small always-visible tab in the video frame's corner; tapping it opens/closes
-    the settings popup. Plain ASCII label — OpenCV's Hershey fonts don't reliably
-    render gear/settings glyphs."""
+    """Always-visible tab in the video frame's corner; tapping it opens/closes the
+    settings popup. Drawn as a hamburger icon (three bars) rather than text — OpenCV's
+    Hershey fonts don't reliably render gear/settings glyphs, and a plain geometric
+    icon reads clearly at touch-target size."""
     x0, y0, x1, y1 = layout['tab']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.35, fill, 0.65, 0)
-    cv2.putText(frame, 'E', (x0 + 11, y1 - 12),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+    bar_x0, bar_x1 = x0 + 11, x1 - 11
+    for frac in (0.32, 0.5, 0.68):
+        by = y0 + int((y1 - y0) * frac)
+        cv2.line(frame, (bar_x0, by), (bar_x1, by), (220, 220, 220), 2)
 
 
 _BATT_W = 44          # battery icon body width
@@ -276,9 +282,9 @@ _BATT_NUB_W = 4        # width of the small terminal nub on the icon's right edg
 
 
 def _draw_battery(frame, x1, percent):
-    """Battery icon + percentage text, right edge at x1, top-aligned with the
-    settings tab. Fill color shifts green -> amber -> red as charge drops."""
-    y0 = _TAB_MARGIN
+    """Battery icon + percentage text, right edge at x1, vertically centered on the
+    (taller) settings tab. Fill color shifts green -> amber -> red as charge drops."""
+    y0 = _TAB_MARGIN + (_TAB_SIZE - _BATT_H) // 2
     y1 = y0 + _BATT_H
     body_x1 = x1 - _BATT_NUB_W - 2
     body_x0 = body_x1 - _BATT_W
@@ -846,7 +852,7 @@ def main():
                 with _battery_lock:
                     batt_percent = _battery_status['percent']
                 if batt_percent is not None:
-                    _draw_battery(frame, popup_layout['tab'][0] - _TAB_MARGIN, batt_percent)
+                    _draw_battery(frame, popup_layout['tab'][0] - _BATT_TAB_GAP, batt_percent)
                 if popup_open:
                     _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open,
                                 nsrc, paused)
