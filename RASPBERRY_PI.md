@@ -341,7 +341,7 @@ In addition to the standard desktop taskbar, there are several icons on the Desk
 
 #### Acoustic Camera
 
-![Acoustic Camera Icon](assets/icon.svg)
+<img src="assets/icon.svg" width="64" height="64" />
 
 Touching this icon starts the Acoustic Camera application (which takes over the full screen).
 
