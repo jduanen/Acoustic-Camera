@@ -485,6 +485,8 @@ The Raspberry Pi's I2C interface must first be enabled by running `raspi-config`
 
 A Waveshare-provided program that prints the current voltage, current, power, and remaining battery percentage is found in https://files.waveshare.com/upload/e/ea/UPS_Module_3S_Code.zip.
 
+`acoustic_camera_p3.py` reads the same INA219 chip directly (via `ups/UPS_Module_3S_V2/INA219.py`, I2C address `0x41`) and draws a battery icon + percentage next to the settings tab in the top-right corner of the live display. It needs apt's `python3-smbus` (see requirements.txt); without it, or without a UPS attached, the indicator is simply not drawn.
+
 N.B. It is important to source the Li batteries from a well-known reliable source as they are very energetic and could cause a problem if they were to malfunction.
 
 ## 9. Known Issues Summary

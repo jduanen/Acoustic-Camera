@@ -27,6 +27,16 @@ from beamforming import (FS, N_MICS, NYQUIST,
                          beamform_ds, beamform_mvdr, beamform_clean,
                          beamform_music, compute_csm)
 
+# UPS battery gauge (Waveshare UPS 3S, see RASPBERRY_PI.md §8) — its INA219 driver
+# lives outside src/, so it needs its directory added to sys.path. Only present on
+# the Pi deployment (needs apt's python3-smbus, not pip) — ImportError on a dev
+# machine just means the battery indicator stays hidden (see _poll_battery).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'ups' / 'UPS_Module_3S_V2'))
+try:
+    from INA219 import INA219
+except ImportError:
+    INA219 = None
+
 
 # --- Overlay rendering ---
 
@@ -258,6 +268,40 @@ def _draw_tab(frame, layout):
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.35, fill, 0.65, 0)
     cv2.putText(frame, 'E', (x0 + 11, y1 - 12),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (220, 220, 220), 1)
+
+
+_BATT_W = 44          # battery icon body width
+_BATT_H = 20           # battery icon body height (matches the settings tab's row)
+_BATT_NUB_W = 4        # width of the small terminal nub on the icon's right edge
+
+
+def _draw_battery(frame, x1, percent):
+    """Battery icon + percentage text, right edge at x1, top-aligned with the
+    settings tab. Fill color shifts green -> amber -> red as charge drops."""
+    y0 = _TAB_MARGIN
+    y1 = y0 + _BATT_H
+    body_x1 = x1 - _BATT_NUB_W - 2
+    body_x0 = body_x1 - _BATT_W
+    nub_y0 = y0 + _BATT_H // 4
+    nub_y1 = y1 - _BATT_H // 4
+
+    if percent >= 50:
+        color = (80, 200, 80)
+    elif percent >= 20:
+        color = (0, 200, 220)
+    else:
+        color = (0, 0, 220)
+
+    cv2.rectangle(frame, (body_x0, y0), (body_x1, y1), (200, 200, 200), 1)
+    cv2.rectangle(frame, (body_x1, nub_y0), (body_x1 + _BATT_NUB_W, nub_y1), (200, 200, 200), -1)
+    fill_w = int((_BATT_W - 4) * percent / 100)
+    if fill_w > 0:
+        cv2.rectangle(frame, (body_x0 + 2, y0 + 2), (body_x0 + 2 + fill_w, y1 - 2), color, -1)
+
+    label = f'{percent:.0f}%'
+    (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+    cv2.putText(frame, label, (body_x0 - tw - 6, y0 + (_BATT_H + th) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.4, (220, 220, 220), 1)
 
 
 def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused):
@@ -493,6 +537,38 @@ def _poll_throttled():
         time.sleep(3)
 
 
+# --- UPS battery gauge ---
+# Waveshare UPS 3S module (3x 18650 Li-ion in series) + INA219 fuel-gauge chip,
+# see RASPBERRY_PI.md §8. 9.0V/12.6V empty/full and 0x41 I2C address match the
+# vendor's own sample script (ups/UPS_Module_3S_V2/INA219.py's __main__).
+_BATT_ADDR = 0x41
+_BATT_EMPTY_V = 9.0
+_BATT_SPAN_V = 3.6
+
+_battery_status = {'percent': None}  # None until a reading succeeds, or forever if no UPS is present
+_battery_lock = threading.Lock()
+
+
+def _poll_battery():
+    """Background thread: polls the INA219 fuel-gauge chip every few seconds.
+    Exits quietly (leaving percent at None, so the overlay stays hidden) if the
+    chip isn't present — e.g. running off a dev machine with no UPS attached."""
+    if INA219 is None:
+        return
+    try:
+        ina219 = INA219(addr=_BATT_ADDR)
+    except Exception:
+        return
+    while True:
+        try:
+            percent = (ina219.getBusVoltage_V() - _BATT_EMPTY_V) / _BATT_SPAN_V * 100
+        except Exception:
+            return
+        with _battery_lock:
+            _battery_status['percent'] = max(0.0, min(100.0, percent))
+        time.sleep(3)
+
+
 # --- Settings persistence ---
 # Only the touch-adjustable settings (frequency band, algorithm, source count,
 # auto-range, threshold) round-trip through the config file — everything else
@@ -661,6 +737,7 @@ def main():
     _sliders['screenshot_requested'] = False
     mouse_registered = False
     threading.Thread(target=_poll_throttled, daemon=True).start()
+    threading.Thread(target=_poll_battery, daemon=True).start()
 
     prof = collections.defaultdict(float)
     prof_n = 0
@@ -766,6 +843,10 @@ def main():
                 # visible even while the audio buffer is still filling.
                 popup_layout = _popup_layout(frame.shape[1], algo_open, algo)
                 _draw_tab(frame, popup_layout)
+                with _battery_lock:
+                    batt_percent = _battery_status['percent']
+                if batt_percent is not None:
+                    _draw_battery(frame, popup_layout['tab'][0] - _TAB_MARGIN, batt_percent)
                 if popup_open:
                     _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open,
                                 nsrc, paused)
