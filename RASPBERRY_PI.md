@@ -363,6 +363,22 @@ Touching this icon will cause the system to shutdown.
 
 The system shutdown icon's action is defined in `./Desktop/shutdown.desktop`.
 
+#### Battery
+
+![Battery Icon](assets/battery_icon.png)
+
+Shows the current UPS charge as a percentage, baked into the icon graphic itself (green ≥50%, amber ≥20%, red below). The icon is regenerated from the INA219 fuel-gauge chip (same reading as the live overlay's own battery indicator, see `src/acoustic_camera_p3.py`) by `bin/battery_icon.py`, which writes `assets/battery_icon.png`. Touching the icon re-runs that script for an immediate refresh; otherwise it's kept current automatically by `battery-icon.timer` (every 60s).
+
+The battery icon's action is defined in `./Desktop/battery.desktop`. Install the timer:
+
+```bash
+sudo cp etc/systemd/system/battery-icon.service etc/systemd/system/battery-icon.timer /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl enable --now battery-icon.timer
+```
+
+Note: whether the desktop actually redraws an already-displayed icon when its target PNG changes on disk depends on the desktop shell's icon-cache behavior — `bin/battery_icon.py` also touches `Desktop/battery.desktop`'s mtime after each render as a best-effort nudge, but this hasn't been fully validated against Trixie's desktop (pcmanfm/labwc). If it doesn't auto-refresh in practice, tapping the icon (or `F5`) forces a redraw.
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
