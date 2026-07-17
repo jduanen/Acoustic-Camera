@@ -334,6 +334,35 @@ The unit hardcodes user `jdn` and path `/home/jdn/Code/Acoustic-Camera` — edit
 different account or checkout path. Check status/logs with
 `systemctl status acoustic-camera.service` / `journalctl -u acoustic-camera.service -f`.
 
+### Home Screen Icons for System Control
+
+Once the `Exit` button is pushed on the Acoustic Camera application's popup window, the application will exit and the Raspberry Pi Trixie desktop will be shown.
+In addition to the standard desktop taskbar, there are several icons on the Desktop that can be used to quickly control the application and system.
+
+#### Acoustic Camera
+
+![Acoustic Camera Icon](assets/icon.svg)
+
+Touching this icon starts the Acoustic Camera application (which takes over the full screen).
+
+The Acoustic Camera icon's action is defined in `./Desktop/acousticcamera.desktop`.
+
+#### Reboot
+
+![Reboot Icon](assets/reboot.gif)
+
+Touching this icon causes the Raspberry Pi to reboot and relaunch the Acoustic Camera application.
+
+The system reboot icon's action is defined in `./Desktop/reboot.desktop`.
+
+#### System Shutdown
+
+![Shutdown Icon](assets/power_off.png)
+
+Touching this icon will cause the system to shutdown.
+
+The system shutdown icon's action is defined in `./Desktop/shutdown.desktop`.
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
