@@ -379,6 +379,24 @@ sudo systemctl enable --now battery-icon.timer
 
 Note: whether the desktop actually redraws an already-displayed icon when its target PNG changes on disk depends on the desktop shell's icon-cache behavior — `bin/battery_icon.py` also touches `Desktop/battery.desktop`'s mtime after each render as a best-effort nudge, but this hasn't been fully validated against Trixie's desktop (pcmanfm/labwc). If it doesn't auto-refresh in practice, tapping the icon (or `F5`) forces a redraw.
 
+#### Calibrate
+
+![Calibrate Icon](assets/calibrate.png)
+
+Runs `src/calibrate_uma16.py`, a terminal walkthrough of the same boresight-reference procedure as [`notebooks/17_uma16_calibration.ipynb`](notebooks/17_uma16_calibration.ipynb) (frequency-domain cross-correlation for per-mic delay, RMS ratios for per-mic gain), so the array can be re-calibrated directly on the appliance without a dev machine or Jupyter. It records a 5s boresight clip on prompt, prints the measured delay/gain per channel, backs up any existing `test/UMA16/cal.npy` to `cal.npy.bak`, saves the new calibration vector, and reports the boresight DoA peak (D&S and MVDR) before vs after as a sanity check.
+
+Touching the icon opens `lxterminal` running `bin/calibrate.sh`, so the prompts and results are visible; the window stays open until you press Enter at the final prompt. The calibrate icon's action is defined in `./Desktop/calibrate.desktop` — it assumes `lxterminal` is the installed terminal emulator (Raspberry Pi OS's default); swap the `Exec=` command if a different one is in use.
+
+**Tone frequency**: the script prompts for a **1 kHz** tone (`CAL_FREQ` in `src/calibrate_uma16.py`), matching both source notebooks. 1 kHz is:
+- well below the array's ~4082 Hz spatial Nyquist (`NYQUIST` in `src/beamforming.py`, set by the 42mm mic spacing), so there's no spatial-aliasing ambiguity in the phase measurement;
+- easily reproduced cleanly by a phone or laptop speaker (most roll off below 1 kHz or beam/distort above it);
+- short enough a wavelength (~343mm) relative to typical mic-to-mic delays that the delay-to-phase conversion (`2π·f·delay`) stays well within ±π, avoiding phase-wrap ambiguity.
+
+Any phone tone-generator app works, or from a laptop with `sox` installed:
+```bash
+play -n synth 5 sine 1000
+```
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
