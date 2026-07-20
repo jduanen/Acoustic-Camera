@@ -481,7 +481,8 @@ The beamforming frequency is set live by the on-screen F lo / F hi sliders (ther
 CLEAN-SC/MUSIC, CSM) lives in `src/beamforming.py`, used by both this script and
 `src/benchmark_algos.py`, with a pytest suite in `tests/`.
 
-[Example Screengrab](assets/screenshot.png)
+##### Example Screengrab
+<img src="assets/phase3_screengrab.png" width="960" height="540" />
 
 Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sliding CSM →
 2D beamform (azimuth × elevation grid) → COLORMAP_JET full-frame overlay blended onto
