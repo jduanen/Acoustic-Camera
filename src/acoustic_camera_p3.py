@@ -138,7 +138,35 @@ def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6
 _SLIDER_H = 44          # height of each individual slider strip
 _SPECTRUM_H = 90        # height of the spectrum panel between the two slider strips
 _FREQ_MAX = 8000        # shared max for both sliders, so the same track position means the same Hz on either
-_TRACK_X0 = 92          # left edge of slider track
+
+_SLIDER_FONT_SCALE = 0.7   # larger than the track-side margins strictly need, for
+_SLIDER_FONT_THICK = 2     # readability — label and value live outside the track's
+                           # x-range (see _track_geom); the handle is clamped to that
+                           # same range below so it can't overhang into the margins
+                           # and collide with them at the extreme ends of the range.
+_SUB_FONT_SCALE = 0.45     # "hi"/"lo" subscript on the "F" label — smaller and
+_SUB_FONT_THICK = 1        # baseline-shifted down (see _slider_strip)
+_SUB_GAP = 2               # horizontal gap between "F" and its subscript
+_SUB_DROP = 5              # how far the subscript's baseline sits below "F"'s
+_SLIDER_TEXT_PAD = 6       # gap from the strip's left/right edge to the label/value text
+
+# Track insets are asymmetric on purpose: the label ("F" + subscript, narrow) and the
+# value ("NNNN Hz", up to 4 digits, much wider) need different amounts of margin to
+# leave the *same visual gap* to the track on both sides. Sized from actual glyph
+# widths (worst case: "hi"/"lo", whichever is wider; value width at _FREQ_MAX, the
+# widest the live value ever gets) rather than hardcoded, so this stays correct if the
+# fonts or _FREQ_MAX ever change.
+_TRACK_GAP = 30  # desired empty space between the track and the text on each side
+_label_w = max(
+    cv2.getTextSize('F', cv2.FONT_HERSHEY_SIMPLEX, _SLIDER_FONT_SCALE, _SLIDER_FONT_THICK)[0][0]
+    + _SUB_GAP
+    + cv2.getTextSize(sub, cv2.FONT_HERSHEY_SIMPLEX, _SUB_FONT_SCALE, _SUB_FONT_THICK)[0][0]
+    for sub in ('hi', 'lo')
+)
+_value_w_max = cv2.getTextSize(f'{_FREQ_MAX} Hz', cv2.FONT_HERSHEY_SIMPLEX,
+                                _SLIDER_FONT_SCALE, _SLIDER_FONT_THICK)[0][0]
+_TRACK_LEFT = _SLIDER_TEXT_PAD + _label_w + _TRACK_GAP
+_TRACK_RIGHT = _SLIDER_TEXT_PAD + _value_w_max + _TRACK_GAP
 
 # Settings tab + popup (auto/manual range toggle + energy threshold), drawn inside the
 # video frame itself rather than as a new full-width strip, since the display is fit
@@ -171,20 +199,10 @@ _sliders_lock = threading.Lock()
 
 def _track_geom(w):
     """Shared by both sliders (and _on_mouse) so Flo/Hi always agree on where a
-    given Hz value sits on screen: the intersection of the two labels' margins,
-    i.e. a track inset by _TRACK_X0 on *both* sides regardless of label side."""
-    return _TRACK_X0, max(w - 2 * _TRACK_X0, 1)
-
-
-_SLIDER_FONT_SCALE = 0.7   # larger than the track-side margins strictly need, for
-_SLIDER_FONT_THICK = 2     # readability — label and value live outside the track's
-                           # x-range (see _track_geom); the handle is clamped to that
-                           # same range below so it can't overhang into the margins
-                           # and collide with them at the extreme ends of the range.
-_SUB_FONT_SCALE = 0.45     # "hi"/"lo" subscript on the "F" label — smaller and
-_SUB_FONT_THICK = 1        # baseline-shifted down (see _slider_strip)
-_SUB_GAP = 2               # horizontal gap between "F" and its subscript
-_SUB_DROP = 5              # how far the subscript's baseline sits below "F"'s
+    given Hz value sits on screen: inset by _TRACK_LEFT/_TRACK_RIGHT — asymmetric so
+    the visual gap to the label and to the value text matches on both sides despite
+    their very different widths (see the constants above)."""
+    return _TRACK_LEFT, max(w - _TRACK_LEFT - _TRACK_RIGHT, 1)
 
 
 def _slider_strip(w, sub, val, vmax, color):
@@ -204,15 +222,15 @@ def _slider_strip(w, sub, val, vmax, color):
     # Combined glyph block spans [main_y - f_h, main_y + _SUB_DROP] (F's top to the
     # subscript's baseline); solving (top + bottom) / 2 == yc for main_y:
     main_y = yc + (f_h - _SUB_DROP) // 2
-    cv2.putText(strip, 'F', (6, main_y),
+    cv2.putText(strip, 'F', (_SLIDER_TEXT_PAD, main_y),
                 cv2.FONT_HERSHEY_SIMPLEX, _SLIDER_FONT_SCALE, (180, 180, 180), _SLIDER_FONT_THICK)
-    cv2.putText(strip, sub, (6 + f_w + _SUB_GAP, main_y + _SUB_DROP),
+    cv2.putText(strip, sub, (_SLIDER_TEXT_PAD + f_w + _SUB_GAP, main_y + _SUB_DROP),
                 cv2.FONT_HERSHEY_SIMPLEX, _SUB_FONT_SCALE, (180, 180, 180), _SUB_FONT_THICK)
 
     value_text = f'{val} Hz'
     (value_w, value_h), _ = cv2.getTextSize(value_text, cv2.FONT_HERSHEY_SIMPLEX,
                                              _SLIDER_FONT_SCALE, _SLIDER_FONT_THICK)
-    cv2.putText(strip, value_text, (w - value_w - 6, yc + value_h // 2),
+    cv2.putText(strip, value_text, (w - value_w - _SLIDER_TEXT_PAD, yc + value_h // 2),
                 cv2.FONT_HERSHEY_SIMPLEX, _SLIDER_FONT_SCALE, (180, 180, 180), _SLIDER_FONT_THICK)
     return strip
 
