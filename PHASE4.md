@@ -111,6 +111,11 @@ Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
 - Verdict: not worth it for the first board; revisit if Phase 4 data shows sidelobe-limited
   performance in a specific measured scenario
 
+> Note: this tradeoff is specific to the single-FPGA design's fixed LUT budget. Under the
+> Multi-FPGA (Clustered) Alternative below, scaling past 96 mics means adding a 5th cluster
+> (still comfortably-sized XC7S25 tiles) rather than upsizing one chip — worth revisiting
+> alongside this section if a clustered build is pursued.
+
 #### Considered and rejected: 350 mm aperture
 
 Increasing aperture from 300 mm to 350 mm was evaluated:
@@ -123,6 +128,144 @@ Increasing aperture from 300 mm to 350 mm was evaluated:
 - PCB is 17% larger; harder to mount at array center
 - Verdict: the far-field regression outweighs the HPBW gain for the first board; revisit with
   a larger mic count after Phase 4 field data is available
+
+---
+
+### FPGA — Multi-FPGA (Clustered) Alternative
+
+The primary design above puts all 96 channels through one XC7A200T. An alternative —
+preferred for a build prioritizing modularity and per-unit cost over a single-chip design —
+splits the front-end across **5 small Xilinx 7-series FPGAs**: 4 "cluster" FPGAs, each
+handling one quadrant of the array, plus 1 "hub" FPGA that aggregates their output and
+talks GbE, exactly as the primary design's single FPGA already does.
+
+Motivation: the XC7A200T ships only in a 484-pin FBGA (`XC7A200T-1FBG484C`), which is why
+the primary design defers a custom PCB to rev-2 and prototypes on a $500 Nexys Video dev
+board instead. Splitting the front end across several much smaller FPGAs — each fitting a
+hand-assembly-friendly module — removes that constraint at both the prototype and
+custom-PCB stage, and turns one 300mm PCB with 48 matched PDM traces into several
+independently buildable, testable, and replaceable tiles.
+
+#### Partition: 4 clusters of 3 arms each
+
+96 mics = 12 arms × 8 mics (the chosen Underbrink spiral, see Array Geometry below). The
+12 arms divide evenly into 4 symmetric 90° quadrants of 3 arms (24 mics) each — the natural
+mechanical unit for this split.
+
+Grouping was evaluated at several granularities. Two blocks — PDM capture control and the
+serial-link framing logic — are largely fixed overhead per FPGA rather than scaling with
+channel count, so grouping arms uses silicon more efficiently, not just fewer connectors:
+
+| Grouping | FPGAs | Ch/FPGA | Est. LUT/FPGA | Headroom on XC7S25 (14,600 LUT) |
+|---|---|---|---|---|
+| 1 arm/FPGA | 12 | 8 | ~2,950 | ~80% unused |
+| 2 arms/FPGA | 6 | 16 | ~5,350 | ~63% unused |
+| **3 arms/FPGA (chosen)** | **4** | **24** | **~7,750** | **~47% unused** |
+| 4 arms/FPGA | 3 | 32 | ~10,150 | ~30% unused |
+
+(Model: CIC ≈ 250 LUT/ch and FIR ≈ 25 LUT/ch — both linear, matching the 96-channel
+pipeline estimate above — plus PDM control ≈ 150 + 15/ch and link framing ≈ 400 + 10/ch as
+fixed-ish terms. Rough estimates pending real HDL synthesis, same caveat as the 96ch
+numbers above.)
+
+4 clusters at 24ch each was chosen over 1-per-arm (12 FPGAs, mostly-idle silicon, 3× the
+connectors) and over coarser groupings that start eating into headroom without much
+further connector reduction.
+
+#### Architecture: hub-and-spoke, single shared clock domain
+
+- **4× cluster FPGA** (Xilinx Spartan-7 **XC7S25**, 14,600 LUT): PDM clock fan-out to its
+  24 local mics, per-cluster CIC decimation + FIR compensation, then serializes the
+  decimated 48kHz PCM onto one LVDS link back to the hub. No GbE MAC, no PHY chip, no TCXO
+  on the tile. Fits on the **Digilent Cmod S7 module** (~$45) — BGA pre-mounted, no hand
+  rework needed even at prototype stage.
+- **1× hub FPGA** (Xilinx Artix-7 **XC7A35T**, 20,800 LUT): holds the single 12.288 MHz
+  TCXO, generates the 3.072 MHz PDM clock and forwards it to all 4 clusters over the same
+  links — source-synchronous, one clock domain end-to-end (only a fixed, calibrate-once
+  per-spoke cable-length skew, not drift). Deserializes the 4 incoming streams (96 channels
+  total) and does GbE MAC + UDP packetization — the same last stage the primary design's
+  single FPGA already performs. Available on the **Arty A7-35T dev board** (~$130) — the
+  primary design's FMC LPC connector was needed for 48 direct PDM lines; a hub handling
+  only 4 spoke links doesn't need it, so a cheaper board works.
+
+Star topology, not a daisy-chain: each cluster connects directly to the hub over its own
+short link (clusters already sit close to the center), rather than chaining cluster→
+cluster→hub, which would add latency and let one broken link take out others downstream
+of it.
+
+| | Cluster FPGA (×4) | Hub FPGA (×1) |
+|---|---|---|
+| CIC decimation (24ch) | ~6,000 LUT | — (moved to clusters) |
+| FIR compensation (24ch) | ~600 LUT | — |
+| PDM capture/demux | ~500 LUT | — |
+| LVDS serialize/deserialize | ~650 LUT | 4× deserializer ≈ 1,600-2,000 LUT |
+| GbE MAC + UDP stack | — (not needed) | ~3,000 LUT |
+| Clock gen (PLL from TCXO) | — (receives forwarded clock) | ~500 LUT |
+| **Total estimate** | **~7,750 LUT** | **~5,100-5,500 LUT** |
+
+Spoke bandwidth: 24ch × 24-bit × 48kHz ≈ 27.6 Mbps payload per cluster — well within an
+ordinary LVDS pair over a short cable; no SerDes/Aurora/transceiver IP needed anywhere in
+this design.
+
+#### Why XC7A35T for the hub, not XC7S25 like the clusters
+
+The hub's ~5,100-5,500 LUT need would also fit the same XC7S25 used for the clusters
+(~62-65% headroom) — RGMII GbE needs DDR-capable I/O, not the GTP transceivers Spartan-7
+lacks, so nothing technically forces a bigger part. Using XC7S25 everywhere would reduce
+the design to one single part number (5× identical Cmod S7 modules).
+
+Chosen instead: **XC7A35T for the hub**, matching the primary design's reasoning for
+picking the bigger XC7A200T over XC7A100T — headroom for future FPGA-side additions
+(octave-band parallel beamforming, hardware PSF correction) — while still being a small,
+cheap part relative to the XC7A200T it replaces. All-XC7S25 remains a documented
+lower-cost fallback if part-count minimization is reprioritized later.
+
+#### Why this satisfies the modularity/cost motivation better than the primary design
+
+- **Clock coherence is preserved, not compromised.** All 96 channels must stay phase-locked
+  to one 48kHz word clock for coherent beamforming (see Sample alignment in FPGA
+  responsibilities, below). Giving each cluster its own TCXO would reintroduce exactly the
+  drift problem TCXOs were chosen to prevent in the first place; keeping the single TCXO on
+  the hub and forwarding its clock preserves the existing clock-plan numbers unchanged
+  (12.288 MHz → ÷4 → 3.072 MHz PDM → ×4 PLL → 49.152 MHz → ÷1024 → 48.000 kHz WS) — just
+  distributed over cable instead of PCB trace.
+- **Both tiers are far smaller than the XC7A200T** (134,600 LUT) — under 6% of it either way.
+- **PCB routing simplifies at both levels**: each cluster only routes matched PDM traces
+  within its own 90° sector (short spans to 3 nearby arms) instead of the full 300mm span,
+  and the hub routes 4 spoke links instead of 48 matched PDM lines — likely drops the
+  6-layer PCB recommendation for the mic array board.
+
+#### Honest tradeoffs
+
+- New engineering work not needed for the primary design: the cluster-to-hub synchronous
+  link protocol (clock forwarding, framing, per-spoke cable-skew calibration) has to be
+  designed from scratch — it replaces what used to be an internal parallel bus.
+- PDM routing within a cluster reaches 3 arms per board, not 1 — a modest but real routing
+  exercise, worth a first-pass floorplan sketch during detailed design.
+- More BOM line items and connector points than the primary design (5 FPGAs instead of 1,
+  plus 4 cluster-to-hub cables) — each individually simpler/cheaper and independently
+  testable, but more total assembly points to design connector keying/strain-relief for.
+- Cost comparison here is directional, not quoted, matching how the primary design hedges
+  its own $ figures — confirm with current distributor quotes once package/qty are picked.
+
+#### Considered and rejected
+
+- **1 FPGA per arm (12 total)**: each tile would use only ~20% of even the smallest
+  practical FPGA — maximizes connector/BOM count for no headroom benefit.
+- **2 FPGAs per arm-pair (6 total)**: a reasonable middle ground, superseded by the further
+  consolidation to 4×24ch, which also enabled the hub-unification option above.
+- **Daisy-chain instead of star topology**: rejected — adds latency, and a single broken
+  link takes out all downstream clusters.
+- **Per-cluster GbE PHY (no hub, parallel topology)**: rejected — 4× GbE PHY chips + 4×
+  TEMAC MAC logic costs strictly more silicon/parts than one shared hub MAC+PHY, for no
+  benefit given the array needs one coherent clock domain regardless.
+- **Lattice iCE40UP5K for the cluster tiles**: considered for its open toolchain
+  (Yosys/nextpnr/IceStorm) and lower per-chip cost (~$5-8) — clusters never touch GbE, so
+  the ECP5 alternate's GbE-SerDes objection (above) wouldn't apply here either. Rejected:
+  its 5,280 LUT ceiling doesn't fit the chosen 24ch/cluster load (~7,750 LUT estimate; even
+  16ch would leave near-zero margin), and its few small hard multipliers make DSP-based FIR
+  compensation (the primary design's approach) unreliable at this channel count. Would also
+  reintroduce a second toolchain alongside the hub's Vivado flow.
 
 ---
 
