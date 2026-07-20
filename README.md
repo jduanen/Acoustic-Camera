@@ -481,7 +481,7 @@ Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sli
 webcam video, in one of two modes (Auto/Manual — see "Touch UI: Energy Threshold Tab"
 below). Green cross-hair marks peak direction (az, el). FPS displayed in overlay.
 
-Below the video, top to bottom: an **Fhi** slider strip, a spectrum plot, then an **Flo**
+Below the video, top to bottom: an **F<sub>hi</sub>** slider strip, a spectrum plot, then an **F<sub>lo</sub>**
 slider strip (the two are on opposite sides of the plot, not stacked together — see
 "Touch UI" below for why). The green bars in the spectrum plot show energy per frequency
 bin, from `f_lo` on the left to `f_hi` on the right; a white vertical line at the center
