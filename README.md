@@ -453,6 +453,13 @@ The goals of this phase include validating 2D beamforming, calibration, and vide
 Hardware: **miniDSP UMA-16 v2** (16 mics, 126 mm × 126 mm aperture, 48 kHz, driverless USB).
 https://www.minidsp.com/products/usb-audio-interface/uma-16-microphone-array
 
+#### Hardware Images
+
+<img src="assets/Phase3Back.jpg" width="768" height="1020" />
+<img src="assets/Phase3Front.jpg" width="768" height="1020" />
+<img src="assets/Phase3Side.jpg" width="1020" height="768" />
+<img src="assets/Phase3Top.jpg" width="768" height="1020" />
+
 #### Hardware Findings
 
 - USB device index 12; 16 channels at 48 kHz; Knowles SPH1668LM4H-1 MEMS mics (65.5 dB SNR)
@@ -474,7 +481,7 @@ The beamforming frequency is set live by the on-screen F lo / F hi sliders (ther
 CLEAN-SC/MUSIC, CSM) lives in `src/beamforming.py`, used by both this script and
 `src/benchmark_algos.py`, with a pytest suite in `tests/`.
 
-**TODO** Place a screengrab of the running application's display here.
+[Example Screengrab](assets/screenshot.png)
 
 Real-time two-thread pipeline: `sounddevice.InputStream` (16-ch, 48 kHz) → sliding CSM →
 2D beamform (azimuth × elevation grid) → COLORMAP_JET full-frame overlay blended onto
