@@ -96,7 +96,7 @@ def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6
     bar_db = 10 * np.log10(bar_power + 1e-30)
     norm = np.clip((bar_db - bar_db.max() + 40) / 40, 0, 1)
 
-    LABEL_H = 14   # pixels reserved at the bottom for axis labels
+    LABEL_H = 18   # pixels reserved at the bottom for axis labels (fits the larger tick font)
     bar_top = height - LABEL_H
 
     for k, v in enumerate(norm):
@@ -123,8 +123,9 @@ def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6
             continue
         cv2.line(panel, (xl, bar_top), (xl, bar_top + 3), (140, 140, 140), 1)
         lbl = f'{f // 1000}k' if f % 1000 == 0 else f'{f / 1000:.1f}k' if f >= 1000 else str(f)
-        cv2.putText(panel, lbl, (xl - 8, height - 2),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.28, (160, 160, 160), 1)
+        (lw, _), _ = cv2.getTextSize(lbl, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+        cv2.putText(panel, lbl, (xl - lw // 2, height - 3),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (160, 160, 160), 1)
 
     return panel
 
@@ -175,23 +176,44 @@ def _track_geom(w):
     return _TRACK_X0, max(w - 2 * _TRACK_X0, 1)
 
 
-def _slider_strip(w, label, val, vmax, color, label_right=False):
-    """label_right puts the text at the right edge instead of the left; the track
-    itself (see _track_geom) is identical either way, so Flo and Fhi line up."""
+_SLIDER_FONT_SCALE = 0.7   # larger than the track-side margins strictly need, for
+_SLIDER_FONT_THICK = 2     # readability — label and value live outside the track's
+                           # x-range (see _track_geom); the handle is clamped to that
+                           # same range below so it can't overhang into the margins
+                           # and collide with them at the extreme ends of the range.
+_SUB_FONT_SCALE = 0.45     # "hi"/"lo" subscript on the "F" label — smaller and
+_SUB_FONT_THICK = 1        # baseline-shifted down (see _slider_strip)
+_SUB_GAP = 2               # horizontal gap between "F" and its subscript
+_SUB_DROP = 5              # how far the subscript's baseline sits below "F"'s
+
+
+def _slider_strip(w, sub, val, vmax, color):
+    """"F" with a subscript ('hi' or 'lo') in the left margin, the live Hz value in
+    the right margin — same layout for both sliders so Flo and Fhi line up."""
     strip = np.full((_SLIDER_H, w, 3), 28, dtype=np.uint8)
     track_x0, track_w = _track_geom(w)
     yc = _SLIDER_H // 2
     cv2.rectangle(strip, (track_x0, yc - 3), (track_x0 + track_w, yc + 3), (80, 80, 80), -1)
     xh = track_x0 + int(val / vmax * track_w)
-    cv2.rectangle(strip, (xh - 5, yc - 7), (xh + 5, yc + 7), color, -1)
-    text = f'{label}: {val} Hz'
-    if label_right:
-        (text_w, _), _ = cv2.getTextSize(text, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
-        tx = w - text_w - 6
-    else:
-        tx = 4
-    cv2.putText(strip, text, (tx, yc + 4),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+    handle_x0 = max(track_x0, xh - 5)
+    handle_x1 = min(track_x0 + track_w, xh + 5)
+    cv2.rectangle(strip, (handle_x0, yc - 7), (handle_x1, yc + 7), color, -1)
+
+    (f_w, f_h), _ = cv2.getTextSize('F', cv2.FONT_HERSHEY_SIMPLEX,
+                                     _SLIDER_FONT_SCALE, _SLIDER_FONT_THICK)
+    # Combined glyph block spans [main_y - f_h, main_y + _SUB_DROP] (F's top to the
+    # subscript's baseline); solving (top + bottom) / 2 == yc for main_y:
+    main_y = yc + (f_h - _SUB_DROP) // 2
+    cv2.putText(strip, 'F', (6, main_y),
+                cv2.FONT_HERSHEY_SIMPLEX, _SLIDER_FONT_SCALE, (180, 180, 180), _SLIDER_FONT_THICK)
+    cv2.putText(strip, sub, (6 + f_w + _SUB_GAP, main_y + _SUB_DROP),
+                cv2.FONT_HERSHEY_SIMPLEX, _SUB_FONT_SCALE, (180, 180, 180), _SUB_FONT_THICK)
+
+    value_text = f'{val} Hz'
+    (value_w, value_h), _ = cv2.getTextSize(value_text, cv2.FONT_HERSHEY_SIMPLEX,
+                                             _SLIDER_FONT_SCALE, _SLIDER_FONT_THICK)
+    cv2.putText(strip, value_text, (w - value_w - 6, yc + value_h // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, _SLIDER_FONT_SCALE, (180, 180, 180), _SLIDER_FONT_THICK)
     return strip
 
 
@@ -891,9 +913,9 @@ def main():
                                                  fmin=disp_flo, fmax=disp_fhi)
                 display = np.vstack([
                     frame,
-                    _slider_strip(w_f, 'F hi', disp_fhi, _FREQ_MAX, (80, 160, 220), label_right=True),
+                    _slider_strip(w_f, 'hi', disp_fhi, _FREQ_MAX, (80, 160, 220)),
                     spec_panel_img,
-                    _slider_strip(w_f, 'F lo', disp_flo, _FREQ_MAX, (80, 200, 80)),
+                    _slider_strip(w_f, 'lo', disp_flo, _FREQ_MAX, (80, 200, 80)),
                 ])
 
                 if screenshot_requested:
