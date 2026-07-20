@@ -54,6 +54,39 @@ To get some ideas of what's possible, existing products and projects are examine
   - records full 3D sound field; outputs raw capsule audio + Ambisonics B-format
   - gold-plated condenser capsules, 20 Hz – 20 kHz
   - USB or Dante network audio interface
+
+* Fluke
+  - https://www.fluke.com/en-us/product/industrial-imaging/sonic-industrial-imager-ii900
+  - https://www.fluke.com/en-us/product/industrial-imaging/precision-acoustic-imager-ii910
+  - ii900 (discontinued, replaced by ii905): air/gas/vacuum leak detection
+    * 64x digital MEMS mics
+    * 2KHz-52KHz
+    * range: 0.5->70m, detects 0.005 CFM leak @ 100PSI from 32.8ft
+    * FOV: 63deg +-5deg (visual camera matches, 1.2MP, 3x digital zoom)
+    * 7" 1280x800 capacitive touchscreen, sunlight readable
+    * 186x322x68mm, 1.8kg w/ battery, 6hr Li-ion (spare included)
+  - ii910 (discontinued, replaced by ii915): adds partial discharge (PD) detection
+    * mic count not published; 2KHz-100KHz, 25FPS
+    * range: 0.5->120m
+    * FOV: 63deg +-5deg; 5MP visual camera, 3x digital zoom
+    * PDQ Mode: on-device PD classification + PRPD plot
+    * 186x322x68mm, 2.15kg w/ battery, 2x 6hr Li-ion
+    * same display as ii900
+
+* Fotric
+  - https://www.fotric.com/h-series-high-performance-acoustic-imaging-camera
+  - https://us.fotric.com/products/fotric-td2e-acoustic-imager-camera
+  - TD-series: handheld leak detection
+    * TD2e: 64x MEMS mics, 200KHz sample rate, 2KHz-100KHz, range 0.3-60m
+      - FOV 58x45deg, 5MP camera, 3.5" 640x480 IPS touchscreen
+      - IP54, 2m drop, 25g shock, 3.6V 5000mAh Li-ion (>=3hr), $999
+    * TD3-LD: 96x MEMS mics, rapid leak detection variant
+  - H-series: higher-end, adds partial discharge detection
+    * H4 / H4mini / H6 / H7 / H-Flex
+    * up to 162x MEMS mics (spiral array, 6.6" diameter), FOV 66x52deg, 13MP camera
+    * H7: 345x MEMS mics, range up to 300m, NaviPdM AI assistant
+      - on-device PD type recognition, leak severity scoring, auto report gen
+    * freq range/weight/price not published for H-series
   - widely used reference platform for HOA research and spatial audio production
 
 * gfai Tech
