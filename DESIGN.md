@@ -98,12 +98,17 @@ on the ECP5 open tools is harder (~4–6 weeks extra). Suitable for a rev-2 boar
 Preferred when modularity and per-unit part cost matter more than a single-chip design.
 Splits the front end across 4 small Xilinx Spartan-7 (XC7S25) "cluster" FPGAs — one per
 90° quadrant of 3 arms / 24 mics each, doing local PDM capture + CIC/FIR — plus 1 Xilinx
-Artix-7 (XC7A35T) hub FPGA that aggregates their output over LVDS and does the same
-GbE/UDP packetization as the primary design. Both chips are far smaller than the XC7A200T
-(under 6% of its LUTs each), all on hand-assembly-friendly modules (Digilent Cmod S7 /
-Arty A7-35T), no BGA rework needed even at prototype stage. Full reasoning, LUT/pin/
-bandwidth budgets, and rejected alternatives (finer/coarser grouping, daisy-chain topology,
-Lattice iCE40 tiles) are in [`PHASE4.md`](./PHASE4.md#fpga--multi-fpga-clustered-alternative).
+Artix-7 (XC7A35T) hub FPGA that aggregates their output over a parallel single-ended bus
+(not true LVDS — the Cmod S7's exposed I/O has no differential-capable pins). Unlike the
+primary design, the hub never speaks Ethernet itself: it bridges the aggregated stream over USB
+(FTDI FT232H sync FIFO) to a co-located Raspberry Pi 5, which either runs beamforming
+locally (standalone) or relays the stream out its own on-board GbE port to an external host
+(tethered) — no RGMII PHY chip or GbE MAC on the hub board at all. Both FPGAs are far
+smaller than the XC7A200T (under 6% of its LUTs each), all on hand-assembly-friendly
+modules (Digilent Cmod S7 / Arty A7-35T), no BGA rework needed even at prototype stage.
+Full reasoning, LUT/pin/bandwidth budgets, and rejected alternatives (finer/coarser
+grouping, daisy-chain topology, Lattice iCE40 tiles, hub-direct GbE) are in
+[`PHASE4.md`](./PHASE4.md#fpga--multi-fpga-clustered-alternative).
 
 ##### Considered and rejected: Zynq-7020
 

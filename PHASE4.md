@@ -137,7 +137,8 @@ The primary design above puts all 96 channels through one XC7A200T. An alternati
 preferred for a build prioritizing modularity and per-unit cost over a single-chip design —
 splits the front-end across **5 small Xilinx 7-series FPGAs**: 4 "cluster" FPGAs, each
 handling one quadrant of the array, plus 1 "hub" FPGA that aggregates their output and
-talks GbE, exactly as the primary design's single FPGA already does.
+bridges it to a Raspberry Pi 5 over USB (see Host interface below) — unlike the primary
+design's single FPGA, the hub never speaks Ethernet itself.
 
 Motivation: the XC7A200T ships only in a 484-pin FBGA (`XC7A200T-1FBG484C`), which is why
 the primary design defers a custom PCB to rev-2 and prototypes on a $500 Nexys Video dev
@@ -175,18 +176,22 @@ further connector reduction.
 #### Architecture: hub-and-spoke, single shared clock domain
 
 - **4× cluster FPGA** (Xilinx Spartan-7 **XC7S25**, 14,600 LUT): PDM clock fan-out to its
-  24 local mics, per-cluster CIC decimation + FIR compensation, then serializes the
-  decimated 48kHz PCM onto one LVDS link back to the hub. No GbE MAC, no PHY chip, no TCXO
-  on the tile. Fits on the **Digilent Cmod S7 module** (~$45) — BGA pre-mounted, no hand
-  rework needed even at prototype stage.
+  24 local mics, per-cluster CIC decimation + FIR compensation, then frames the decimated
+  48kHz PCM onto a parallel single-ended bus back to the hub (see Spoke link below — not
+  true LVDS; the Cmod S7's exposed I/O has no differential-capable pins). No GbE MAC, no PHY
+  chip, no TCXO on the tile. Fits on the **Digilent Cmod S7 module** (~$45) — BGA
+  pre-mounted, no hand rework needed even at prototype stage.
 - **1× hub FPGA** (Xilinx Artix-7 **XC7A35T**, 20,800 LUT): holds the single 12.288 MHz
   TCXO, generates the 3.072 MHz PDM clock and forwards it to all 4 clusters over the same
-  links — source-synchronous, one clock domain end-to-end (only a fixed, calibrate-once
-  per-spoke cable-length skew, not drift). Deserializes the 4 incoming streams (96 channels
-  total) and does GbE MAC + UDP packetization — the same last stage the primary design's
-  single FPGA already performs. Available on the **Arty A7-35T dev board** (~$130) — the
+  spoke links — source-synchronous, one clock domain end-to-end (only a fixed,
+  calibrate-once per-spoke cable-length skew, not drift). Reassembles the 4 incoming streams
+  (96 channels total) and frames the result out over a **USB FIFO bridge to a
+  Raspberry Pi 5** (see Host interface below) — no GbE MAC, no RGMII PHY chip, no Ethernet
+  routing on the hub board at all. Available on the **Arty A7-35T dev board** (~$130) — the
   primary design's FMC LPC connector was needed for 48 direct PDM lines; a hub handling
-  only 4 spoke links doesn't need it, so a cheaper board works.
+  only 4 spoke links plus a USB bridge doesn't need it, so a cheaper board works. (The
+  Arty A7-35T's own on-board 10/100 Ethernet PHY goes unused here — irrelevant now that the
+  hub doesn't speak Ethernet at all, see Host interface below.)
 
 Star topology, not a daisy-chain: each cluster connects directly to the hub over its own
 short link (clusters already sit close to the center), rather than chaining cluster→
@@ -198,27 +203,70 @@ of it.
 | CIC decimation (24ch) | ~6,000 LUT | — (moved to clusters) |
 | FIR compensation (24ch) | ~600 LUT | — |
 | PDM capture/demux | ~500 LUT | — |
-| LVDS serialize/deserialize | ~650 LUT | 4× deserializer ≈ 1,600-2,000 LUT |
-| GbE MAC + UDP stack | — (not needed) | ~3,000 LUT |
+| Spoke bus framing/deframing | ~400 LUT | 4× deframer ≈ 1,000-1,200 LUT |
+| USB FIFO bridge interface (sync FIFO ctrl + framing) | — (not needed) | ~300-400 LUT |
 | Clock gen (PLL from TCXO) | — (receives forwarded clock) | ~500 LUT |
-| **Total estimate** | **~7,750 LUT** | **~5,100-5,500 LUT** |
+| **Total estimate** | **~7,500 LUT** | **~1,800-2,100 LUT** |
 
-Spoke bandwidth: 24ch × 24-bit × 48kHz ≈ 27.6 Mbps payload per cluster — well within an
-ordinary LVDS pair over a short cable; no SerDes/Aurora/transceiver IP needed anywhere in
-this design.
+#### Spoke link: parallel single-ended bus, not LVDS
+
+The Cmod S7's exposed I/O (its one Pmod, and its 48-pin DIP header) routes every pin through
+a 200-240Ω series protection resistor, capped at 25 MHz — standard practice for a
+breadboard-friendly module, but it rules out true differential LVDS: a series resistor at
+the connector breaks the controlled 100Ω differential impedance a real LVDS receiver needs.
+Digilent only exposes genuine shunt-configurable/high-speed differential pins on other
+boards (e.g. the Arty's JB/JC); the Cmod S7 has no such option on either connector.
+
+Instead, each spoke is an ordinary **parallel single-ended bus** on the Cmod S7's single
+8-signal Pmod: **6 data bits + 1 strobe + 1 forwarded PDM clock (in) = 8 signals**, one
+Pmod-to-Pmod cable per spoke. 27.6 Mbps payload ÷ 6 bits ≈ 4.6 MHz per wire — about 5×
+margin under the 25 MHz cap, comfortable for a short cable at prototype stage. The hub side
+needs no differential-capable connector either; any of the Arty A7's 4 Pmods work
+identically for single-ended signaling, so the earlier "high-speed Pmod" distinction on the
+hub board is moot.
+
+#### Host interface: USB bridge to Raspberry Pi 5
+
+Unlike the primary design (hub drives GbE directly to a network switch, received by either
+host in Configuration A or B — see Host Configurations, below), the clustered hub always
+talks to a co-located **Raspberry Pi 5** over USB, and the Pi 5 decides what to do with the
+stream:
+
+- **Hub → Pi 5**: one **FTDI FT232H** USB-to-FIFO bridge (~$5 chip, ~$15 breakout module),
+  wired to the hub FPGA as a synchronous 245-mode 8-bit parallel FIFO (~12 signals: 8 data +
+  RXF#/TXE#/RD#/WR#, no SerDes/GTP needed — fits a single Pmod-style header). USB 2.0
+  Hi-Speed sync-FIFO mode sustains ~320 Mbps, comfortably over the 110 Mbps (96ch × 24-bit ×
+  48kHz) payload, with headroom to spare if channel count or bit depth grows later. Talks to
+  either of the Pi 5's USB 3.0 ports (USB2-speed device, backward compatible).
+- **Standalone**: Pi 5 reads the stream over USB and runs beamforming/display locally —
+  functionally identical to Configuration A in the primary design, just fed over USB instead
+  of GbE.
+- **Tethered**: Pi 5 relays the same stream out its own on-board Gigabit Ethernet port to an
+  external GPU workstation — replacing Configuration B's direct hub→switch→workstation link
+  with a hub→USB→Pi 5→GbE→workstation path. The Pi 5's native GbE (already used in
+  Configuration A) is reused for this rather than adding a second Ethernet interface.
+
+This removes the hub's GbE MAC + RGMII PHY entirely (see the LUT table above and the
+"Why XC7A35T" note below) at the cost of routing every byte through the Pi 5 even in
+tethered mode — an extra hop, but a trivial one: 110 Mbps is ~11% of the Pi 5's own GbE
+link, and Cortex-A76 UDP relay/forwarding overhead at this rate is not a real bottleneck.
+The Pi 5 becomes a mandatory part of the BOM for both configurations, not just standalone.
 
 #### Why XC7A35T for the hub, not XC7S25 like the clusters
 
-The hub's ~5,100-5,500 LUT need would also fit the same XC7S25 used for the clusters
-(~62-65% headroom) — RGMII GbE needs DDR-capable I/O, not the GTP transceivers Spartan-7
-lacks, so nothing technically forces a bigger part. Using XC7S25 everywhere would reduce
-the design to one single part number (5× identical Cmod S7 modules).
+Dropping GbE MAC/PHY from the hub, and replacing its LVDS deserializer with a simpler
+parallel-bus deframer (see Spoke link and Host interface, above/below), shrinks its LUT
+need well below the earlier GbE-hub estimate — the hub's ~1,800-2,100 LUT would leave
+**~86-88% headroom on the same XC7S25** used for the clusters, an even stronger case for
+one single part number (5× identical Cmod S7 modules) than before.
 
-Chosen instead: **XC7A35T for the hub**, matching the primary design's reasoning for
-picking the bigger XC7A200T over XC7A100T — headroom for future FPGA-side additions
-(octave-band parallel beamforming, hardware PSF correction) — while still being a small,
-cheap part relative to the XC7A200T it replaces. All-XC7S25 remains a documented
-lower-cost fallback if part-count minimization is reprioritized later.
+Chosen instead: **XC7A35T for the hub** (~90-91% headroom at this LUT count),
+matching the primary design's reasoning for picking the bigger XC7A200T over XC7A100T —
+headroom for future FPGA-side additions (octave-band parallel beamforming, hardware PSF
+correction) — while still being a small, cheap part relative to the XC7A200T it replaces.
+With GbE gone, LUT budget no longer drives this choice at all in either direction; it's
+purely a bet on whether future hub-side additions are worth keeping open. All-XC7S25
+remains a documented lower-cost/single-part-number fallback if that headroom isn't needed.
 
 #### Why this satisfies the modularity/cost motivation better than the primary design
 
@@ -234,6 +282,9 @@ lower-cost fallback if part-count minimization is reprioritized later.
   within its own 90° sector (short spans to 3 nearby arms) instead of the full 300mm span,
   and the hub routes 4 spoke links instead of 48 matched PDM lines — likely drops the
   6-layer PCB recommendation for the mic array board.
+- **No RGMII PHY chip or GbE MAC on the hub at all** (see Host interface, above) — a USB
+  FIFO bridge to the Pi 5 is a far simpler board-level interface than routing RGMII plus an
+  external PHY, and sidesteps PHY part selection entirely.
 
 #### Honest tradeoffs
 
@@ -259,6 +310,11 @@ lower-cost fallback if part-count minimization is reprioritized later.
 - **Per-cluster GbE PHY (no hub, parallel topology)**: rejected — 4× GbE PHY chips + 4×
   TEMAC MAC logic costs strictly more silicon/parts than one shared hub MAC+PHY, for no
   benefit given the array needs one coherent clock domain regardless.
+- **Hub drives GbE directly (own RGMII PHY, no Pi 5 relay)**: the first version of this
+  design gave the hub its own GbE MAC + PHY, mirroring the primary design exactly. Rejected
+  in favor of the USB-to-Pi-5 bridge above: it removes an entire PHY part-selection problem
+  and ~3,000 LUT of TEMAC/UDP gateware from the hub, at the cost of making the Pi 5
+  mandatory in every deployment (including tethered/GPU-host mode) rather than optional.
 - **Lattice iCE40UP5K for the cluster tiles**: considered for its open toolchain
   (Yosys/nextpnr/IceStorm) and lower per-chip cost (~$5-8) — clusters never touch GbE, so
   the ECP5 alternate's GbE-SerDes objection (above) wouldn't apply here either. Rejected:
