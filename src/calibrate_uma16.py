@@ -24,6 +24,9 @@ from beamforming import FS, N_MICS, compute_csm, beamform_ds, beamform_mvdr
 
 CAL_FREQ = 1000.0   # calibration tone (Hz) — well below the ~4082 Hz spatial Nyquist
 CAL_SECS = 5         # reference recording duration
+_MIN_PEAK = 0.02     # abort if the loudest sample is below 2% of full scale — a real
+                     # boresight tone peaks far above this; anything near this floor
+                     # is just mic/ADC self-noise (observed failure case: ~0.06%)
 
 _REPO = Path(__file__).resolve().parent.parent
 CAL_PATH = _REPO / 'test' / 'UMA16' / 'cal.npy'
@@ -84,6 +87,22 @@ def main():
     for i, r in enumerate(rms):
         bar = '#' * int(r / rms.max() * 30)
         print(f'  ch{i:2d}: {r:.2e}  {bar}')
+
+    # Delay/gain estimates computed from a near-silent recording are meaningless noise,
+    # not a real calibration (this is exactly what happened when the tone source wasn't
+    # actually audible to the array — see RASPBERRY_PI.md's calibration troubleshooting).
+    # Catch it here rather than silently saving a bogus cal.npy over a good one.
+    peak = float(np.abs(ref_rec).max())
+    if peak < _MIN_PEAK:
+        sys.exit(
+            f'\nERROR: peak amplitude is only {peak * 100:.2f}% of full scale -- the array '
+            f'barely\npicked up any signal (expected at least {_MIN_PEAK * 100:.0f}%). The RMS bars '
+            f'above are almost\ncertainly just noise floor, not the calibration tone.\n\n'
+            f'This usually means the tone source wasn\'t actually audible: check that it\'s\n'
+            f'really playing, turn up its volume, move it closer to the array, and confirm\n'
+            f'the UMA-16 is the correct input device -- then try again. Nothing was saved;\n'
+            f'the existing {CAL_PATH.name} is untouched.'
+        )
 
     delays = np.zeros(N_MICS)
     for i in range(1, N_MICS):

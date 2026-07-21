@@ -397,6 +397,16 @@ Any phone tone-generator app works, or from a laptop with `sox` installed:
 play -n synth 5 sine 1000
 ```
 
+**If the tone isn't actually audible to the array** — too quiet, too far, not playing, or
+the wrong input device — the reference recording is just mic/ADC self-noise, and the
+resulting delay/gain estimates are meaningless (typically visible as several channels
+locking onto suspiciously identical exact-integer-sample delays, since noise has no real
+cross-channel phase relationship). `calibrate_uma16.py` checks for this: if the loudest
+sample in the recording is below 2% of full scale, it aborts with an explanation instead of
+saving a bogus calibration — the existing `cal.npy` is left untouched. Watch the per-channel
+RMS bar chart the script prints right after recording; a real tone shows clearly elevated
+bars, not near-empty ones.
+
 ## 6. Performance Expectations
 
 The Pi 5's Cortex-A76 @ 2.4 GHz with OpenBLAS runs dense BLAS roughly 3-4× slower than a
@@ -537,3 +547,4 @@ N.B. It is important to source the Li batteries from a well-known reliable sourc
 | MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
 | Xorg: `Cannot run in framebuffer mode...` (Lite only) | falling back to `fbdev` instead of `modesetting`/KMS | force `modesetting` via `/etc/X11/xorg.conf.d` (see §5, not fully validated) |
 | Touch sliders felt laggy / seemed to cross despite clamping | stale read used for display, not the clamp math | see README.md's Phase 3 "Touch UI" section |
+| `calibrate_uma16.py` aborts with "peak amplitude is only X% of full scale" | tone source wasn't actually audible to the array (too quiet, too far, wrong device) | confirm the tone is really playing and loud enough, re-run — see §8 Calibrate |
