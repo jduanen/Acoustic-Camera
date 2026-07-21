@@ -397,6 +397,41 @@ Any phone tone-generator app works, or from a laptop with `sox` installed:
 play -n synth 5 sine 1000
 ```
 
+**Device selection**: like `acoustic_camera_p3.py`, the script auto-detects the UMA-16 via
+`find_device()` (first device whose name contains "uma" with ≥16 input channels), or you can
+pin it explicitly with `--device IDX`. Do this if the main app needs `--device` to find the
+right entry too (some ALSA setups enumerate the same physical device more than once, e.g. a
+raw `hw:X` PCM alongside a `plughw`/`dsnoop`-wrapped one). Run
+`python -c "import sounddevice as sd; print(sd.query_devices())"` to see all candidates and
+their indices.
+
+**Recording method**: the script captures via `sd.InputStream(..., blocksize=256, callback=...)`
+— the exact same method `acoustic_camera_p3.py` uses — rather than the simpler
+`sd.rec()`/`sd.wait()` convenience call, which lets PortAudio pick its own default
+blocksize/latency. This wasn't confirmed to be the actual cause of any specific failure, but
+matching the main app's proven-working capture method removes one source of behavioral
+difference between the two scripts.
+
+**Validity check is SNR-based, not amplitude-based**: `calibrate_uma16.py` checks that
+`CAL_FREQ` is at least `_MIN_SNR_DB` (20 dB) above the noise floor, not that the recording
+is loud in absolute terms. This matters because a real, usable tone can be very quiet in
+absolute amplitude — well under 1% of full scale — if the source is distant or this
+particular UMA-16 unit's capture chain runs at low gain, while still being extremely clean
+relative to the noise floor (a real observed case: ~46 dB SNR at ~0.1% of full scale). An
+earlier version of this check used absolute peak amplitude instead and incorrectly rejected
+recordings like that one. If you ever want to check a recording's SNR by hand:
+```bash
+python3 -c "
+import numpy as np, scipy.io.wavfile as wavfile
+fs, ref = wavfile.read('test/UMA16/cal_ref.wav')
+seg = ref[:8192, 0].astype(np.float32) * np.hanning(8192)
+F = np.abs(np.fft.rfft(seg))**2
+freqs = np.fft.rfftfreq(8192, 1/fs)
+pk = np.argmin(np.abs(freqs - 1000))
+print('SNR (dB):', 10*np.log10(F[pk-3:pk+4].mean() / np.median(F)))
+"
+```
+
 **If the tone isn't actually audible to the array** — too quiet, too far, not playing, or
 the wrong input device — the reference recording is just mic/ADC self-noise, and the
 resulting delay/gain estimates are meaningless (typically visible as several channels
@@ -547,4 +582,5 @@ N.B. It is important to source the Li batteries from a well-known reliable sourc
 | MVDR/MUSIC far slower than §6 estimates | OpenBLAS not installed (confirmed default on Trixie); NumPy silently falls back to reference BLAS/LAPACK | `apt install libopenblas0-pthread`, verify with `update-alternatives --display libblas.so.3-aarch64-linux-gnu` |
 | Xorg: `Cannot run in framebuffer mode...` (Lite only) | falling back to `fbdev` instead of `modesetting`/KMS | force `modesetting` via `/etc/X11/xorg.conf.d` (see §5, not fully validated) |
 | Touch sliders felt laggy / seemed to cross despite clamping | stale read used for display, not the clamp math | see README.md's Phase 3 "Touch UI" section |
-| `calibrate_uma16.py` aborts with "peak amplitude is only X% of full scale" | tone source wasn't actually audible to the array (too quiet, too far, wrong device) | confirm the tone is really playing and loud enough, re-run — see §8 Calibrate |
+| `calibrate_uma16.py` aborts with "X Hz is only Y dB above the noise floor" | genuinely no usable tone in the recording — not just quiet, but no clean peak at `CAL_FREQ` at all | confirm the tone is really playing (not timed out/stopped), check device selection, re-run — see §8 Calibrate |
+| RMS bars all look tiny / peak amplitude is well under 1% of full scale | not necessarily a problem — check the printed SNR line instead of judging by eye. A real tone can be very quiet in absolute terms yet still pass easily (observed: ~46 dB SNR at ~0.1% of full scale) | see §8 Calibrate's "Validity check is SNR-based" note; if SNR is also low, then it's a real issue (see row above) |
