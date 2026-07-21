@@ -292,8 +292,18 @@ def _cap(ref, x, y, sch_uuid):
 
 # ── arm sheet generator ───────────────────────────────────────────────────────
 
-def make_arm(arm_idx):
-    """Return (sch_content, sch_uuid) for arm_NN.kicad_sch."""
+def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
+    """Return (sch_content, sch_uuid) for arm_NN.kicad_sch.
+
+    clk_label: override the PDM clock global label (default "PDM_CLK", matching
+    this project's single shared master clock). Used by make_schematic_multi_fpga.py
+    to reuse this same per-mic wiring with cluster-specific clock net names, since
+    each cluster there receives its own forwarded-clock copy, not one shared net.
+    page_num: override this sheet's own page number (default arm_idx + 2, matching
+    this project's page layout; the multi_fpga project nests arms one level deeper).
+    """
+    if page_num is None:
+        page_num = arm_idx + 2
     sch_uuid = _uid()
     buf = []
 
@@ -358,7 +368,7 @@ def make_arm(arm_idx):
         # ── CLK: vertical wire + global label at top ────────────────────────
         clk_x = x + CLK_DX
         buf.append(_wire(clk_x, yL + CLK_DY, clk_x, yR + CLK_DY))
-        buf.append(_glabel("PDM_CLK", clk_x, yL + CLK_DY, angle=180, shape="input"))
+        buf.append(_glabel(clk_label, clk_x, yL + CLK_DY, angle=180, shape="input"))
 
         # ── DATA: vertical wire + global label at bottom ─────────────────────
         dat_x = x + DATA_DX
@@ -368,7 +378,7 @@ def make_arm(arm_idx):
     buf.append(
         f'  (sheet_instances\n'
         f'    (path "/"\n'
-        f'      (page "{arm_idx + 2}")))\n'   # page 1 = top; arms start at 2
+        f'      (page "{page_num}")))\n'
         f')\n'
     )
 

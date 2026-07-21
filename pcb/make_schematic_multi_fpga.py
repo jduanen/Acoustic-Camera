@@ -3,11 +3,15 @@
 make_schematic_multi_fpga.py — generate KiCad 10 schematics for the Phase 4
 Multi-FPGA (Clustered) Alternative dev-board wiring (see PHASE4.md).
 
-Scope: board-to-board interconnect only (which physical connector pins carry
-which signal, real FPGA pin names from the Digilent reference manuals) — NOT
-a redraw of the 96-mic IM72D128 array itself (see pcb/mic_array/, unchanged;
-each cluster's MIC_ARM_CONN symbol here is the cable connector into that
-existing per-mic wiring for that cluster's 3 arms).
+Scope: board-to-board interconnect (which physical connector pins carry which
+signal, real FPGA pin names from the Digilent reference manuals), plus the
+per-mic wiring for each cluster's 3 arms — reused directly from
+pcb/make_schematic.py's make_arm() (same 96-mic IM72D128 layout as
+pcb/mic_array/, not redrawn or reimplemented here) via two overridable
+parameters: a per-cluster clock label (each cluster receives its own forwarded
+PDM clock copy over its own spoke, not one shared net like the primary
+design's single-FPGA case) and a page number (this project nests arms one
+level deeper: top -> cluster -> arm, vs. mic_array's top -> arm).
 
 Dev boards are represented as simplified connector-block symbols exposing
 only the physical header pins actually used, labeled with their real FPGA
@@ -16,16 +20,26 @@ Digilent's own internal board schematic.
 
 Outputs (in pcb/multi_fpga/):
   top.kicad_sch                    — root sheet: 4 cluster sub-sheets + 1 hub sub-sheet
-  cluster_00..03.kicad_sch         — Cmod S7 + mic-arm connector + spoke bus
+  cluster_00..03.kicad_sch         — Cmod S7 + spoke bus + 3 arm sub-sheets each
+  arm_00..11.kicad_sch             — per-mic wiring, reused from make_schematic.make_arm()
   hub.kicad_sch                    — Arty A7-35T + 4 spoke buses + TCXO + USB bridge
   multi_fpga.kicad_pro             — KiCad project file
+
+multi_fpga and mic_array are deliberately separate KiCad projects (mutually
+exclusive alternative front-ends, not two parts of one build) — only the
+arm-level .kicad_sch generation logic is shared, via make_arm(), not the
+project files themselves.
 
 Usage (from project root):
   python pcb/make_schematic_multi_fpga.py
 """
 
 import os
+import sys
 import uuid as _uuid_mod
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from make_schematic import make_arm  # noqa: E402 — reuse the primary design's per-mic wiring
 
 # ── project constants ─────────────────────────────────────────────────────────
 
@@ -287,12 +301,6 @@ def _all_lib_symbols():
         ("OE", "3", "input"), ("OUT", "4", "output"),
     ]
 
-    mic_arm_pins = (
-        [("PDM_CLK", "1", "passive")]
-        + [(f"PDM_D{i:02d}", str(i + 2), "passive") for i in range(12)]
-        + [("GND", "14", "power_in")]
-    )
-
     return (
         _lib_gnd()
         + _lib_pwr_flag("+5V")
@@ -310,9 +318,6 @@ def _all_lib_symbols():
                     "USB 3.0 port (device is USB2-speed, ~320 Mbps, backward compatible)")
         + _conn_lib("TCXO_OSC", "Y", "12.288 MHz TCXO", tcxo_pins,
                     "Master clock; NDK NZ2520SD or TXC 7M series, +-2.5ppm or better")
-        + _conn_lib("MIC_ARM_CONN", "J", "To 3-arm mic cable (24 mics, see pcb/mic_array/)", mic_arm_pins,
-                    "Cable connector into this cluster's share of the existing 96-mic "
-                    "IM72D128 array wiring (pcb/mic_array/) — 2 mics per PDM_Dxx line")
     )
 
 # ── cluster sheet generator ───────────────────────────────────────────────────
@@ -348,23 +353,18 @@ def make_cluster(idx):
     CX, CY = 120.0, 150.0
     buf.append(_conn_instance("CMOD_S7", "U1", CX, CY, sch_uuid, cmod_pins))
 
-    mic_arm_pins = (
-        [("PDM_CLK", "1", "passive")]
-        + [(f"PDM_D{i:02d}", str(i + 2), "passive") for i in range(12)]
-        + [("GND", "14", "power_in")]
-    )
-    JX, JY = 40.0, 150.0
-    buf.append(_conn_instance("MIC_ARM_CONN", "J1", JX, JY, sch_uuid, mic_arm_pins))
-
-    # PDM_CLK + PDM_D00..D11: tie CMOD_S7 pins 0..12 directly to J1 pins 0..12
-    # via matching global labels (cluster-unique names — no cross-cluster tie).
-    prefix = f"C{idx}"
-    for i in range(13):
-        net = f"{prefix}_PDM_CLK" if i == 0 else f"{prefix}_PDM_D{i-1:02d}"
-        x1, y1 = _conn_pin_xy(CX, CY, i, n)
-        buf.append(_stub_and_label(x1, y1, 10.0, net, shape="passive"))
-        x2, y2 = _conn_pin_xy(JX, JY, i, len(mic_arm_pins))
-        buf.append(_stub_and_label(x2, y2, 10.0, net, shape="passive"))
+    # PDM_CLK: this cluster's own forwarded-clock copy (not shared with other
+    # clusters — see PHASE4.md Spoke link). PDM_D00..D11: tie straight to the
+    # real per-mic wiring's global DATA_NN labels (arm sub-sheets, below) —
+    # DATA indices are globally unique across all 12 arms (12*idx .. 12*idx+11
+    # for this cluster's 3 arms), so no cross-cluster collision.
+    clk_net = f"C{idx}_PDM_CLK"
+    x, y = _conn_pin_xy(CX, CY, 0, n)
+    buf.append(_stub_and_label(x, y, 10.0, clk_net, shape="passive"))
+    for i in range(12):
+        net = f"DATA_{12*idx + i:02d}"
+        x, y = _conn_pin_xy(CX, CY, i + 1, n)
+        buf.append(_stub_and_label(x, y, 10.0, net, shape="passive"))
 
     # VU / GND power
     i_vu, i_gnd = 13, 14
@@ -373,16 +373,41 @@ def make_cluster(idx):
     x, y = _conn_pin_xy(CX, CY, i_gnd, n)
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
 
-    # J1 (MIC_ARM_CONN) GND return, pin index 13 (last pin)
-    x, y = _conn_pin_xy(JX, JY, 13, len(mic_arm_pins))
-    buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
-
     # Spoke bus: pins 15..22 = JA positions 1..10 (skipping 5,6) = D0..D5, STROBE, CLK
     for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX):
         net = f"SPOKE{idx}_{suffix}"
         x, y = _conn_pin_xy(CX, CY, 15 + j, n)
         shape = "input" if suffix == "CLK" else "output"
         buf.append(_stub_and_label(x, y, 10.0, net, shape=shape, label_angle=180))
+
+    # 3 arm sub-sheets (this cluster's share of the 96-mic array, reused from
+    # pcb/mic_array/'s per-mic wiring via make_arm() — see module docstring).
+    AW, AH = 60.0, 30.0
+    AX, AY0 = 20.0, 40.0
+    for k in range(3):
+        arm_idx = idx * 3 + k
+        ay = AY0 + k * (AH + 15.0)
+        arm_sheet_uuid = _uid()
+        page_num = arm_idx + 7   # pages: 1=top, 2-5=clusters, 6=hub, 7-18=arms
+        buf.append(
+            f'  (sheet\n'
+            f'    (at {_f(AX)} {_f(ay)})\n'
+            f'    (size {_f(AW)} {_f(AH)})\n'
+            f'    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)\n'
+            f'    (stroke (width 0.1524) (type solid))\n'
+            f'    (fill (color 0 0 0 0))\n'
+            f'    (uuid "{arm_sheet_uuid}")\n'
+            f'    (property "Sheetname" "arm_{arm_idx:02d}"\n'
+            f'      (at {_f(AX)} {_f(ay - 1.5)} 0)\n'
+            f'      (effects (font (size 1.524 1.524)) (justify left bottom)))\n'
+            f'    (property "Sheetfile" "arm_{arm_idx:02d}.kicad_sch"\n'
+            f'      (at {_f(AX)} {_f(ay + AH + 1.5)} 0)\n'
+            f'      (effects (font (size 1.27 1.27)) (justify left top)))\n'
+            f'    (instances\n'
+            f'      (project "{PROJECT}"\n'
+            f'        (path "/{sch_uuid}"\n'
+            f'          (page "{page_num}")))))\n'
+        )
 
     buf.append(
         f'  (sheet_instances\n'
@@ -582,6 +607,20 @@ def make_project():
 def main():
     os.makedirs(OUTDIR, exist_ok=True)
 
+    # 12 arm sheets: real per-mic wiring, reused from make_schematic.make_arm().
+    # clk_label is cluster-specific (each cluster gets its own forwarded-clock
+    # copy) and page_num matches this project's deeper nesting (top -> cluster
+    # -> arm). make_arm() bakes in make_schematic.py's own PROJECT ("mic_array")
+    # in its symbol-instance paths, so patch that to this project's name.
+    for arm_idx in range(N_CLUSTERS * 3):
+        cluster_idx = arm_idx // 3
+        content, _ = make_arm(arm_idx, clk_label=f"C{cluster_idx}_PDM_CLK", page_num=arm_idx + 7)
+        content = content.replace('(project "mic_array"', f'(project "{PROJECT}"')
+        path = os.path.join(OUTDIR, f"arm_{arm_idx:02d}.kicad_sch")
+        with open(path, 'w') as fh:
+            fh.write(content)
+        print(f"  {path}")
+
     for i in range(N_CLUSTERS):
         content, _ = make_cluster(i)
         path = os.path.join(OUTDIR, f"cluster_{i:02d}.kicad_sch")
@@ -605,7 +644,7 @@ def main():
         fh.write(make_project())
     print(f"  {pro_path}")
 
-    print(f"\nDone — {N_CLUSTERS} clusters + 1 hub.")
+    print(f"\nDone — {N_CLUSTERS} clusters (12 arms, 96 mics total) + 1 hub.")
     print(f"Open {pro_path} in KiCad 9/10.")
     print("Next steps:")
     print("  1. Run ERC; expected: unconnected DP83848J PHY pins (unused, see PHASE4.md)")
