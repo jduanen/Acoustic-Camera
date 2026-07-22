@@ -108,17 +108,18 @@ required bandwidth (110 Mbps > 100 Mbps) and it's not part of this design.
 ## ERC: zero errors
 
 `kicad-cli sch erc` on this project (`top.kicad_sch`, full hierarchy) reports
-**zero errors**. Two error classes that showed up during development were
-fixed at the root rather than documented as accepted:
+**zero errors**. `pcb/mic_array/` shares the per-mic wiring generator
+(`make_arm()`) and has been regenerated with the same fixes, so it carries
+them too — its only remaining errors (`power_pin_not_driven` ×2,
+`pin_not_driven` ×1) are pre-existing and unrelated (no `PWR_FLAG`s added
+there; out of scope so far). Error classes that showed up during development
+were fixed at the root rather than documented as accepted:
 
 - `pin_to_pin` ("Output and Output connected") on each mic pair's shared PDM
   data line (L/R time-multiplexed via `SEL`, never driving simultaneously) —
   fixed by giving the IM72D128 `DATA` pin `tri_state` electrical type instead
   of `output` in `pcb/make_schematic.py`'s `_lib_mic()`, matching the mic's
-  real behavior (tri-stated on the half-cycle it isn't selected). Shared code
-  with `pcb/mic_array/`, but that project's own committed output isn't
-  regenerated as part of this fix — its schematics still show the old
-  `output`-typed pin and the corresponding ERC errors until it's regenerated.
+  real behavior (tri-stated on the half-cycle it isn't selected).
 - `power_pin_not_driven` on GND/+5V/+3V3/+1V8 — no battery/regulator-output
   symbol is modeled at this dev-board-interconnect scope, so ERC has no
   driver for these externally-supplied rails. Fixed with `power:PWR_FLAG`
@@ -131,15 +132,36 @@ fixed at the root rather than documented as accepted:
   usage in that file wasn't reliably recognized as connected by ERC, so it's
   attached to an already-used instance instead.
 
+Two further defects weren't ERC violations at all (KiCad's type-conflict
+rules don't cover them) but were real bugs in the generated schematic,
+found by inspection:
+
+- **CLK silently shorted to SEL on every mic pair.** `CLK_DX` and `SEL_DX`
+  (in `pcb/make_schematic.py`) put both pins on the same x column, 2.54mm
+  apart; a straight CLK-to-CLK wire between the L and R mic ran directly over
+  the R mic's SEL pin. Fixed by jogging the CLK wire left, clear of the SEL
+  column, before running it vertically (`CLK_CLEAR`).
+- **`SEL`/`DATA`/`CLK`/`VDD`/`GND` pin-name text all rendered on top of each
+  other** at the body centre, illegible. Caused by `_lib_mic()`'s
+  `pin_names (offset 0.508)` — the offset drags name text *inward* from the
+  pin's outer tip toward the body centre, not outward; with 5 pins this
+  close together, anything above `offset 0` collides. Fixed by setting it to
+  `0`, which places each name right at its own pin tip.
+
 Remaining violations are all warnings, in the same classes already present in
 `pcb/mic_array/`'s own ERC output:
 
-- `endpoint_off_grid` — cosmetic grid-snap only, no effect on connectivity.
 - `lib_symbol_issues` / `lib_symbol_mismatch` — symbols are embedded directly
   in each sheet (no project `sym-lib-table`), same approach as the primary
   design's generator. `lib_symbol_mismatch` count is non-deterministic
   run-to-run (varies with the random per-instance UUIDs each regeneration
   produces) — cosmetic, not a connectivity issue.
+
+`endpoint_off_grid` no longer appears at all: every placement constant in
+both generators (`pcb/make_schematic.py` and
+`pcb/make_schematic_multi_fpga.py`) is now an exact multiple of `GRID = 1.27`
+(KiCad's default 50 mil schematic grid), so every pin, wire endpoint, and
+label lands on-grid by construction.
 
 ---
 

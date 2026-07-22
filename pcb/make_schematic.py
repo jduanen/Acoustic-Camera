@@ -25,18 +25,22 @@ OUTDIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mic_array")
 PROJECT = "mic_array"
 KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 
+GRID = 1.27   # KiCad's default schematic grid (50 mil). Every placement
+              # constant below is an exact multiple of this so every pin,
+              # wire endpoint, and label lands on-grid.
+
 # ── arm sheet layout (mm, A3 landscape 420 × 297 mm) ─────────────────────────
 #
 #  2-column, 2-row arrangement:
-#    pairs 0,1 → column 0 (x=80)
-#    pairs 2,3 → column 1 (x=230)
-#  Within each column: pair in row 0 (y_base=20) or row 1 (y_base=135).
+#    pairs 0,1 → column 0 (x≈80)
+#    pairs 2,3 → column 1 (x≈230)
+#  Within each column: pair in row 0 (y_base≈20) or row 1 (y_base≈135).
 #
-COL_X    = [80.0, 230.0]   # mic centre x per column
-ROW_BASE = [20.0, 135.0]   # y_base per row
-L_DY     = 20.0            # L-mic y offset from y_base
-R_DY     = 60.0            # R-mic y offset from y_base
-CAP_DX   = 22.0            # cap centre x-offset from mic centre
+COL_X    = [63 * GRID, 181 * GRID]   # mic centre x per column (≈80, ≈230)
+ROW_BASE = [16 * GRID, 106 * GRID]   # y_base per row (≈20, ≈135)
+L_DY     = 16 * GRID                 # L-mic y offset from y_base (≈20)
+R_DY     = 47 * GRID                 # R-mic y offset from y_base (≈60)
+CAP_DX   = 17 * GRID                 # cap centre x-offset from mic centre (≈22)
 
 # IM72D128 pin connection offsets in *screen* coords (y-down), rel. to symbol centre.
 # Derived by negating the y component of the symbol-local y-up pin positions:
@@ -51,6 +55,13 @@ GND_DY  = +6.35
 DATA_DX = +6.35;  DATA_DY = -1.27
 CLK_DX  = -6.35;  CLK_DY  = +1.27
 SEL_DX  = -6.35;  SEL_DY  = -1.27
+
+# CLK_DX == SEL_DX: both pins stub out on the same left-side column, just
+# 2.54mm apart in y. A CLK-to-CLK wire straight down that column crosses
+# directly over the R mic's SEL pin (2.54mm above R's CLK, still within the
+# L-to-R wire's span) and shorts CLK to SEL/+1V8. CLK_CLEAR jogs the CLK wire
+# further left, off the SEL column, before running it vertically.
+CLK_CLEAR = 5.08
 
 # Device:C pin offsets (screen y-down, relative to cap centre):
 #   pin 1 (top): symbol-local (0,+3.81,270) → screen (0,-3.81)
@@ -131,7 +142,11 @@ def _lib_vdd():
 def _lib_mic():
     return (
         '  (symbol "IM72D128"\n'
-        '    (pin_numbers (hide yes)) (pin_names (offset 0.508))\n'
+        # offset 0 keeps each pin's name right at its outer tip, clear of the
+        # body — a nonzero offset drags the name inward toward the body
+        # centre, and with 5 pins this close together (CLK/SEL only 2.54mm
+        # apart), any offset above ~0 makes adjacent names overlap.
+        '    (pin_numbers (hide yes)) (pin_names (offset 0))\n'
         '    (exclude_from_sim no) (in_bom yes) (on_board yes)\n'
         + _pp("Reference",   "U",                 0,  8.89)
         + _pp("Value",       "IM72D128V01XTMA1",  0, -8.89)
@@ -368,10 +383,13 @@ def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
         buf.append(_pwr("power:+1V8", "+1V8", x + CAP_DX, cap_yR + CP1_DY, sch_uuid))
         buf.append(_pwr("power:GND",  "GND",  x + CAP_DX, cap_yR + CP2_DY, sch_uuid))
 
-        # ── CLK: vertical wire + global label at top ────────────────────────
-        clk_x = x + CLK_DX
-        buf.append(_wire(clk_x, yL + CLK_DY, clk_x, yR + CLK_DY))
-        buf.append(_glabel(clk_label, clk_x, yL + CLK_DY, angle=180, shape="input"))
+        # ── CLK: jog left clear of the SEL pin column, then vertical + label ──
+        clk_x  = x + CLK_DX
+        clk_x2 = clk_x - CLK_CLEAR
+        buf.append(_wire(clk_x, yL + CLK_DY, clk_x2, yL + CLK_DY))
+        buf.append(_wire(clk_x2, yL + CLK_DY, clk_x2, yR + CLK_DY))
+        buf.append(_wire(clk_x2, yR + CLK_DY, clk_x, yR + CLK_DY))
+        buf.append(_glabel(clk_label, clk_x2, yL + CLK_DY, angle=180, shape="input"))
 
         # ── DATA: vertical wire + global label at bottom ─────────────────────
         dat_x = x + DATA_DX
@@ -518,9 +536,9 @@ def _fmc_connector(top_uuid):
       Row D (unit 2): Sx=610,  pins carry LA01,LA05,LA09,LA13,LA17,LA23,LA26
       Row C (unit 1): Sx=690,  pins carry LA06,LA10,LA14,LA18,LA27
     """
-    UNIT_SX = {'G': 450.0, 'H': 530.0, 'D': 610.0, 'C': 690.0}
+    UNIT_SX = {'G': 354 * GRID, 'H': 417 * GRID, 'D': 480 * GRID, 'C': 543 * GRID}
     UNIT_N  = {'C': 1,     'D': 2,     'G': 3,     'H': 4}
-    SY = 25.0   # top of all connector units
+    SY = 20 * GRID   # top of all connector units (≈25)
     buf = []
 
     for row in ('G', 'H', 'D', 'C'):
@@ -570,9 +588,9 @@ def make_top(arm_uuids):
     )
 
     # ── 12 arm sub-sheet symbols (4 cols × 3 rows) ───────────────────────────
-    SW, SH = 85.0, 45.0
-    MARGIN_X, MARGIN_Y = 20.0, 25.0
-    SPACING_X, SPACING_Y = SW + 15.0, SH + 20.0
+    SW, SH = 67 * GRID, 35 * GRID
+    MARGIN_X, MARGIN_Y = 16 * GRID, 20 * GRID
+    SPACING_X, SPACING_Y = SW + 12 * GRID, SH + 16 * GRID
 
     for arm_idx in range(N_ARMS):
         col = arm_idx % 4

@@ -40,7 +40,7 @@ import sys
 import uuid as _uuid_mod
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from make_schematic import make_arm  # noqa: E402 — reuse the primary design's per-mic wiring
+from make_schematic import make_arm, GRID  # noqa: E402 — reuse the primary design's per-mic wiring
 
 # ── project constants ─────────────────────────────────────────────────────────
 
@@ -284,6 +284,7 @@ def _lib_pwr_flag(name):
 
 PIN_LEN   = 5.08
 BODY_HW   = 12.7   # body half-width
+STUB      = 8 * GRID   # stub-and-label/pwr wire length (≈10)
 
 def _conn_lib(lib_name, ref_prefix, value, pins, desc=""):
     """pins: list of (pin_name, pin_number, elec_type) in top-to-bottom (screen) order."""
@@ -439,7 +440,7 @@ def make_cluster(idx):
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
     )
     n = len(cmod_pins)
-    CX, CY = 120.0, 150.0
+    CX, CY = 94 * GRID, 118 * GRID
     buf.append(_conn_instance("CMOD_S7", "U1", CX, CY, sch_uuid, cmod_pins))
 
     # PDM_CLK: this cluster's own forwarded-clock copy (not shared with other
@@ -449,33 +450,33 @@ def make_cluster(idx):
     # for this cluster's 3 arms), so no cross-cluster collision.
     clk_net = f"C{idx}_PDM_CLK"
     x, y = _conn_pin_xy(CX, CY, 0, n)
-    buf.append(_stub_and_label(x, y, 10.0, clk_net, shape="passive"))
+    buf.append(_stub_and_label(x, y, STUB, clk_net, shape="passive"))
     for i in range(12):
         net = f"DATA_{12*idx + i:02d}"
         x, y = _conn_pin_xy(CX, CY, i + 1, n)
-        buf.append(_stub_and_label(x, y, 10.0, net, shape="passive"))
+        buf.append(_stub_and_label(x, y, STUB, net, shape="passive"))
 
     # VU / GND power
     i_vu, i_gnd = 13, 14
     x, y = _conn_pin_xy(CX, CY, i_vu, n)
-    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
     x, y = _conn_pin_xy(CX, CY, i_gnd, n)
-    buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
     # Spoke bus: pins 15..22 = JA positions 1..10 (skipping 5,6) = D0..D5, STROBE, CLK
     for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX):
         net = f"SPOKE{idx}_{suffix}"
         x, y = _conn_pin_xy(CX, CY, 15 + j, n)
         shape = "input" if suffix == "CLK" else "output"
-        buf.append(_stub_and_label(x, y, 10.0, net, shape=shape, label_angle=180))
+        buf.append(_stub_and_label(x, y, STUB, net, shape=shape, label_angle=180))
 
     # 3 arm sub-sheets (this cluster's share of the 96-mic array, reused from
     # pcb/mic_array/'s per-mic wiring via make_arm() — see module docstring).
-    AW, AH = 60.0, 30.0
-    AX, AY0 = 20.0, 40.0
+    AW, AH = 47 * GRID, 24 * GRID
+    AX, AY0 = 16 * GRID, 32 * GRID
     for k in range(3):
         arm_idx = idx * 3 + k
-        ay = AY0 + k * (AH + 15.0)
+        ay = AY0 + k * (AH + 12 * GRID)
         arm_sheet_uuid = _uid()
         page_num = arm_idx + 7   # pages: 1=top, 2-5=clusters, 6=hub, 7-18=arms
         buf.append(
@@ -536,7 +537,7 @@ def make_hub():
     arty_pins += [("5V0", "PWR1", "power_in"), ("GND", "PWR2", "power_in")]
     n = len(arty_pins)
 
-    AX, AY = 150.0, 250.0
+    AX, AY = 118 * GRID, 197 * GRID
     buf.append(_conn_instance("ARTY_A7_35T", "U1", AX, AY, sch_uuid, arty_pins))
 
     # 4x Pmod spoke buses: pins 0..31, 8 per cluster in ARTY_PMOD_ORDER order
@@ -546,36 +547,36 @@ def make_hub():
             net = f"SPOKE{cidx}_{suffix}"
             x, y = _conn_pin_xy(AX, AY, pin_i, n)
             shape = "output" if suffix == "CLK" else "input"
-            buf.append(_stub_and_label(x, y, 10.0, net, shape=shape))
+            buf.append(_stub_and_label(x, y, STUB, net, shape=shape))
 
     # Shield pins 32..44: USB FIFO bus + TCXO clock in
     base = 32
     for k, (shield_name, net) in enumerate(SHIELD_PINS_USED):
         x, y = _conn_pin_xy(AX, AY, base + k, n)
         shape = "input" if net == "TCXO_CLK" else "passive"
-        buf.append(_stub_and_label(x, y, 10.0, net, shape=shape))
+        buf.append(_stub_and_label(x, y, STUB, net, shape=shape))
 
     # Power
     x, y = _conn_pin_xy(AX, AY, base + len(SHIELD_PINS_USED), n)
-    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
     x, y = _conn_pin_xy(AX, AY, base + len(SHIELD_PINS_USED) + 1, n)
-    buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
     # TCXO
     tcxo_pins = [
         ("VDD", "1", "power_in"), ("GND", "2", "power_in"),
         ("OE", "3", "input"), ("OUT", "4", "output"),
     ]
-    TX, TY = 320.0, 60.0
+    TX, TY = 252 * GRID, 47 * GRID
     buf.append(_conn_instance("TCXO_OSC", "Y1", TX, TY, sch_uuid, tcxo_pins))
     x, y = _conn_pin_xy(TX, TY, 0, 4)
-    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, STUB, sch_uuid))
     x, y = _conn_pin_xy(TX, TY, 1, 4)
-    buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
     x, y = _conn_pin_xy(TX, TY, 2, 4)
-    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, 10.0, sch_uuid))   # OE tied high (always enabled)
+    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, STUB, sch_uuid))   # OE tied high (always enabled)
     x, y = _conn_pin_xy(TX, TY, 3, 4)
-    buf.append(_stub_and_label(x, y, 10.0, "TCXO_CLK", shape="output", label_angle=180))
+    buf.append(_stub_and_label(x, y, STUB, "TCXO_CLK", shape="output", label_angle=180))
 
     # FT232H USB bridge
     ft232h_pins = (
@@ -584,16 +585,16 @@ def make_hub():
            ("RD#", "11", "passive"), ("WR#", "12", "passive")]
         + [("VCCIO", "13", "power_in"), ("GND", "14", "power_in")]
     )
-    FX, FY = 320.0, 170.0
+    FX, FY = 252 * GRID, 134 * GRID
     buf.append(_conn_instance("FT232H_BRK", "U2", FX, FY, sch_uuid, ft232h_pins))
     ft232h_nets = [f"USB_D{i}" for i in range(8)] + ["USB_RXF_N", "USB_TXE_N", "USB_RD_N", "USB_WR_N"]
     for i, net in enumerate(ft232h_nets):
         x, y = _conn_pin_xy(FX, FY, i, len(ft232h_pins))
-        buf.append(_stub_and_label(x, y, 10.0, net, shape="passive", label_angle=180))
+        buf.append(_stub_and_label(x, y, STUB, net, shape="passive", label_angle=180))
     x, y = _conn_pin_xy(FX, FY, 12, len(ft232h_pins))
-    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, STUB, sch_uuid))
     x, y = _conn_pin_xy(FX, FY, 13, len(ft232h_pins))
-    buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
     # Power flags: one pair per rail used at this level (GND, +5V, +3V3).
     # Power-symbol nets are global by name, so placing these once here
@@ -604,7 +605,7 @@ def make_hub():
     # isolated island here — see main()/_inject_pwr_flag_onto_net().
     for i, (lib_id, val) in enumerate(
             [("power:GND", "GND"), ("power:+5V", "+5V"), ("power:+3V3", "+3V3")]):
-        buf.append(_pwr_flag_pair(lib_id, val, 30.0, 20.0 + i * 15.0, sch_uuid))
+        buf.append(_pwr_flag_pair(lib_id, val, 24 * GRID, 16 * GRID + i * 12 * GRID, sch_uuid))
 
     buf.append(
         '  (text "USB-C/Micro-B cable to Raspberry Pi 5 USB 3.0 port\\n'
@@ -644,9 +645,9 @@ def make_top():
         f'  (lib_symbols)\n'
     )
 
-    SW, SH = 70.0, 40.0
-    MARGIN_X, MARGIN_Y = 20.0, 25.0
-    SPACING_X = SW + 15.0
+    SW, SH = 55 * GRID, 32 * GRID
+    MARGIN_X, MARGIN_Y = 16 * GRID, 20 * GRID
+    SPACING_X = SW + 12 * GRID
 
     names = [f"cluster_{i:02d}" for i in range(N_CLUSTERS)] + ["hub"]
     for i, name in enumerate(names):
