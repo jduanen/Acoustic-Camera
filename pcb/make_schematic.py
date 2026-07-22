@@ -23,7 +23,7 @@ N_PAIRS   = N_PER_ARM // 2   # 4 pairs per arm, 2 mics per pair
 
 OUTDIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mic_array")
 PROJECT = "mic_array"
-KI_VER  = "20250114"   # KiCad 9/10 schematic format version
+KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 
 # ── arm sheet layout (mm, A3 landscape 420 × 297 mm) ─────────────────────────
 #
@@ -151,8 +151,11 @@ def _lib_mic():
           '      (pin power_in line (at 0 -6.35 90) (length 2.54)\n'
           '        (name "GND"  (effects (font (size 1.27 1.27))))\n'
           '        (number "2"  (effects (font (size 1.27 1.27)))))\n'
-          # DATA: right-side output
-          '      (pin output line (at 6.35 1.27 180) (length 2.54)\n'
+          # DATA: right-side output, tri-stated on the half-cycle this mic isn't
+          # selected (SEL) so its L/R partner can drive the shared line — hence
+          # "tri_state" electrical type, not "output", to avoid a false-positive
+          # ERC pin-to-pin conflict on the two mics' shared DATA net.
+          '      (pin tri_state line (at 6.35 1.27 180) (length 2.54)\n'
           '        (name "DATA" (effects (font (size 1.27 1.27))))\n'
           '        (number "3"  (effects (font (size 1.27 1.27)))))\n'
           # CLK: left-side input, lower
@@ -311,7 +314,7 @@ def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
         f'(kicad_sch\n'
         f'  (version {KI_VER})\n'
         f'  (generator "{PROJECT}_make_schematic")\n'
-        f'  (generator_version "1.0")\n'
+        f'  (generator_version "10.0")\n'
         f'  (uuid "{sch_uuid}")\n'
         f'  (paper "A3")\n'
         f'  (title_block\n'
@@ -550,7 +553,7 @@ def make_top(arm_uuids):
         f'(kicad_sch\n'
         f'  (version {KI_VER})\n'
         f'  (generator "{PROJECT}_make_schematic")\n'
-        f'  (generator_version "1.0")\n'
+        f'  (generator_version "10.0")\n'
         f'  (uuid "{top_uuid}")\n'
         f'  (paper "A1")\n'
         f'  (title_block\n'
@@ -657,7 +660,7 @@ def main():
     print(f"  {pro_path}")
 
     print(f"\nDone — {N_ARMS * N_PER_ARM} mics, {N_ARMS * N_PAIRS} DATA lines.")
-    print(f"Open {pro_path} in KiCad 9/10.")
+    print(f"Open {pro_path} in KiCad 10.")
     print(f"Next steps:")
     print(f"  1. Assign IM72D128 footprint (from Infineon / Ultra Librarian / SnapEDA)")
     print(f"  2. Assign C footprint (e.g., Capacitor_SMD:C_0402_1005Metric)")

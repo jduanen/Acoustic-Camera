@@ -105,26 +105,41 @@ required bandwidth (110 Mbps > 100 Mbps) and it's not part of this design.
 
 ---
 
-## Known ERC warnings (expected, not bugs)
+## ERC: zero errors
 
-Running `kicad-cli sch erc` on this project (`top.kicad_sch`, full hierarchy)
-reports warnings in the same classes already present (at similar or larger
-scale) in `pcb/mic_array/`'s own ERC output — confirmed by direct comparison,
-not new here:
+`kicad-cli sch erc` on this project (`top.kicad_sch`, full hierarchy) reports
+**zero errors**. Two error classes that showed up during development were
+fixed at the root rather than documented as accepted:
 
-- `power_pin_not_driven` — no battery/regulator-output symbol is modeled;
-  power rails are drawn as plain input-type flags.
+- `pin_to_pin` ("Output and Output connected") on each mic pair's shared PDM
+  data line (L/R time-multiplexed via `SEL`, never driving simultaneously) —
+  fixed by giving the IM72D128 `DATA` pin `tri_state` electrical type instead
+  of `output` in `pcb/make_schematic.py`'s `_lib_mic()`, matching the mic's
+  real behavior (tri-stated on the half-cycle it isn't selected). Shared code
+  with `pcb/mic_array/`, but that project's own committed output isn't
+  regenerated as part of this fix — its schematics still show the old
+  `output`-typed pin and the corresponding ERC errors until it's regenerated.
+- `power_pin_not_driven` on GND/+5V/+3V3/+1V8 — no battery/regulator-output
+  symbol is modeled at this dev-board-interconnect scope, so ERC has no
+  driver for these externally-supplied rails. Fixed with `power:PWR_FLAG`
+  symbols (the standard KiCad idiom for this): one pair each for GND/+5V/+3V3
+  in `hub.kicad_sch`, and one for +1V8 stacked onto an existing +1V8 instance
+  in `arm_00.kicad_sch` — see `_pwr_flag_pair()` / `_inject_pwr_flag_onto_net()`
+  in `pcb/make_schematic_multi_fpga.py`. +1V8 needed the different treatment
+  because it has no natural home at the cluster/hub level (it's the mic-local
+  supply rail); a fresh isolated flag pair for a net with no other same-named
+  usage in that file wasn't reliably recognized as connected by ERC, so it's
+  attached to an already-used instance instead.
+
+Remaining violations are all warnings, in the same classes already present in
+`pcb/mic_array/`'s own ERC output:
+
+- `endpoint_off_grid` — cosmetic grid-snap only, no effect on connectivity.
 - `lib_symbol_issues` / `lib_symbol_mismatch` — symbols are embedded directly
   in each sheet (no project `sym-lib-table`), same approach as the primary
-  design's generator.
-- `endpoint_off_grid` — cosmetic grid-snap only, no effect on connectivity.
-- `pin_to_pin` ("Output and Output connected") — each mic pair shares one PDM
-  data line by design (L/R time-multiplexed via `SEL`, never driving
-  simultaneously); `pcb/mic_array/` shows the identical pattern (208 instances
-  there for 96 mics vs. 48 here, same per-pair rate).
-
-There are **zero** `pin_not_connected` or `isolated_pin_label` violations when
-ERC is run against the full hierarchy (`top.kicad_sch`).
+  design's generator. `lib_symbol_mismatch` count is non-deterministic
+  run-to-run (varies with the random per-instance UUIDs each regeneration
+  produces) — cosmetic, not a connectivity issue.
 
 ---
 

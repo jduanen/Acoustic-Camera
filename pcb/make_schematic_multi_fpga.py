@@ -35,6 +35,7 @@ Usage (from project root):
 """
 
 import os
+import re
 import sys
 import uuid as _uuid_mod
 
@@ -47,7 +48,7 @@ N_CLUSTERS = 4
 
 OUTDIR  = os.path.join(os.path.dirname(os.path.abspath(__file__)), "multi_fpga")
 PROJECT = "multi_fpga"
-KI_VER  = "20250114"   # KiCad 9/10 schematic format version
+KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 
 # ── real pinout data, from Digilent reference manuals ─────────────────────────
 # Cmod S7: one "standard" Pmod (JA), 200 ohm series resistors on every pin,
@@ -144,6 +145,93 @@ def _pwr(lib_id, val, x, y, sch_uuid, rot=0):
             f'    (pin "1" (uuid "{_uid()}"))\n'
             f'    (instances (project "{PROJECT}"\n'
             f'      (path "/{sch_uuid}" (reference "{ref}") (unit 1)))))\n')
+
+_flg_n = [0]
+
+def _flag_ref():
+    _flg_n[0] += 1
+    return f"#FLG{_flg_n[0]:02d}"
+
+def _flag(x, y, sch_uuid):
+    """PWR_FLAG instance: declares the net it's wired to as externally
+    supplied, satisfying ERC's "power input not driven" rule for rails with
+    no on-schematic regulator/source symbol (dev-board-level scope — see
+    SCHEMATIC_NOTES.md)."""
+    ref = _flag_ref()
+    return (f'  (symbol (lib_id "power:PWR_FLAG")\n'
+            f'    (at {_f(x)} {_f(y)} 0)\n'
+            f'    (unit 1)\n'
+            f'    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)\n'
+            f'    (uuid "{_uid()}")\n'
+            f'    (property "Reference" "{ref}"\n'
+            f'      (at {_f(x)} {_f(y - 5.08)} 0)\n'
+            f'      (effects (font (size 1.27 1.27))))\n'
+            f'    (property "Value" "PWR_FLAG"\n'
+            f'      (at {_f(x)} {_f(y - 7.62)} 0)\n'
+            f'      (effects (font (size 1.27 1.27))))\n'
+            f'    (property "Footprint" ""\n'
+            f'      (at {_f(x)} {_f(y)} 0)\n'
+            f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+            f'    (property "Datasheet" ""\n'
+            f'      (at {_f(x)} {_f(y)} 0)\n'
+            f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+            f'    (property "Description" ""\n'
+            f'      (at {_f(x)} {_f(y)} 0)\n'
+            f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
+            f'    (pin "1" (uuid "{_uid()}"))\n'
+            f'    (instances (project "{PROJECT}"\n'
+            f'      (path "/{sch_uuid}" (reference "{ref}") (unit 1)))))\n')
+
+def _pwr_flag_pair(lib_id, val, x, y, sch_uuid):
+    """Power symbol + PWR_FLAG stacked at the identical point (both have a
+    zero-length pin at their own origin, so co-locating them connects the two
+    without a separate wire segment — the standard KiCad idiom for silencing
+    "not driven" on a rail with no on-schematic regulator/source symbol).
+    Power-symbol nets are global by name across the whole hierarchy, so one
+    pair per net name anywhere in the project satisfies ERC for every other
+    instance of that same rail."""
+    return _pwr(lib_id, val, x, y, sch_uuid) + _flag(x, y, sch_uuid)
+
+def _lib_flag():
+    return (
+        '  (symbol "power:PWR_FLAG" (power)\n'
+        '    (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))\n'
+        '    (exclude_from_sim no) (in_bom yes) (on_board yes)\n'
+        + _pp("Reference", "#FLG", 0, 2.54)
+        + _pp("Value",     "PWR_FLAG", 0, 4.826)
+        + _pp("Footprint", "", 0, 0, hide=True)
+        + _pp("Datasheet", "", 0, 0, hide=True)
+        + _pp("Description",
+              "Declares its net externally supplied, so ERC does not require "
+              "an on-schematic driver for it", 0, 0, hide=True)
+        + '    (symbol "PWR_FLAG_0_1"\n'
+          '      (circle (center 0 1.905) (radius 0.635)\n'
+          '        (stroke (width 0) (type default)) (fill (type none)))\n'
+          '      (polyline (pts (xy 0 0) (xy 0 1.27))\n'
+          '        (stroke (width 0) (type default)) (fill (type none))))\n'
+          '    (symbol "PWR_FLAG_1_1"\n'
+          '      (pin power_out line (at 0 0 90) (length 0)\n'
+          '        (name "pwr" (effects (font (size 1.27 1.27))))\n'
+          '        (number "1" (effects (font (size 1.27 1.27)))))))\n'
+    )
+
+def _inject_pwr_flag_onto_net(content, sch_uuid, lib_id):
+    """Stack a PWR_FLAG onto an existing power-symbol instance already present
+    in a generated arm sheet's content (used for +1V8, the mic-local supply
+    rail — see main()). +1V8 has no natural home at the cluster/hub level, and
+    a fresh isolated flag pair for a net with no other same-named usage in
+    that file isn't reliably recognized as connected by ERC; stacking onto an
+    already-used instance avoids that."""
+    m = re.search(
+        r'\(symbol \(lib_id "' + re.escape(lib_id) + r'"\)\n'
+        r'    \(at ([\d.\-]+) ([\d.\-]+) 0\)',
+        content)
+    if not m:
+        raise ValueError(f"no existing {lib_id} instance found to attach a PWR_FLAG to")
+    x, y = float(m.group(1)), float(m.group(2))
+    content = content.replace('  (lib_symbols\n', '  (lib_symbols\n' + _lib_flag(), 1)
+    content = content.replace('  (sheet_instances\n', _flag(x, y, sch_uuid) + '  (sheet_instances\n', 1)
+    return content
 
 def _lib_gnd():
     return (
@@ -305,6 +393,7 @@ def _all_lib_symbols():
         _lib_gnd()
         + _lib_pwr_flag("+5V")
         + _lib_pwr_flag("+3V3")
+        + _lib_flag()
         + _conn_lib("CMOD_S7", "U", "Digilent Cmod S7 (XC7S25-1CSGA225C)", cmod_pins,
                     "Cluster FPGA module — Pmod JA (8 sig, 200ohm series) + DIP header "
                     "(13 of 32 GPIO used for local PDM capture); every pin series-resistor "
@@ -330,7 +419,7 @@ def make_cluster(idx):
         f'(kicad_sch\n'
         f'  (version {KI_VER})\n'
         f'  (generator "{PROJECT}_make_schematic")\n'
-        f'  (generator_version "1.0")\n'
+        f'  (generator_version "10.0")\n'
         f'  (uuid "{sch_uuid}")\n'
         f'  (paper "A3")\n'
         f'  (title_block\n'
@@ -426,7 +515,7 @@ def make_hub():
         f'(kicad_sch\n'
         f'  (version {KI_VER})\n'
         f'  (generator "{PROJECT}_make_schematic")\n'
-        f'  (generator_version "1.0")\n'
+        f'  (generator_version "10.0")\n'
         f'  (uuid "{sch_uuid}")\n'
         f'  (paper "A2")\n'
         f'  (title_block\n'
@@ -506,6 +595,17 @@ def make_hub():
     x, y = _conn_pin_xy(FX, FY, 13, len(ft232h_pins))
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, 10.0, sch_uuid))
 
+    # Power flags: one pair per rail used at this level (GND, +5V, +3V3).
+    # Power-symbol nets are global by name, so placing these once here
+    # satisfies ERC's "power input not driven" rule hierarchy-wide — no
+    # regulator/source symbol is modeled at this dev-board-interconnect scope
+    # (see SCHEMATIC_NOTES.md). +1V8 (mic-local supply) is flagged separately
+    # in arm_00.kicad_sch, where it's already used, rather than as a fresh
+    # isolated island here — see main()/_inject_pwr_flag_onto_net().
+    for i, (lib_id, val) in enumerate(
+            [("power:GND", "GND"), ("power:+5V", "+5V"), ("power:+3V3", "+3V3")]):
+        buf.append(_pwr_flag_pair(lib_id, val, 30.0, 20.0 + i * 15.0, sch_uuid))
+
     buf.append(
         '  (text "USB-C/Micro-B cable to Raspberry Pi 5 USB 3.0 port\\n'
         'Standalone: Pi 5 runs beamforming locally\\n'
@@ -532,7 +632,7 @@ def make_top():
         f'(kicad_sch\n'
         f'  (version {KI_VER})\n'
         f'  (generator "{PROJECT}_make_schematic")\n'
-        f'  (generator_version "1.0")\n'
+        f'  (generator_version "10.0")\n'
         f'  (uuid "{top_uuid}")\n'
         f'  (paper "A3")\n'
         f'  (title_block\n'
@@ -614,8 +714,14 @@ def main():
     # in its symbol-instance paths, so patch that to this project's name.
     for arm_idx in range(N_CLUSTERS * 3):
         cluster_idx = arm_idx // 3
-        content, _ = make_arm(arm_idx, clk_label=f"C{cluster_idx}_PDM_CLK", page_num=arm_idx + 7)
+        content, arm_uuid = make_arm(arm_idx, clk_label=f"C{cluster_idx}_PDM_CLK", page_num=arm_idx + 7)
         content = content.replace('(project "mic_array"', f'(project "{PROJECT}"')
+        if arm_idx == 0:
+            # +1V8 (mic-local supply) has no natural home at the cluster/hub
+            # level, unlike GND/+5V/+3V3 — flag it here, where it's already
+            # used, instead of as a fresh isolated island (see
+            # _inject_pwr_flag_onto_net()).
+            content = _inject_pwr_flag_onto_net(content, arm_uuid, "power:+1V8")
         path = os.path.join(OUTDIR, f"arm_{arm_idx:02d}.kicad_sch")
         with open(path, 'w') as fh:
             fh.write(content)
@@ -645,7 +751,7 @@ def main():
     print(f"  {pro_path}")
 
     print(f"\nDone — {N_CLUSTERS} clusters (12 arms, 96 mics total) + 1 hub.")
-    print(f"Open {pro_path} in KiCad 9/10.")
+    print(f"Open {pro_path} in KiCad 10.")
     print("Next steps:")
     print("  1. Run ERC; expected: unconnected DP83848J PHY pins (unused, see PHASE4.md)")
     print("  2. Assign real footprints if this is laid out as a carrier PCB, not point-to-point wiring")
