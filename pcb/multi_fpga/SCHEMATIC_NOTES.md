@@ -69,11 +69,9 @@ Each spoke is an 8-signal parallel bus:
 cap (Cmod A7-35T's DIP/Pmod pins carry the same 25 MHz cap).
 
 Cmod A7-35T has one real Pmod (JA, 8 signals), but all 4 spokes land on the
-hub's 48-pin DIP header instead — including spoke 0, which does get a
-pluggable Pmod-to-Pmod cable on the *cluster* end (Cmod S7's Pmod JA), just
-not on the hub end (see PHASE4.md "Why all-DIP, no Pmod" for why the hub's
-own Pmod goes unused). Alongside the FT232H bridge and TCXO clock in, that's
-45 DIP signals total. Hub-side pin assignment (`CMOD_A7_35T_DIP`, DIP pins in
+hub's 48-pin DIP header instead (see PHASE4.md "Why all-DIP, no Pmod" for why
+the hub's own Pmod goes unused). Alongside the FT232H bridge and TCXO clock
+in, that's 45 DIP signals total. Hub-side pin assignment (`CMOD_A7_35T_DIP`, DIP pins in
 physical order, 45 of the 46 usable — see below): spoke 0 D0-CLK (first 8),
 spoke 1 D0-CLK (next 8), spoke 2 D0-CLK (next 8), spoke 3 D0-CLK (next 8),
 then USB D0-D7/RXF#/TXE#/RD#/WR#, then TCXO clock in — exactly 45, no DIP
@@ -91,6 +89,48 @@ project) — a real constraint file, not reference-manual prose, so the hub's
 pin names are the more reliably-sourced of the two (except DIP pin 16, see
 above). Neither has been verified against a synthesized `.xdc` for *this*
 design specifically; cross-check before committing to real hardware.
+
+### Spoke connector (mechanical): board-to-board, no cable
+
+The hub now mounts at the physical centre of the array (standoff- and
+connector-mated to all 4 cluster boards — see `pcb/layout_multi_fpga.py`'s
+`place_hub()`), which changed how each spoke physically gets from a
+cluster's Cmod S7 to the hub, compared to earlier revisions of this
+document: **a plain 2.54mm 2x6 pin header, plugged directly into the Cmod
+S7's Pmod JA socket, pointing straight back toward the hub and mating with
+a matching 2x6 socket soldered to the hub board** — no cable anywhere.
+Digilent's standard Pmod pinout already reserves pins 5/11 (VCC) and 6/12
+(GND) on every 2x6 Pmod, previously unmodelled on `CMOD_S7_PMOD_JA`'s
+8-signal-only pin list (`SPOKE_VU`/`SPOKE_GND` in `make_cluster()`, wired to
+the same +5V/GND net as this project's other rails) — so the hub also
+sources +5V/GND out to each cluster board through the same connector,
+rather than assuming independent power per cluster board.
+
+This connector is the *physical entry point* for the 8 spoke signals onto
+the hub board only — which of the hub's `CMOD_A7_35T_DIP` pins each one
+ultimately reaches is still exactly what's defined in the spoke bus table
+above; routing traces from the socket to those DIP pins is a later,
+not-yet-done pass (this project is still placement-only, see
+`pcb/layout_multi_fpga.py`'s module docstring).
+
+**Signal integrity flag (not solved, carried forward for the HDL/routing
+pass)**: a plain 2x6 Pmod-style header/socket gives only 1 shared GND pin
+for all 8 signal lines. With 6 data lines + strobe potentially switching
+together, that's simultaneous-switching noise on a single shared return
+path — mediocre-but-usually-fine for a Pmod's typical control/slow-signal
+use, but the one line here that's actually timing-critical is `CLK`: this
+design needs phase-coherent sampling across all 4 clusters for
+beamforming, so jitter injected onto `CLK` by ground bounce matters more
+than it would for a generic control signal. Mitigating factors: the rigid
+standoff-mounted stack keeps the electrical length short and fixed
+(better than a variable-length cable would have been), and the spoke bus
+carries each cluster's already-decimated 48kHz PCM output (a few Mbps
+range per line), not raw multi-MHz PDM, so absolute switching speed is
+modest. Net call: keep the plain header/socket (no reason for a fancier
+connector when Cmod's Pmod is single-ended only regardless), but revisit
+`CLK` once HDL exists — either give it its own adjacent ground pin if the
+Pmod pinout allows, or add a small re-clocking/filter stage on the hub
+side so link jitter doesn't propagate straight into the sample clock.
 
 ---
 
@@ -224,11 +264,23 @@ label lands on-grid by construction.
 
 ## Not yet done
 
-- Footprint assignment (only relevant if this becomes a carrier PCB rather
-  than point-to-point Pmod-cable/DIP wiring between dev boards).
+- This is now laid out as a real carrier PCB (`pcb/layout_multi_fpga.py`):
+  footprints assigned, board outlines drawn, mechanical stack (hub at the
+  array centre, standoffs, spoke connectors, camera, Pi 5) placed — but
+  **placement only, no routing yet**. Traces from each spoke socket to the
+  hub's `CMOD_A7_35T_DIP` pins, PDM traces, and power distribution all
+  still need to be routed.
+- Several mechanical dimensions are placeholders pending physical parts in
+  hand: Cmod S7 pin protrusion (~9mm, sets standoff height), Pi Camera
+  Module 3's lens-barrel diameter (cutout sized generously), Pi 5's exact
+  hole-pattern offsets, and the header/socket pin-length variant needed to
+  match the chosen standoff height — see `pcb/layout_multi_fpga.py`'s
+  `place_hub()` comments for each.
 - FPGA pin names here are from reference-manual text (cluster/Cmod S7) or
   Digilent's own published `.xdc` (hub/Cmod A7-35T) — neither has been
   verified against a synthesized `.xdc` for *this* design specifically;
-  verify before ordering cables/connectors.
+  verify before ordering connectors.
 - No HDL exists yet for either FPGA (see PHASE4.md) — this schematic is the
-  physical interconnect only.
+  physical interconnect only. The spoke connector's signal-integrity flag
+  (shared Pmod ground / `CLK` jitter, see above) should be revisited once
+  it does.

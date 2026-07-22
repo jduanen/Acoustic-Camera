@@ -403,6 +403,14 @@ def _all_lib_symbols():
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
         + [(fpga_pin, f"JA{pos}", "passive")
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
+        # Pmod JA's standard power pins (JA5=GND, JA6=VCC per Digilent's Pmod
+        # spec -- confirm against the reference manual before wiring hardware,
+        # same confidence flag as CMOD_A7_35T_DIP pin 16 elsewhere in this
+        # file), previously left off this symbol since only the 8 signal
+        # pins were needed. Now carrying the hub's +5V/GND out to this
+        # cluster board over the same board-to-board connector as the spoke
+        # signals (see PHASE4.md / SCHEMATIC_NOTES.md "Spoke connector").
+        + [("SPOKE_GND", "JA5", "power_in"), ("SPOKE_VU", "JA6", "power_in")]
     )
     # Hub: same Cmod A7-35T module as used physically — all 45 signals (4
     # spokes + FT232H + TCXO) on its DIP header, no Pmod (see CMOD_A7_35T_DIP
@@ -473,6 +481,7 @@ def make_cluster(idx):
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
         + [(fpga_pin, f"JA{pos}", "passive")
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
+        + [("SPOKE_GND", "JA5", "power_in"), ("SPOKE_VU", "JA6", "power_in")]
     )
     n = len(cmod_pins)
 
@@ -517,6 +526,18 @@ def make_cluster(idx):
         x, y = _conn_pin_xy(CX, CY, 15 + j, n)
         shape = "input" if suffix == "CLK" else "output"
         buf.append(_stub_and_label(x, y, STUB, net, shape=shape, label_angle=180))
+
+    # Spoke connector's power pins (JA5/JA6, pins 23/24): the hub sources
+    # +5V/GND out to this cluster board over the same board-to-board
+    # connector as the spoke signals, rather than assuming independent
+    # power per cluster board -- same +5V/GND net (global power symbol) as
+    # this Cmod S7's own DIP-header VU/GND above, so ERC's existing
+    # PWR_FLAG on the hub's +5V/GND (see SCHEMATIC_NOTES.md) covers this
+    # too, no new flag needed.
+    x, y = _conn_pin_xy(CX, CY, 23, n)
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
+    x, y = _conn_pin_xy(CX, CY, 24, n)
+    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
 
     # 3 arm sub-sheets (this cluster's share of the 96-mic array, reused from
     # pcb/mic_array/'s per-mic wiring via make_arm() — see module docstring).

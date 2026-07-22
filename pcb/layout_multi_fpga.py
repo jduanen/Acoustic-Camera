@@ -58,6 +58,11 @@ DIP48_NAME  = "DIP-48_W15.24mm_Socket"
 LOCAL_LIB   = os.path.join(OUTDIR, "footprints.pretty")
 CAP_FP_LIB  = "/usr/share/kicad/footprints/Capacitor_SMD.pretty"
 CAP_FP_NAME = "C_0603_1608Metric"
+MOUNTHOLE_LIB       = "/usr/share/kicad/footprints/MountingHole.pretty"
+STANDOFF_HOLE_NAME  = "MountingHole_2.7mm_M2.5"  # cluster<->hub standoffs + Pi 5's own holes (both M2.5)
+ENCLOSURE_HOLE_NAME = "MountingHole_3.2mm_M3"     # cluster board -> outer enclosure
+SPOKE_SOCKET_LIB    = "/usr/share/kicad/footprints/Connector_PinSocket_2.54mm.pretty"
+SPOKE_SOCKET_NAME   = "PinSocket_2x06_P2.54mm_Vertical"
 
 # Cmod S7 module: mounted RADIALLY (long axis running outward along the
 # gap between two arms, not across it -- see find_module_placement() for
@@ -126,7 +131,15 @@ def cluster_outline_points(c):
     cut_before = _cut_curve_points(before)
     cut_after = _cut_curve_points(after)
     inner_arc = _arc_points(R_MIN_MM, before, after)
-    outer_arc = _arc_points(R_BOARD_MAX_MM, after, before)
+    # The outer arc must connect the two cut curves' actual endpoints at
+    # r=R_BOARD_MAX_MM, not the "before"/"after" angles -- those only apply
+    # at r=R_MIN_MM (t=0). Both curves sweep an extra degrees(t_max) of
+    # angle by the outer radius (the same spiral-drift mechanism this file
+    # relies on elsewhere), so using the un-swept angles here left a
+    # degrees(t_max)-wide gap at each shoulder that add_outline() drew as a
+    # straight chord cutting across the board near its outer edge.
+    t_max_deg = math.degrees(_t_at_r(R_BOARD_MAX_MM))
+    outer_arc = _arc_points(R_BOARD_MAX_MM, after + t_max_deg, before + t_max_deg)
     return inner_arc + cut_after + outer_arc + list(reversed(cut_before))
 
 
@@ -187,6 +200,21 @@ def add_outline(board, points_mm, width_mm=0.15):
     board.Add(shape)
 
 
+def add_circle_cutout(board, cx_mm, cy_mm, radius_mm, n=32, width_mm=0.15):
+    """A closed circular Edge.Cuts loop fully inside the board's own outline
+    reads as a cutout/hole in KiCad, not a second board -- used for the
+    hub's camera lens opening."""
+    pts = []
+    for i in range(n):
+        ang = 2 * math.pi * i / n
+        pts.append((cx_mm + radius_mm * math.cos(ang), cy_mm + radius_mm * math.sin(ang)))
+    add_outline(board, pts, width_mm=width_mm)
+
+
+def add_mounting_hole(board, lib_name, x_mm, y_mm, ref):
+    board.Add(load_fp(MOUNTHOLE_LIB, lib_name, ref, x_mm, y_mm))
+
+
 # ── cluster board ────────────────────────────────────────────────────────
 
 def _mic_and_cap_xy(x, y):
@@ -242,6 +270,43 @@ def find_module_placement(c, mic_rows):
     return mx, my, rot_deg, max_r
 
 
+def cluster_standoff_xy(c):
+    """Mechanical standoff position for cluster c's hub connection: offset
+    to one side of that cluster's Cmod S7 module, along its short (local
+    +X) axis, clear of the module's own footprint -- so the board-to-board
+    header/socket at the Cmod's own position isn't left bearing the
+    mechanical load of the stack by itself. Same (x,y) is used on both the
+    cluster board (build_cluster()) and the hub board (place_hub()) so the
+    standoff bridges the two."""
+    angle_deg = 90.0 * c + CMOD_S7_PLACEMENT_ANGLE_DEG
+    rot_deg = CMOD_S7_PLACEMENT_ROT_DEG - 90.0 * c
+    theta = math.radians(angle_deg)
+    mx = CMOD_S7_PLACEMENT_R_MM * math.cos(theta)
+    my = CMOD_S7_PLACEMENT_R_MM * math.sin(theta)
+    rot_rad = math.radians(rot_deg)
+    xdir = (math.cos(rot_rad), -math.sin(rot_rad))  # local +X world direction (short axis)
+    # Local-X extent of the DIP-48 footprint runs from its origin out to
+    # ~16.8mm (see _local_courtyard_corners) -- offset from THAT edge, not
+    # from the origin, plus a clearance margin, so the hole doesn't land
+    # inside the module's own courtyard.
+    local_corners = _local_courtyard_corners(DIP48_LIB, DIP48_NAME)
+    x_extent = max(lx for lx, _ in local_corners)
+    # Negative direction checked clearer of nearby mics than positive (the
+    # module isn't centred on local x=0, so the two sides aren't
+    # symmetric) -- verified computationally, not just assumed.
+    offset = -(x_extent + 8.0)
+    return mx + offset * xdir[0], my + offset * xdir[1]
+
+
+# Enclosure-mounting holes: 2 per cluster board, near the outer rim, at
+# +-40deg from that cluster's wedge bisector (90c+30) -- clear of both the
+# Cmod S7 (which sits at +20.2deg from the bisector, see
+# CMOD_S7_PLACEMENT_ANGLE_DEG=50.2 vs the 30deg bisector) and the wedge's
+# own +-45deg boundary (5deg margin so a hole doesn't land right at the
+# board edge).
+ENCLOSURE_HOLE_OFFSET_DEG = 40.0
+
+
 def build_cluster(board, c, mic_rows, module_placement):
     add_outline(board, cluster_outline_points(c))
 
@@ -255,27 +320,117 @@ def build_cluster(board, c, mic_rows, module_placement):
     mx, my, rot_deg = module_placement
     board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{c + 1}", mx, my, rot_deg=rot_deg))
 
+    # Cluster<->hub mechanical standoff.
+    sx, sy = cluster_standoff_xy(c)
+    add_mounting_hole(board, STANDOFF_HOLE_NAME, sx, sy, f"H{c + 1}A")
+
+    # Enclosure mounting, 2 per board, near the outer rim. The wedge centre
+    # drifts with radius (same spiral-drift reasoning as cluster_outline_
+    # points()/find_module_placement()), so it's evaluated at r_enc, not
+    # taken as the fixed 90c+30 that only holds at r=R_MIN.
+    r_enc = R_BOARD_MAX_MM - 15.0
+    bisector_deg_at_r = 90.0 * c + 30.0 + math.degrees(_t_at_r(r_enc))
+    for i, sign in enumerate((-1.0, 1.0)):
+        deg = bisector_deg_at_r + sign * ENCLOSURE_HOLE_OFFSET_DEG
+        ex = r_enc * math.cos(math.radians(deg))
+        ey = r_enc * math.sin(math.radians(deg))
+        add_mounting_hole(board, ENCLOSURE_HOLE_NAME, ex, ey, f"H{c + 1}E{i + 1}")
+
 
 # ── hub board ────────────────────────────────────────────────────────────
+# The hub now mounts at the physical centre of the array (not a
+# disconnected board off to one side): a circular board, standoff- and
+# connector-mated to all 4 cluster boards, with the camera looking forward
+# through a centre cutout and the Pi 5 stacked on the same standoffs
+# behind it. See PHASE4.md / SCHEMATIC_NOTES.md "Spoke connector" for the
+# board-to-board connector choice (plain 2x6 2.54mm header/socket, plugged
+# directly into each Cmod S7's Pmod JA -- no cable) and its flagged
+# signal-integrity caveat (shared Pmod ground / spoke CLK jitter risk, not
+# solved in this pass).
+
+HUB_RADIUS_MM = 105.0  # covers the 4 spoke-connector positions (r=87.8, see
+                       # CMOD_S7_PLACEMENT_R_MM) plus room for the hub's own
+                       # components and the enclosure standoffs
+
+# Camera (Pi Camera Module 3 Wide): PCB 25x24mm, lens module ~12.4mm tall
+# (Raspberry Pi's spec sheet). Lens-barrel diameter wasn't found this
+# session -- cutout sized generously and flagged to confirm against
+# Raspberry Pi's mechanical drawing before fab, same for the mounting-hole
+# spacing (placeholder, camera modules typically use 2 small holes).
+CAMERA_CUTOUT_DIA_MM = 20.0
+CAMERA_MOUNT_HOLE_SPACING_MM = 21.0
+
+# Raspberry Pi 5: 85x56mm board, M2.5 mounting holes on the same pattern as
+# Pi 4 (official mechanical drawing referenced but exact offsets not
+# pulled this session -- placeholder centred rectangle, confirm before
+# fab). Stacks behind the hub on its own standoffs (own hole pattern, not
+# the 4 cluster-facing ones), connected by a short USB cable (Pi 5's USB
+# port is fixed hardware, not a rigid board-to-board link) -- so only its
+# mounting holes are modelled here, not a fabricated outline (it's a
+# purchased board, not one this project cuts).
+RPI5_HOLE_HALF_SPACING_MM = (29.0, 24.5)  # placeholder half-spacing (58x49mm pattern)
+RPI5_CENTRE_XY_MM = (0.0, -160.0)  # clear of HUB_RADIUS_MM entirely (105mm) -- Pi 5 is a
+                                    # purchased board on its own standoffs, doesn't need to
+                                    # share the hub board's own footprint at all
+
+
+def _radial_dip48_pose(r_mm, angle_deg):
+    """Placement math for a DIP-48 module mounted radially (pin 1 at r_mm
+    along angle_deg, body extending further out) -- same convention as
+    find_module_placement(), reused here for the hub's own CMOD_A7_35T.
+    No neighbouring-arm collision concern on the hub, so a direct formula
+    rather than a search."""
+    rot_deg = 90.0 - angle_deg
+    theta = math.radians(angle_deg)
+    return r_mm * math.cos(theta), r_mm * math.sin(theta), rot_deg
+
 
 def place_hub(board):
-    # Simple rectangle, offset well clear of the 4-cluster assembly.
-    hub_w, hub_h = 160.0, 90.0
-    hub_cx, hub_cy = 0.0, -(R_BOARD_MAX_MM + 60.0 + hub_h / 2.0)
-    x0, y0 = hub_cx - hub_w / 2.0, hub_cy - hub_h / 2.0
     add_outline(board, [
-        (x0, y0), (x0 + hub_w, y0), (x0 + hub_w, y0 + hub_h), (x0, y0 + hub_h),
+        (HUB_RADIUS_MM * math.cos(2 * math.pi * i / 64),
+         HUB_RADIUS_MM * math.sin(2 * math.pi * i / 64))
+        for i in range(64)
     ])
+    add_circle_cutout(board, 0.0, 0.0, CAMERA_CUTOUT_DIA_MM / 2.0)
 
-    # CMOD_A7_35T uses the same corner-origin DIP-48 footprint as the
-    # cluster boards' Cmod S7 (pin 1 at the origin, body extending 58.42mm
-    # in the rotated +Y direction -- see find_module_placement()'s comment).
-    board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{N_CLUSTERS + 1}",
-                       hub_cx - 70.0, hub_cy, rot_deg=90.0))
+    # 4x spoke connector sockets -- exact same (x,y) as each cluster's own
+    # Cmod S7 (find_module_placement() reused directly, mic_rows argument
+    # unused by that function), so the socket lines up under the header
+    # plugged into that cluster's Pmod. Rotation matched too, though pin-1
+    # alignment between the two facing connectors still needs a physical
+    # check once parts are in hand (flagged, not verified here).
+    for c in range(N_CLUSTERS):
+        sx, sy, srot, _ = find_module_placement(c, [])
+        board.Add(load_fp(SPOKE_SOCKET_LIB, SPOKE_SOCKET_NAME, f"J{c + 1}", sx, sy, rot_deg=srot))
+        hx, hy = cluster_standoff_xy(c)
+        add_mounting_hole(board, STANDOFF_HOLE_NAME, hx, hy, f"H{c + 1}B")
+
+    # Hub's own CMOD_A7_35T + FT232H + TCXO, tucked into the gaps between
+    # the 4 spoke sockets (each socket sits at 90c+50.2deg -- see
+    # CMOD_S7_PLACEMENT_ANGLE_DEG -- so the gap midpoints are at +45deg
+    # from that, i.e. 90c+95.2deg).
+    ax, ay, arot = _radial_dip48_pose(CMOD_S7_PLACEMENT_R_MM, 95.2)
+    board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{N_CLUSTERS + 1}", ax, ay, rot_deg=arot))
+
+    ft_r, ft_deg = 65.0, 185.2
     board.Add(load_fp(LOCAL_LIB, "FT232H_Breakout", f"A{N_CLUSTERS + 2}",
-                       hub_cx + 18.0, hub_cy, rot_deg=90.0))
+                       ft_r * math.cos(math.radians(ft_deg)), ft_r * math.sin(math.radians(ft_deg)),
+                       rot_deg=90.0 - ft_deg))
+
+    tcxo_r, tcxo_deg = 65.0, 275.2
     board.Add(load_fp(LOCAL_LIB, "TCXO_Can", "Y1",
-                       hub_cx + 50.0, hub_cy))
+                       tcxo_r * math.cos(math.radians(tcxo_deg)), tcxo_r * math.sin(math.radians(tcxo_deg))))
+
+    # Camera mount (placeholder mounting holes either side of the cutout).
+    cx0, cy0 = CAMERA_MOUNT_HOLE_SPACING_MM / 2.0, 0.0
+    add_mounting_hole(board, STANDOFF_HOLE_NAME, -cx0, cy0, "HCAM1")
+    add_mounting_hole(board, STANDOFF_HOLE_NAME, cx0, cy0, "HCAM2")
+
+    # Raspberry Pi 5 mounting holes (own standoffs, stacked behind the hub).
+    prx, pry = RPI5_CENTRE_XY_MM
+    hx, hy = RPI5_HOLE_HALF_SPACING_MM
+    for i, (sx, sy) in enumerate([(-hx, -hy), (hx, -hy), (-hx, hy), (hx, hy)]):
+        add_mounting_hole(board, STANDOFF_HOLE_NAME, prx + sx, pry + sy, f"HPI{i + 1}")
 
 
 # ── main ─────────────────────────────────────────────────────────────────
@@ -317,7 +472,11 @@ def main():
 
     n_fp = len(board.GetFootprints())
     print(f"Saved {OUT_PCB}")
-    print(f"Footprints placed: {n_fp} (expected {96 + 96 + N_CLUSTERS + 3})")
+    # 96 mics + 96 caps + 4 cluster Cmod S7 + hub's (CMOD_A7_35T+FT232H+TCXO=3)
+    # + 4 spoke sockets + mounting holes: 4 cluster-side + 4 hub-side
+    # standoffs, 8 cluster enclosure holes, 2 camera, 4 Pi 5 = 26 holes/sockets.
+    expected = 96 + 96 + N_CLUSTERS + 3 + N_CLUSTERS + (4 + 4 + 8 + 2 + 4)
+    print(f"Footprints placed: {n_fp} (expected {expected})")
     print(f"R_BOARD_MAX_MM = {R_BOARD_MAX_MM:.2f}")
 
 
