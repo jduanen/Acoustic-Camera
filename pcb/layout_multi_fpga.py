@@ -174,17 +174,6 @@ def _true_corners(px_mm, py_mm, rot_deg, local_corners):
             for lx, ly in local_corners]
 
 
-def _point_in_poly(x, y, poly):
-    inside = False
-    j = len(poly) - 1
-    for i, (xi, yi) in enumerate(poly):
-        xj, yj = poly[j]
-        if (yi > y) != (yj > y) and x < (xj - xi) * (y - yi) / (yj - yi) + xi:
-            inside = not inside
-        j = i
-    return inside
-
-
 def add_outline(board, points_mm, width_mm=0.15):
     shape = pcbnew.PCB_SHAPE(board)
     shape.SetShape(pcbnew.SHAPE_T_POLY)
@@ -198,185 +187,59 @@ def add_outline(board, points_mm, width_mm=0.15):
     board.Add(shape)
 
 
-# ── exact (closed-form) wedge membership, for the Cmod S7 placement search ──
-# cluster_outline_points()'s polygon is sampled (24 points/curve) and good
-# enough for drawing Edge.Cuts and the earlier corner-containment check, but
-# the wedge boundary has a closed form: at any radius r, the wedge is
-# exactly the +-45deg band around wedge_center_deg(c, r) (both boundary
-# curves are the same spiral offset by a constant 90deg, so the band width
-# is exactly 90deg at every radius -- see module docstring). Using the
-# closed form here avoids sampling-resolution error while searching.
-
-def _wedge_center_deg(c, r_mm):
-    return 90.0 * c + 30.0 + math.degrees(_t_at_r(r_mm))
-
-
-def _angle_diff(a_deg, b_deg):
-    return (a_deg - b_deg + 180.0) % 360.0 - 180.0
-
-
-def _point_in_own_wedge(c, x, y, half_width_deg=45.0):
-    r = math.hypot(x, y)
-    if r < R_MIN_MM:
-        return False
-    ang = math.degrees(math.atan2(y, x))
-    return abs(_angle_diff(ang, _wedge_center_deg(c, r))) <= half_width_deg
-
-
-# ── obstacle collision (mic/cap footprints vs. a candidate module pose) ─────
-
-def _to_local(px_mm, py_mm, rot_deg, ox_mm, oy_mm):
-    """World point (ox,oy) expressed in the local frame of a footprint
-    placed at (px,py) with the given rotation -- inverse of _true_corners()'s
-    transform. xdir/ydir are orthonormal, so the inverse is just a dot
-    product against each."""
-    t = math.radians(rot_deg)
-    xdir = (math.cos(t), -math.sin(t))
-    ydir = (math.sin(t), math.cos(t))
-    dx, dy = ox_mm - px_mm, oy_mm - py_mm
-    return dx * xdir[0] + dy * xdir[1], dx * ydir[0] + dy * ydir[1]
-
-
-def _collides(px_mm, py_mm, rot_deg, local_bbox, obstacles):
-    """obstacles: list of (x_mm, y_mm, radius_mm) circular proxies (mic/cap
-    courtyards). local_bbox: (x0,y0,x1,y1) of the module's own footprint in
-    its local frame."""
-    x0, y0, x1, y1 = local_bbox
-    for ox, oy, orad in obstacles:
-        lx, ly = _to_local(px_mm, py_mm, rot_deg, ox, oy)
-        if (x0 - orad) <= lx <= (x1 + orad) and (y0 - orad) <= ly <= (y1 + orad):
-            return True
-    return False
-
-
 # ── cluster board ────────────────────────────────────────────────────────
-
-MIC_COURTYARD_RADIUS_MM = 3.2   # IM72D128 courtyard half-extent, rounded up
-CAP_COURTYARD_RADIUS_MM = 1.55  # C_0603 courtyard half-extent, rounded up
-
-# Cmod S7 search range/resolution -- see find_module_placement().
-_GAP_R_MIN_MM   = R_MIN_MM + 5.0
-_GAP_R_MAX_MM   = R_MAX_MM + 60.0
-_GAP_R_STEP_MM  = 0.5
-_GAP_DELTA_DEG  = 60.0
-_GAP_DELTA_STEP = 0.5
-
 
 def _mic_and_cap_xy(x, y):
     """Cap position for a mic at (x,y): offset 3mm further out along the
     mic's own radial direction from the array centre. Shared by the
-    obstacle list (find_module_placement()) and the actual placement
-    (build_cluster()) so the search sees exactly what gets placed."""
+    obstacle check (find_module_placement()) and the actual placement
+    (build_cluster()) so the check sees exactly what gets placed."""
     r = math.hypot(x, y)
     if r > 0:
         return x + 3.0 * x / r, y + 3.0 * y / r
     return x + 3.0, y
 
 
+# Cmod S7 placement: fixed constants approximating a manual layout the
+# user dragged/rotated in KiCad (recovered from
+# pcb/multi_fpga/.history's local-history git repo, commit 9d35787 "PCB
+# Save", after it had been overwritten in the working tree by rerunning
+# this script's previous (collision-search-based) version -- the .history
+# snapshot was the only surviving copy of the manual edit). Averaged
+# across the 4 (independently dragged, so not perfectly identical)
+# instances found there:
+#   radius: 87.41, 88.33, 86.56, 88.88 -> avg 87.8mm
+#   position angle, relative to each cluster's own 90c base: 49.53,
+#     51.18, 50.53, 49.44 -> avg 50.2deg (jitter of ~1deg either way,
+#     consistent with a hand-dragged position, same pattern seen earlier
+#     in this project's schematic repositioning)
+#   rotation: exactly 30, -60, -150, 120 deg for c=0..3 -- i.e. exactly
+#     30-90c with NO jitter at all, unlike position (suggests the
+#     rotation was set precisely, e.g. via the footprint properties
+#     dialog, rather than free-dragged)
+# Confirmed collision-free against this project's actual mic/cap
+# footprints and fully contained in each module's own cluster wedge (see
+# chat verification) before adopting this as the fixed layout.
+CMOD_S7_PLACEMENT_R_MM     = 87.8
+CMOD_S7_PLACEMENT_ANGLE_DEG = 50.2  # offset from each cluster's own 90*c base
+CMOD_S7_PLACEMENT_ROT_DEG   = 30.0  # rot_deg = CMOD_S7_PLACEMENT_ROT_DEG - 90*c
+
+
 def find_module_placement(c, mic_rows):
-    """Search for where cluster c's Cmod S7 module goes: tucked into the
-    natural gap between this cluster's 2nd and 3rd arms (arm indices
-    3c+1, 3c+2 -- an arbitrary but fixed choice of which of the cluster's
-    2 internal arm-to-arm gaps to use, consistent across all 4 clusters),
-    as far in towards the array centre as it can go without colliding
-    with a mic or its decoupling cap.
-
-    Orientation is now RADIAL (long axis running along the gap, outward
-    from the centre), not tangential (across it) -- that gap is a wedge
-    that narrows towards the centre and widens outward (the two arms
-    diverge with radius, same as every arm-to-arm gap), so a long thin
-    module fits it lengthwise, the way a book fits a shelf, rather than
-    lying across it. Short axis (radial version: local +X) sits centred
-    on the gap's angular bisector; long axis (local +Y) points straight
-    out along it, pin-1 end innermost.
-
-    The gap's angular centre is tracked with radius the same way the
-    wedge bisector is (see cluster_outline_points()'s docstring on spiral
-    drift): at r=R_MAX_MM this is exactly 15deg off the wedge's own
-    bisector (which sits on arm 3c+1's own curve) -- i.e. comfortably
-    inside this cluster's own wedge (half-width 45deg), not near either
-    boundary, so the binding constraint here is mic/cap collision, not the
-    board edge.
-
-    Returns (mx, my, rot_deg, max_corner_radius_mm)."""
-    obstacles = []
-    for row in mic_rows:
-        x, y = float(row["x_mm"]), float(row["y_mm"])
-        obstacles.append((x, y, MIC_COURTYARD_RADIUS_MM))
-        cx, cy = _mic_and_cap_xy(x, y)
-        obstacles.append((cx, cy, CAP_COURTYARD_RADIUS_MM))
+    """Cmod S7 placement for cluster c -- see CMOD_S7_PLACEMENT_* comment
+    above. mic_rows is unused (kept in the signature since build_cluster()
+    and main() already pass it, and a future revision may want it again
+    for a collision check) but the placement itself is now a fixed formula,
+    not searched. Returns (mx, my, rot_deg, max_corner_radius_mm)."""
+    angle_deg = 90.0 * c + CMOD_S7_PLACEMENT_ANGLE_DEG
+    rot_deg = CMOD_S7_PLACEMENT_ROT_DEG - 90.0 * c
+    theta = math.radians(angle_deg)
+    mx, my = CMOD_S7_PLACEMENT_R_MM * math.cos(theta), CMOD_S7_PLACEMENT_R_MM * math.sin(theta)
 
     local_corners = _local_courtyard_corners(DIP48_LIB, DIP48_NAME)
-    xs = [p[0] for p in local_corners]
-    ys = [p[1] for p in local_corners]
-    local_bbox = (min(xs), min(ys), max(xs), max(ys))
-    # Pin 1 (the footprint's local origin) sits at one END of the SHORT
-    # (local X) axis too, not its centre -- shift so the short axis's
-    # true midpoint, not the origin, lands on the gap's bisector line.
-    short_axis_centre_shift = -(local_bbox[0] + local_bbox[2]) / 2.0
-
-    def place_at(r0, extra_delta_deg):
-        """r0: radius of the pin-1 (innermost) end of the module, along
-        the gap's own bisector line."""
-        angle_deg = 90.0 * c + 45.0 + math.degrees(_t_at_r(r0)) + extra_delta_deg
-        rot_deg = 90.0 - angle_deg  # local +Y -> world angle angle_deg (radial); see module docstring's rotation derivation
-        theta = math.radians(angle_deg)
-        rot_rad = math.radians(rot_deg)
-        xdir = (math.cos(rot_rad), -math.sin(rot_rad))  # local +X world direction (tangential)
-        mx = r0 * math.cos(theta) + short_axis_centre_shift * xdir[0]
-        my = r0 * math.sin(theta) + short_axis_centre_shift * xdir[1]
-        return mx, my, rot_deg
-
-    def fits(r0, extra_delta_deg):
-        mx, my, rot_deg = place_at(r0, extra_delta_deg)
-        if _collides(mx, my, rot_deg, local_bbox, obstacles):
-            return False
-        corners = _true_corners(mx, my, rot_deg, local_corners)
-        return all(_point_in_own_wedge(c, x, y) for x, y in corners)
-
-    def largest_contiguous_run_midpoint(deltas_sorted):
-        """deltas_sorted: ascending list of deltas that individually pass
-        fits(). With real point obstacles (mics/caps) in the way, the
-        valid set isn't necessarily one contiguous band -- there can be a
-        clear window on each side of an obstacle with a blocked gap in
-        between. Taking the midpoint of the overall min/max (fine when the
-        only constraint was the two smooth boundary curves) can land
-        straight in such a gap. Find the widest contiguous run instead and
-        use its midpoint."""
-        runs = []
-        start = deltas_sorted[0]
-        prev = start
-        for d in deltas_sorted[1:]:
-            if d - prev > _GAP_DELTA_STEP * 1.5:
-                runs.append((start, prev))
-                start = d
-            prev = d
-        runs.append((start, prev))
-        lo, hi = max(runs, key=lambda run: run[1] - run[0])
-        return (lo + hi) / 2.0
-
-    n_r = int(round((_GAP_R_MAX_MM - _GAP_R_MIN_MM) / _GAP_R_STEP_MM))
-    n_d = int(round(2 * _GAP_DELTA_DEG / _GAP_DELTA_STEP))
-    for i in range(n_r + 1):
-        r0 = _GAP_R_MIN_MM + i * _GAP_R_STEP_MM
-        ok_deltas = [
-            -_GAP_DELTA_DEG + j * _GAP_DELTA_STEP
-            for j in range(n_d + 1)
-            if fits(r0, -_GAP_DELTA_DEG + j * _GAP_DELTA_STEP)
-        ]
-        if ok_deltas:
-            extra_delta_deg = largest_contiguous_run_midpoint(ok_deltas)
-            # The midpoint is derived from the coarse scan grid, not
-            # verified directly -- confirm it (it should always pass,
-            # since it's built from two points that did, but the module
-            # is a rigid shape so don't trust that blindly).
-            if fits(r0, extra_delta_deg):
-                mx, my, rot_deg = place_at(r0, extra_delta_deg)
-                corners = _true_corners(mx, my, rot_deg, local_corners)
-                max_r = max(math.hypot(x, y) for x, y in corners)
-                return mx, my, rot_deg, max_r
-
-    raise RuntimeError(f"cluster {c}: no collision-free placement found for the Cmod S7 module")
+    corners = _true_corners(mx, my, rot_deg, local_corners)
+    max_r = max(math.hypot(x, y) for x, y in corners)
+    return mx, my, rot_deg, max_r
 
 
 def build_cluster(board, c, mic_rows, module_placement):
