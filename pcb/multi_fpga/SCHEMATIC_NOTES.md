@@ -14,7 +14,7 @@ numbers. `mic_array` and `multi_fpga` are deliberately separate KiCad projects
 (mutually exclusive alternative front-ends) — only that one generator function
 is shared, not the projects themselves.
 
-Dev boards (Cmod S7, Arty A7-35T) are drawn as simplified connector-block
+Dev boards (Cmod S7, Cmod A7-35T) are drawn as simplified connector-block
 symbols exposing only the header pins actually used, not Digilent's own
 internal board schematic.
 
@@ -27,7 +27,7 @@ internal board schematic.
 | `top.kicad_sch` | 4x cluster sub-sheet + 1x hub sub-sheet |
 | `cluster_00..03.kicad_sch` | Cmod S7 (A1-A4) + spoke bus to hub + 3x arm sub-sheet |
 | `arm_00..11.kicad_sch` | Per-mic wiring (8 mics each), reused from `pcb/mic_array/` |
-| `hub.kicad_sch` | Arty A7-35T (A5) + 4x spoke bus + TCXO (Y1) + USB bridge (A6) |
+| `hub.kicad_sch` | Cmod A7-35T (A5) + 4x spoke bus (all DIP, no Pmod) + TCXO (Y1) + USB bridge (A6) |
 
 Page numbering: 1 = top, 2-5 = cluster_00-03, 6 = hub, 7-18 = arm_00-11 (in
 cluster order: cluster N's arms are 3N, 3N+1, 3N+2, i.e. pages 7+3N..9+3N).
@@ -40,7 +40,7 @@ cluster order: cluster N's arms are 3N, 3N+1, 3N+2, i.e. pages 7+3N..9+3N).
 |---|---|---|
 | A1-A4 | cluster_00-03 | Digilent Cmod S7 (XC7S25-1CSGA225C), one per cluster |
 | U1-U96, C1-C96 | arm_NN | IM72D128 mics + decoupling caps — same numbering as `pcb/mic_array/` |
-| A5 | hub | Digilent Arty A7-35T (XC7A35TICSG324-1L) |
+| A5 | hub | Digilent Cmod A7-35T (XC7A35T-1CPG236C) |
 | A6 | hub | FTDI FT232H USB-FIFO breakout (e.g. Adafruit #2264) |
 | Y1 | hub | 12.288 MHz TCXO (NDK NZ2520SD or TXC 7M series, ±2.5 ppm) |
 
@@ -53,25 +53,44 @@ clusters' Cmod S7 said "U1"); fixed by moving them to their own prefix.
 
 ## Spoke bus: parallel single-ended, not LVDS
 
-Every Cmod S7 I/O pin (Pmod JA and the 48-pin DIP header alike) runs through a
-200-240Ω series protection resistor, capped at 25 MHz — there is no
-differential-capable pin anywhere on the module. See PHASE4.md's "Spoke link"
-section for the full reasoning. Each spoke is instead an 8-signal parallel bus
-on Cmod S7's single Pmod (JA):
+Both the cluster's Cmod S7 and the hub's Cmod A7-35T run every exposed I/O pin
+(Pmod and 48-pin DIP header alike) through a 200-240Ω series protection
+resistor, capped at 25 MHz — there is no differential-capable pin anywhere on
+either module. See PHASE4.md's "Spoke link" section for the full reasoning.
+Each spoke is an 8-signal parallel bus:
 
-| Signal | Cluster (Cmod S7 Pmod JA) | Hub (Arty Pmod, per spoke) | Direction |
+| Signal | Cluster (Cmod S7 Pmod JA) | Hub | Direction |
 |---|---|---|---|
 | D0-D5 | 6 data bits | 6 data bits | cluster → hub |
 | STROBE | byte/word strobe | — | cluster → hub |
 | CLK | forwarded PDM clock | — | hub → cluster |
 
 ~4.6 MHz per wire (27.6 Mbps ÷ 6 bits) — ~5x margin under the Cmod S7's 25 MHz
-cap.
+cap (Cmod A7-35T's DIP/Pmod pins carry the same 25 MHz cap).
 
-Spoke-to-Pmod assignment (hub side): SPOKE0→Arty JA, SPOKE1→JB, SPOKE2→JC,
-SPOKE3→JD. Real FPGA pin names for both ends come straight from the Digilent
-reference manuals (Cmod S7 RM §8, Arty A7 RM §10) — **not** verified against a
-synthesized `.xdc`; cross-check before committing to real hardware.
+Cmod A7-35T has one real Pmod (JA, 8 signals), but all 4 spokes land on the
+hub's 48-pin DIP header instead — including spoke 0, which does get a
+pluggable Pmod-to-Pmod cable on the *cluster* end (Cmod S7's Pmod JA), just
+not on the hub end (see PHASE4.md "Why all-DIP, no Pmod" for why the hub's
+own Pmod goes unused). Alongside the FT232H bridge and TCXO clock in, that's
+45 DIP signals total. Hub-side pin assignment (`CMOD_A7_35T_DIP`, DIP pins in
+physical order, 45 of the 46 usable — see below): spoke 0 D0-CLK (first 8),
+spoke 1 D0-CLK (next 8), spoke 2 D0-CLK (next 8), spoke 3 D0-CLK (next 8),
+then USB D0-D7/RXF#/TXE#/RD#/WR#, then TCXO clock in — exactly 45, no DIP
+pins left spare. The 45th signal needed one more pin than the 44
+confirmed-digital DIP pins provide; filled by DIP pin 16 (FPGA ball H2),
+documented by Digilent as an XADC auxiliary analog input (`vaux12`) rather
+than plain GPIO — unused-for-analog 7-series aux pins are ordinary fabric
+I/O, and this design has no XADC use, but this specific pin hasn't been
+confirmed against a plain-GPIO-mode example the way the other 44 have.
+
+Real FPGA pin names for both ends come from Digilent's own reference
+material: cluster (Cmod S7) from the RM §8 text table, hub (Cmod A7-35T)
+from Digilent's published `CmodA7_Master.xdc` (`Cmod-A7-35T-GPIO` reference
+project) — a real constraint file, not reference-manual prose, so the hub's
+pin names are the more reliably-sourced of the two (except DIP pin 16, see
+above). Neither has been verified against a synthesized `.xdc` for *this*
+design specifically; cross-check before committing to real hardware.
 
 ---
 
@@ -101,12 +120,14 @@ across the four 9-pin header blocks before wiring.
 ## Host interface: USB bridge to Raspberry Pi 5
 
 No GbE MAC or RGMII PHY on the hub — see PHASE4.md's "Host interface" section.
-`A6` (FT232H) talks a synchronous 245-mode 8-bit FIFO to the hub over the
-Arty's shield connector (`IO0`-`IO7` = data, `IO8`-`IO11` = `RXF#`/`TXE#`/
-`RD#`/`WR#`), then a USB cable to a Raspberry Pi 5 USB 3.0 port (device is
-USB2 Hi-Speed, ~320 Mbps, well over the 110 Mbps payload). The Arty's own
-on-board 10/100 Ethernet PHY (TI DP83848J) is unused — it can't carry the
-required bandwidth (110 Mbps > 100 Mbps) and it's not part of this design.
+`A6` (FT232H) talks a synchronous 245-mode 8-bit FIFO to the hub over 12 of
+the hub's DIP pins (`USB_D0`-`USB_D7` = data, `USB_RXF_N`/`USB_TXE_N`/
+`USB_RD_N`/`USB_WR_N` = control — see Spoke bus, above, for how these share
+the DIP header with all 4 spokes), then a USB cable to a Raspberry Pi 5 USB 3.0
+port (device is USB2 Hi-Speed, ~320 Mbps, well over the 110 Mbps payload).
+Cmod A7-35T has no on-board Ethernet PHY at all (unlike the Arty A7-35T
+originally considered — see PHASE4.md "Why Cmod A7-35T, not Arty A7-35T"), so
+there's nothing to leave unused here.
 
 ---
 
@@ -196,8 +217,10 @@ label lands on-grid by construction.
 ## Not yet done
 
 - Footprint assignment (only relevant if this becomes a carrier PCB rather
-  than point-to-point Pmod-cable wiring between dev boards).
-- FPGA pin names here are from reference-manual text, not a synthesized
-  `.xdc` — verify before ordering cables/connectors.
+  than point-to-point Pmod-cable/DIP wiring between dev boards).
+- FPGA pin names here are from reference-manual text (cluster/Cmod S7) or
+  Digilent's own published `.xdc` (hub/Cmod A7-35T) — neither has been
+  verified against a synthesized `.xdc` for *this* design specifically;
+  verify before ordering cables/connectors.
 - No HDL exists yet for either FPGA (see PHASE4.md) — this schematic is the
   physical interconnect only.

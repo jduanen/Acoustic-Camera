@@ -91,11 +91,10 @@ further connector reduction.
   calibrate-once per-spoke cable-length skew, not drift). Reassembles the 4 incoming streams
   (96 channels total) and frames the result out over a **USB FIFO bridge to a
   Raspberry Pi 5** (see Host interface below) — no GbE MAC, no RGMII PHY chip, no Ethernet
-  routing on the hub board at all. Available on the **Arty A7-35T dev board** (~$130) — the
-  single-FPGA alternate's FMC LPC connector was needed for 48 direct PDM lines; a hub handling
-  only 4 spoke links plus a USB bridge doesn't need it, so a cheaper board works. (The
-  Arty A7-35T's own on-board 10/100 Ethernet PHY goes unused here — irrelevant now that the
-  hub doesn't speak Ethernet at all, see Host interface below.)
+  routing on the hub board at all. Available on the **Digilent Cmod A7-35T module** (~$99) —
+  same compact 48-pin DIP breadboardable form factor as the cluster tiles' Cmod S7 (see "Why
+  Cmod A7-35T, not Arty A7-35T" below); no on-board Ethernet PHY to leave unused, since this
+  module doesn't have one at all.
 
 Star topology, not a daisy-chain: each cluster connects directly to the hub over its own
 short link (clusters already sit close to the center), rather than chaining cluster→
@@ -114,20 +113,20 @@ of it.
 
 #### Spoke link: parallel single-ended bus, not LVDS
 
-The Cmod S7's exposed I/O (its one Pmod, and its 48-pin DIP header) routes every pin through
-a 200-240Ω series protection resistor, capped at 25 MHz — standard practice for a
-breadboard-friendly module, but it rules out true differential LVDS: a series resistor at
-the connector breaks the controlled 100Ω differential impedance a real LVDS receiver needs.
-Digilent only exposes genuine shunt-configurable/high-speed differential pins on other
-boards (e.g. the Arty's JB/JC); the Cmod S7 has no such option on either connector.
+Both the cluster's Cmod S7 and the hub's Cmod A7-35T route every exposed I/O pin (Pmod and
+48-pin DIP header alike) through a 200-240Ω series protection resistor, capped at 25 MHz —
+standard practice for a breadboard-friendly module on both boards, but it rules out true
+differential LVDS: a series resistor at the connector breaks the controlled 100Ω
+differential impedance a real LVDS receiver needs. Digilent only exposes genuine
+shunt-configurable/high-speed differential pins on other boards (e.g. the Arty A7's JB/JC);
+neither Cmod module has that option on any connector.
 
-Instead, each spoke is an ordinary **parallel single-ended bus** on the Cmod S7's single
-8-signal Pmod: **6 data bits + 1 strobe + 1 forwarded PDM clock (in) = 8 signals**, one
-Pmod-to-Pmod cable per spoke. 27.6 Mbps payload ÷ 6 bits ≈ 4.6 MHz per wire — about 5×
-margin under the 25 MHz cap, comfortable for a short cable at prototype stage. The hub side
-needs no differential-capable connector either; any of the Arty A7's 4 Pmods work
-identically for single-ended signaling, so the earlier "high-speed Pmod" distinction on the
-hub board is moot.
+Instead, each spoke is an ordinary **parallel single-ended bus**: **6 data bits + 1 strobe +
+1 forwarded PDM clock (in) = 8 signals**, one cable per spoke. 27.6 Mbps payload ÷ 6 bits ≈
+4.6 MHz per wire — about 5× margin under the 25 MHz cap, comfortable for a short cable at
+prototype stage. Cluster-side, all 4 clusters carry their spoke on the same connector (Cmod
+S7's single Pmod, JA). Hub-side, all 4 spokes land on the hub's DIP header, not its Pmod —
+see "Why all-DIP, no Pmod" below.
 
 #### Host interface: USB bridge to Raspberry Pi 5
 
@@ -138,7 +137,8 @@ below):
 
 - **Hub → Pi 5**: one **FTDI FT232H** USB-to-FIFO bridge (~$5 chip, ~$15 breakout module),
   wired to the hub FPGA as a synchronous 245-mode 8-bit parallel FIFO (~12 signals: 8 data +
-  RXF#/TXE#/RD#/WR#, no SerDes/GTP needed — fits a single Pmod-style header). USB 2.0
+  RXF#/TXE#/RD#/WR#, no SerDes/GTP needed — a small enough pin count to fit on the hub's
+  DIP header alongside the spoke links, see Spoke link above). USB 2.0
   Hi-Speed sync-FIFO mode sustains ~320 Mbps, comfortably over the 110 Mbps (96ch × 24-bit ×
   48kHz) payload, with headroom to spare if channel count or bit depth grows later. Talks to
   either of the Pi 5's USB 3.0 ports (USB2-speed device, backward compatible).
@@ -171,6 +171,48 @@ correction) — while still being a small, cheap part relative to the XC7A200T i
 With GbE gone, LUT budget no longer drives this choice at all in either direction; it's
 purely a bet on whether future hub-side additions are worth keeping open. All-XC7S25
 remains a documented lower-cost/single-part-number fallback if that headroom isn't needed.
+
+#### Why Cmod A7-35T, not Arty A7-35T
+
+The chip choice above (XC7A35T) is independent of which physical board carries it. The
+original build used the **Arty A7-35T dev board** (~$130): 4 pluggable Pmods (one per spoke
+— no DIP-header wiring needed) plus a shield connector roomy enough for the FT232H bridge,
+at the cost of being a full-size dev board unlike the clusters' compact Cmod S7 modules.
+
+Chosen instead: the **Digilent Cmod A7-35T module** (~$99) — same XC7A35T die, but in the
+identical 48-pin DIP breadboardable form factor as the cluster tiles' Cmod S7, rather than a
+different, larger board family for the one-off hub. Digilent's own reference design
+(`Cmod-A7-35T-GPIO`) confirms 44 digital DIP GPIO pins across the header, enough on its own
+for all 4 spokes (32 signals) + the FT232H bridge (12) + TCXO clock in (1) = 45 signals with
+1 pin to spare, once the module's one Pmod is also folded into the DIP-wired scheme — see
+"Why all-DIP, no Pmod" below.
+
+The tradeoff: unlike the Arty's 4 identical pluggable Pmods, none of the hub's spoke cables
+get a plug-and-play connector — all 4 spokes plus the FT232H breakout are point-to-point
+wiring on the DIP header. A real, if modest, bring-up inconvenience relative to the Arty. In
+exchange: one part family (Cmod, not Cmod + Arty) across all 5 tiles, a smaller/cheaper
+board, and a form factor that fits the same rev-2 compact-tile ambition already planned for
+the clusters (see Rev-2, in Hardware Sub-Tasks below) instead of needing a separate path for
+the hub.
+
+#### Why all-DIP, no Pmod
+
+Cmod A7-35T does have one real Pmod (JA, 8 signals) — the first version of this hub kept
+spoke 0 on it, matching how every cluster's own spoke already uses a pluggable Pmod cable,
+and used the DIP header only for spokes 1-3 + FT232H + TCXO (37 of 44 DIP pins).
+
+Moved everything to the DIP header instead, spoke 0 included: mixing connector types (1
+Pmod cable + DIP wiring for the rest) is *more* bring-up complexity than a single consistent
+scheme, not less — one cable type to keep track of, one set of DIP wiring for the whole
+board, rather than "which spoke is the pluggable one" as a special case to remember. The
+cost is one additional DIP pin: 4 full spokes + FT232H + TCXO = 45 signals, one more than
+the 44 confirmed-digital DIP pins. Filled by DIP pin 16 — documented as an XADC auxiliary
+analog input (`vaux12`) rather than plain GPIO, but 7-series aux-analog pins are ordinary
+fabric I/O when not driven into analog mode (the same reasoning already applied to unused
+analog-capable FMC pins on the single-FPGA alternate's mic-array connector, and this design
+has no use for the XADC at all). This specific pin hasn't been confirmed against a
+plain-GPIO-mode example from Digilent, unlike the other 44 — flag for verification before
+ordering hardware.
 
 #### Why this design satisfies the modularity/cost motivation
 
@@ -599,15 +641,16 @@ Phase 4 is split into three parallel workstreams that merge at integration.
 |---|---|---|
 | **Procure 4× Cmod S7** | Digilent ~$45 each (~$180 total); XC7S25, BGA pre-mounted; includes Vivado WebPACK license | None |
 | **HDL development** | CIC + FIR + spoke bus framing pipeline in Verilog/VHDL, 24ch; test on one Cmod S7 before duplicating to the other 3 | Cmod S7 in hand |
-| **Spoke bus cabling** | Pmod-to-Pmod cable per cluster (8 signals: 6 data + strobe + fwd clock, see Spoke link) | HDL ping-pong test passing |
+| **Spoke bus cabling** | Pmod cable per cluster (8 signals: 6 data + strobe + fwd clock, see Spoke link) — Cmod S7's Pmod JA to flying leads on the hub's DIP header, not Pmod-to-Pmod (see "Why all-DIP, no Pmod") | HDL ping-pong test passing |
 
-### Workstream 2 — Hub (Arty A7-35T dev board)
+### Workstream 2 — Hub (Cmod A7-35T module)
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **Procure Arty A7-35T** | Digilent ~$130; XC7A35T + 4 Pmod + shield connector; includes Vivado WebPACK license | None |
+| **Procure Cmod A7-35T** | Digilent ~$99; XC7A35T, 48-pin DIP + 1 Pmod; includes Vivado WebPACK license | None |
 | **Procure FT232H breakout** | ~$15 (e.g. Adafruit #2264); USB 2.0 Hi-Speed sync FIFO bridge to Pi 5 | None |
-| **HDL development** | Clock generation/forwarding + spoke deframing/reassembly + USB FIFO framing; test on Arty A7-35T | Arty in hand |
+| **Spoke + FT232H wiring** | All 4 spokes + FT232H bridge: point-to-point wiring on the DIP header, no Pmod cables (see "Why all-DIP, no Pmod", above) | Cmod A7-35T in hand |
+| **HDL development** | Clock generation/forwarding + spoke deframing/reassembly + USB FIFO framing; test on Cmod A7-35T | Cmod A7-35T in hand |
 
 ### Workstream 3 — Mic array PCB
 
@@ -622,7 +665,7 @@ Phase 4 is split into three parallel workstreams that merge at integration.
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **First integration** | Connect mic array PCB quadrants to their Cmod S7 clusters, clusters to the Arty hub via spoke cables, hub to Pi 5 via USB; verify all 96 PDM channels on ILA | All 3 workstreams complete |
+| **First integration** | Connect mic array PCB quadrants to their Cmod S7 clusters, clusters to the Cmod A7-35T hub via spoke cables/DIP wiring, hub to Pi 5 via USB; verify all 96 PDM channels on ILA | All 3 workstreams complete |
 | **Host software** | USB ingestion (Config A) / GbE relay (Config B) + 96-ch pipeline; extend `acoustic_camera_p3.py` → `acoustic_camera_p4.py` | Hub producing a valid USB stream |
 | **Camera** | Pi Camera Module 3 Wide (Config A) or USB webcam (Config B) | Host software running |
 | **Calibration** | Gain + phase estimation at 96-ch scale; extend nb17 approach | Hardware assembled |
@@ -677,8 +720,8 @@ housing.
 - Underbrink multi-arm log-spiral array patent — geometry basis
 - Infineon IM72D128 datasheet — mic specs and PDM timing
 - FTDI FT232H datasheet + D2XX/D3XX driver docs — USB sync-FIFO bridge (primary design's hub)
-- Digilent Cmod S7 / Arty A7 reference manuals — connector pinouts, FPGA pin names (primary
-  design's dev boards)
+- Digilent Cmod S7 / Cmod A7-35T reference manuals — connector pinouts, FPGA pin names
+  (primary design's dev-board modules)
 - Xilinx TEMAC IP core product guide (PG051) — GbE MAC integration (single-FPGA alternate)
 - `alexforencich/verilog-ethernet` — open-source GbE MAC, alternative to TEMAC (single-FPGA
   alternate)

@@ -15,14 +15,14 @@ level deeper: top -> cluster -> arm, vs. mic_array's top -> arm).
 
 Dev boards are represented as simplified connector-block symbols exposing
 only the physical header pins actually used, labeled with their real FPGA
-pin names (from the Cmod S7 / Arty A7 reference manuals) — not a redraw of
-Digilent's own internal board schematic.
+pin names (from the Cmod S7 / Cmod A7-35T reference manuals) — not a redraw
+of Digilent's own internal board schematic.
 
 Outputs (in pcb/multi_fpga/):
   top.kicad_sch                    — root sheet: 4 cluster sub-sheets + 1 hub sub-sheet
   cluster_00..03.kicad_sch         — Cmod S7 + spoke bus + 3 arm sub-sheets each
   arm_00..11.kicad_sch             — per-mic wiring, reused from make_schematic.make_arm()
-  hub.kicad_sch                    — Arty A7-35T + 4 spoke buses + TCXO + USB bridge
+  hub.kicad_sch                    — Cmod A7-35T + 4 spoke buses + TCXO + USB bridge
   multi_fpga.kicad_pro             — KiCad project file
 
 multi_fpga and mic_array are deliberately separate KiCad projects (mutually
@@ -57,28 +57,41 @@ KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 # link: parallel single-ended bus, not LVDS").
 CMOD_S7_PMOD_JA = ["J2", "H2", "H4", "F3", "H3", "H1", "G1", "F4"]  # positions 1,2,3,4,7,8,9,10
 
-# Arty A7: 4 Pmod connectors, 200 ohm series resistors on every pin (JA/JD
-# "standard"; JB/JC "high-speed" with 0-ohm shunts instead — irrelevant here
-# since we no longer need differential signaling on the hub either).
-ARTY_PMOD = {
-    "JA": ["G13", "B11", "A11", "D12", "D13", "B18", "A18", "K16"],
-    "JB": ["E15", "E16", "D15", "C15", "J17", "J18", "K15", "J15"],
-    "JC": ["U12", "V12", "V10", "V11", "U14", "V14", "T13", "U13"],
-    "JD": ["D4",  "D3",  "F4",  "F3",  "E2",  "D2",  "H2",  "G2"],
-}
-ARTY_PMOD_ORDER = ["JA", "JB", "JC", "JD"]  # spoke 0,1,2,3
+# Cmod A7-35T (hub): 48-pin DIP form factor, same as Cmod S7 — see PHASE4.md
+# "Why Cmod A7-35T for the hub, not Arty A7-35T". Real pin names from
+# Digilent's own CmodA7_Master.xdc (Cmod-A7-35T-GPIO reference project),
+# cross-checked against the "Sch=" pin-number comments in that file. All 4
+# spokes (32 signals) + the FT232H USB bridge (12) + TCXO clock in (1) = 45
+# signals, entirely on the DIP header — no Pmod used at all (see PHASE4.md
+# "Why all-DIP, no Pmod" for why this is preferred over splitting spoke 0
+# onto the module's one real Pmod, JA).
+#
+# (fpga_pin, dip_pin_number) — pins 1-14, 17-23, 26-48 in physical order (44
+# confirmed-digital pins; 24/25 are the VU/GND power pins, not signal-
+# capable) plus DIP pin 16, the 45th signal needed. Pin 16 is documented as
+# an XADC auxiliary analog input (vaux12) rather than plain GPIO — H2 is its
+# single-ended ("P" leg) ball per the reference material; unused-for-analog
+# 7-series aux pins are ordinary fabric I/O (same reasoning already applied
+# to unused analog-capable FMC pins in pcb/make_schematic.py's mic array
+# connector), but this specific pin has NOT been confirmed against a plain-
+# GPIO-mode .xdc example — flag for verification before ordering hardware.
+CMOD_A7_35T_DIP = list(zip(
+    ["M3", "L3", "A16", "K3", "C15", "H1", "A15", "B15", "A14", "J3", "J1", "K2", "L1", "L2",
+     "M1", "N3", "P3", "M2", "N1", "N2", "P1",
+     "R3", "T3", "R2", "T1", "T2", "U1", "W2", "V2", "W3", "V3", "W5", "V4", "U4", "V5", "W4",
+     "U5", "U2", "W6", "U3", "U7", "W7", "U8", "V8", "H2"],
+    list(range(1, 15)) + list(range(17, 24)) + list(range(26, 49)) + [16],
+))
 
 # Spoke bus signal order matching Pmod position index 0..7 (see PHASE4.md
 # "Spoke link"): 6 data bits + 1 strobe + 1 forwarded PDM clock (hub->cluster).
 SPOKE_SIGNAL_SUFFIX = ["D0", "D1", "D2", "D3", "D4", "D5", "STROBE", "CLK"]
 
-# Arty shield connector (49 GPIO, "IOx" names per RM section 11) — subset used
-# for the FT232H USB-FIFO bridge (8 data + 4 control) and the TCXO clock input.
-SHIELD_PINS_USED = [
-    ("IO0", "USB_D0"), ("IO1", "USB_D1"), ("IO2", "USB_D2"), ("IO3", "USB_D3"),
-    ("IO4", "USB_D4"), ("IO5", "USB_D5"), ("IO6", "USB_D6"), ("IO7", "USB_D7"),
-    ("IO8", "USB_RXF_N"), ("IO9", "USB_TXE_N"), ("IO10", "USB_RD_N"), ("IO11", "USB_WR_N"),
-    ("IO12", "TCXO_CLK"),
+# FT232H USB bridge (8 data + 4 control) + TCXO clock in: 13 of the 37 DIP
+# signals above, taken from CMOD_A7_35T_DIP in order after spokes 1-3.
+USB_TCXO_NETS = [
+    "USB_D0", "USB_D1", "USB_D2", "USB_D3", "USB_D4", "USB_D5", "USB_D6", "USB_D7",
+    "USB_RXF_N", "USB_TXE_N", "USB_RD_N", "USB_WR_N", "TCXO_CLK",
 ]
 
 # ── helpers (mirrors pcb/make_schematic.py conventions) ───────────────────────
@@ -376,13 +389,13 @@ def _all_lib_symbols():
         + [(fpga_pin, f"JA{pos}", "passive")
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
     )
-    arty_pins = []
-    for pmod in ARTY_PMOD_ORDER:
-        for fpga_pin, pos in zip(ARTY_PMOD[pmod], [1, 2, 3, 4, 7, 8, 9, 10]):
-            arty_pins.append((f"{pmod}_{fpga_pin}", f"{pmod}{pos}", "passive"))
-    for shield_name, _ in SHIELD_PINS_USED:
-        arty_pins.append((shield_name, f"SH_{shield_name}", "passive"))
-    arty_pins += [("5V0", "PWR1", "power_in"), ("GND", "PWR2", "power_in")]
+    # Hub: same Cmod A7-35T module as used physically — all 45 signals (4
+    # spokes + FT232H + TCXO) on its DIP header, no Pmod (see CMOD_A7_35T_DIP
+    # and PHASE4.md "Why all-DIP, no Pmod") + VU/GND power (DIP 24/25).
+    hub_pins = (
+        [(fpga_pin, f"D{num}", "passive") for fpga_pin, num in CMOD_A7_35T_DIP]
+        + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
+    )
 
     ft232h_pins = (
         [(f"D{i}", str(i + 1), "passive") for i in range(8)]
@@ -405,10 +418,11 @@ def _all_lib_symbols():
                     "Cluster FPGA module — Pmod JA (8 sig, 200ohm series) + DIP header "
                     "(13 of 32 GPIO used for local PDM capture); every pin series-resistor "
                     "protected, no differential-capable I/O (see PHASE4.md Spoke link)")
-        + _conn_lib("ARTY_A7_35T", "U", "Digilent Arty A7-35T (XC7A35TICSG324-1L)", arty_pins,
-                    "Hub FPGA module — 4x Pmod (32 pins, one per cluster spoke) + 13 shield "
-                    "pins (USB FIFO bridge + TCXO clock in); on-board 10/100 Ethernet PHY "
-                    "(TI DP83848J) left unused, see PHASE4.md Host interface")
+        + _conn_lib("CMOD_A7_35T", "U", "Digilent Cmod A7-35T (XC7A35T-1CPG236C)", hub_pins,
+                    "Hub FPGA module — all 4 spokes + FT232H USB bridge + TCXO clock in "
+                    "(45 signals) on its 48-pin DIP header, no Pmod used; same DIP module "
+                    "form factor as the cluster's Cmod S7, see PHASE4.md, Why all-DIP, "
+                    "no Pmod")
         + _conn_lib("FT232H_BRK", "U", "FTDI FT232H USB-FIFO breakout", ft232h_pins,
                     "USB 2.0 Hi-Speed synchronous 245-mode FIFO bridge to Raspberry Pi 5 "
                     "USB 3.0 port (device is USB2-speed, ~320 Mbps, backward compatible)")
@@ -530,30 +544,29 @@ def make_hub():
         f'  (uuid "{sch_uuid}")\n'
         f'  (paper "A2")\n'
         f'  (title_block\n'
-        f'    (title "Multi-FPGA Alternative — Hub (Arty A7-35T)")\n'
-        f'    (comment 1 "4x spoke bus (one per cluster, via Pmod JA-JD) -- reassembles 96ch")\n'
+        f'    (title "Multi-FPGA Alternative — Hub (Cmod A7-35T)")\n'
+        f'    (comment 1 "4x spoke bus (all on DIP header, no Pmod) -- reassembles 96ch")\n'
         f'    (comment 2 "TCXO forwards 3.072 MHz PDM clock to all 4 clusters over spoke CLK")\n'
-        f'    (comment 3 "USB FIFO bridge (FT232H) to Raspberry Pi 5 -- no GbE MAC/PHY on hub")\n'
+        f'    (comment 3 "USB FIFO bridge (FT232H) to Raspberry Pi 5, also on DIP -- no GbE on hub")\n'
         f'  )\n'
         f'  (lib_symbols\n' + _all_lib_symbols() + '  )\n'
     )
 
-    arty_pins = []
-    for pmod in ARTY_PMOD_ORDER:
-        for fpga_pin, pos in zip(ARTY_PMOD[pmod], [1, 2, 3, 4, 7, 8, 9, 10]):
-            arty_pins.append((f"{pmod}_{fpga_pin}", f"{pmod}{pos}", "passive"))
-    for shield_name, _ in SHIELD_PINS_USED:
-        arty_pins.append((shield_name, f"SH_{shield_name}", "passive"))
-    arty_pins += [("5V0", "PWR1", "power_in"), ("GND", "PWR2", "power_in")]
-    n = len(arty_pins)
+    # Same Cmod A7-35T module used in _all_lib_symbols() — all 45 signals (4
+    # spokes + FT232H + TCXO) on its DIP header, no Pmod, + VU/GND power.
+    hub_pins = (
+        [(fpga_pin, f"D{num}", "passive") for fpga_pin, num in CMOD_A7_35T_DIP]
+        + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
+    )
+    n = len(hub_pins)
 
     AX, AY = 118 * GRID, 197 * GRID
     # "A" (assembly/board module) continuing the clusters' A1-A4 — see
     # make_cluster()'s comment on why this isn't "U1" (mic-range collision).
-    buf.append(_conn_instance("ARTY_A7_35T", f"A{N_CLUSTERS + 1}", AX, AY, sch_uuid, arty_pins))
+    buf.append(_conn_instance("CMOD_A7_35T", f"A{N_CLUSTERS + 1}", AX, AY, sch_uuid, hub_pins))
 
-    # 4x Pmod spoke buses: pins 0..31, 8 per cluster in ARTY_PMOD_ORDER order
-    for cidx, pmod in enumerate(ARTY_PMOD_ORDER):
+    # 4 spokes (32 signals): DIP pins, index 0-31
+    for cidx in range(N_CLUSTERS):
         for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX):
             pin_i = cidx * 8 + j
             net = f"SPOKE{cidx}_{suffix}"
@@ -561,17 +574,16 @@ def make_hub():
             shape = "output" if suffix == "CLK" else "input"
             buf.append(_stub_and_label(x, y, STUB, net, shape=shape))
 
-    # Shield pins 32..44: USB FIFO bus + TCXO clock in
-    base = 32
-    for k, (shield_name, net) in enumerate(SHIELD_PINS_USED):
-        x, y = _conn_pin_xy(AX, AY, base + k, n)
+    # FT232H/TCXO (13 signals): DIP pins, index 32-44
+    for k, net in enumerate(USB_TCXO_NETS):
+        x, y = _conn_pin_xy(AX, AY, 32 + k, n)
         shape = "input" if net == "TCXO_CLK" else "passive"
         buf.append(_stub_and_label(x, y, STUB, net, shape=shape))
 
-    # Power
-    x, y = _conn_pin_xy(AX, AY, base + len(SHIELD_PINS_USED), n)
+    # Power: VU/GND, DIP pins 24/25 (pin index 45/46)
+    x, y = _conn_pin_xy(AX, AY, 45, n)
     buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
-    x, y = _conn_pin_xy(AX, AY, base + len(SHIELD_PINS_USED) + 1, n)
+    x, y = _conn_pin_xy(AX, AY, 46, n)
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
     # TCXO
@@ -652,7 +664,7 @@ def make_top():
         f'  (paper "A3")\n'
         f'  (title_block\n'
         f'    (title "Phase 4 — Multi-FPGA (Clustered) Alternative — Top Level")\n'
-        f'    (comment 1 "4x cluster (Cmod S7, 24 mics each) + 1x hub (Arty A7-35T) + Pi 5 via USB")\n'
+        f'    (comment 1 "4x cluster (Cmod S7, 24 mics each) + 1x hub (Cmod A7-35T) + Pi 5 via USB")\n'
         f'    (comment 2 "See PHASE4.md #fpga--multi-fpga-clustered-alternative for full reasoning")\n'
         f'    (comment 3 "Dev-board interconnect only -- not the 96-mic array itself (pcb/mic_array/)")\n'
         f'  )\n'
@@ -768,7 +780,7 @@ def main():
     print(f"\nDone — {N_CLUSTERS} clusters (12 arms, 96 mics total) + 1 hub.")
     print(f"Open {pro_path} in KiCad 10.")
     print("Next steps:")
-    print("  1. Run ERC; expected: unconnected DP83848J PHY pins (unused, see PHASE4.md)")
+    print("  1. Run ERC — expected clean; see SCHEMATIC_NOTES.md for accepted warning classes")
     print("  2. Assign real footprints if this is laid out as a carrier PCB, not point-to-point wiring")
     print("  3. Cross-check FPGA pin names here against a synthesized .xdc before wiring hardware")
 

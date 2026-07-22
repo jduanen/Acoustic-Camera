@@ -81,7 +81,8 @@ co-located Raspberry Pi 5, which either runs beamforming locally (standalone) or
 stream out its own on-board GbE port to an external host (tethered) — no RGMII PHY chip or
 GbE MAC anywhere in this design. Both FPGA tiers are far smaller than a single-chip XC7A200T
 design (under 6% of its LUTs each), all on hand-assembly-friendly modules (Digilent Cmod S7 /
-Arty A7-35T), no BGA rework needed even at prototype stage.
+Cmod A7-35T — same compact DIP form factor on both), no BGA rework needed even at prototype
+stage.
 
 Chosen over the single-chip alternate (below) because the XC7A200T ships only in a 484-pin
 BGA — forcing a dev board at prototype stage and BGA rework at custom-PCB stage — and needs
