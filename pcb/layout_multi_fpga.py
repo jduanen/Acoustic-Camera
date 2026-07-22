@@ -3,12 +3,24 @@
 layout_multi_fpga.py -- board outline + footprint placement for the Phase 4
 Multi-FPGA (Clustered) alternative: 4 quadrant cluster boards (Cmod S7 + 24
 mics + their decoupling caps each) and 1 hub board (Cmod A7-35T + FT232H
-breakout + TCXO), all in one pcb/multi_fpga/layout.kicad_pcb file.
+breakout + TCXO), written as 5 SEPARATE, independently-fabricable files --
+cluster_00..03.kicad_pcb + hub.kicad_pcb, matching the schematic's own
+per-sheet file naming (pcb/multi_fpga/cluster_NN.kicad_sch, hub.kicad_sch).
+These are 5 real physical boards (hub mounted behind the 4 clusters on its
+own standoffs -- see place_hub()), not one panel, so they get 5 files, not
+1 file with 5 outlines in it.
+
+All 5 files share the same (array-centre-origin) coordinate system, even
+though each is its own board/project -- this is deliberate, not an oversight:
+it keeps a cluster's spoke-connector position numerically identical to the
+matching position on the hub file (see cluster_standoff_xy()), which is
+useful for sanity-checking the two boards align, and costs nothing since a
+fab house doesn't care where a board's content sits within its own file.
 
 Scope: board outlines + footprint placement only, no routing (mirrors
 pcb/place_mics.py's placement-only precedent for the single-FPGA board).
 Unlike place_mics.py, this does not require "Update PCB from Schematic" or
-KiCad's in-app Scripting Console first -- it builds the board from scratch,
+KiCad's in-app Scripting Console first -- it builds each board from scratch,
 loading footprints directly by library path via pcbnew (confirmed importable
 from plain python3 in this environment). Pads are left netless (no netlist
 import); wiring/routing is a separate follow-up pass.
@@ -49,7 +61,10 @@ N_CLUSTERS   = 4
 ROOT       = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH   = os.path.join(ROOT, "..", "test", "phase4", "array_xy.csv")
 OUTDIR     = os.path.join(ROOT, "multi_fpga")
-OUT_PCB    = os.path.join(OUTDIR, "layout.kicad_pcb")
+
+
+def board_pcb_path(name):
+    return os.path.join(OUTDIR, f"{name}.kicad_pcb")
 
 MIC_FP_LIB  = os.path.join(ROOT, "IM72D128", "KiCad")
 MIC_FP_NAME = "IFX-PG-LLGA-5-4"
@@ -461,22 +476,34 @@ def main():
     R_BOARD_MAX_MM = max(R_MAX_MM + 5.0, max_reach + 3.0)  # 3mm clearance past the furthest module corner found
 
     # Build pass: now that R_BOARD_MAX_MM is final, draw outlines + place
-    # everything.
-    board = pcbnew.CreateEmptyBoard()
-    for c in range(N_CLUSTERS):
-        build_cluster(board, c, cluster_mic_rows[c], placements[c])
-    place_hub(board)
-
+    # everything -- 5 separate boards (5 separate pcbnew.BOARD() objects,
+    # each saved to its own file), not one file with 5 outlines in it. See
+    # module docstring for why.
     os.makedirs(OUTDIR, exist_ok=True)
-    board.Save(OUT_PCB)
+    total_fp = 0
+    # 24 mics + 24 caps + 1 Cmod S7 + 1 cluster<->hub standoff + 2 enclosure holes
+    expected_per_cluster = 24 + 24 + 1 + 1 + 2
+    for c in range(N_CLUSTERS):
+        board = pcbnew.CreateEmptyBoard()
+        build_cluster(board, c, cluster_mic_rows[c], placements[c])
+        path = board_pcb_path(f"cluster_{c:02d}")
+        board.Save(path)
+        n_fp = len(board.GetFootprints())
+        total_fp += n_fp
+        print(f"Saved {path} -- {n_fp} footprints (expected {expected_per_cluster})")
 
-    n_fp = len(board.GetFootprints())
-    print(f"Saved {OUT_PCB}")
-    # 96 mics + 96 caps + 4 cluster Cmod S7 + hub's (CMOD_A7_35T+FT232H+TCXO=3)
-    # + 4 spoke sockets + mounting holes: 4 cluster-side + 4 hub-side
-    # standoffs, 8 cluster enclosure holes, 2 camera, 4 Pi 5 = 26 holes/sockets.
-    expected = 96 + 96 + N_CLUSTERS + 3 + N_CLUSTERS + (4 + 4 + 8 + 2 + 4)
-    print(f"Footprints placed: {n_fp} (expected {expected})")
+    hub_board = pcbnew.CreateEmptyBoard()
+    place_hub(hub_board)
+    hub_path = board_pcb_path("hub")
+    hub_board.Save(hub_path)
+    n_fp_hub = len(hub_board.GetFootprints())
+    total_fp += n_fp_hub
+    # CMOD_A7_35T + FT232H + TCXO + 4 spoke sockets + 4 hub-side standoffs
+    # + 2 camera holes + 4 Pi 5 holes
+    expected_hub = 3 + N_CLUSTERS + N_CLUSTERS + 2 + 4
+    print(f"Saved {hub_path} -- {n_fp_hub} footprints (expected {expected_hub})")
+
+    print(f"Total footprints across all 5 boards: {total_fp}")
     print(f"R_BOARD_MAX_MM = {R_BOARD_MAX_MM:.2f}")
 
 
