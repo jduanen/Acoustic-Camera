@@ -305,6 +305,21 @@ PIN_LEN   = 5.08
 BODY_HW   = 12.7   # body half-width
 STUB      = 8 * GRID   # stub-and-label/pwr wire length (≈10)
 
+# Real footprints for the dev-board module symbols, used when this schematic
+# is laid out as a carrier PCB (see pcb/layout_multi_fpga.py). Cmod S7 and
+# Cmod A7-35T share the same 48-pin, 2x24, 600mil-row-spacing DIP form factor
+# (confirmed from Digilent's Cmod S7 reference manual), which matches the
+# stock KiCad DIP-48_W15.24mm_Socket footprint exactly -- no custom footprint
+# needed for either module. FT232H_BRK/TCXO_OSC use project-local
+# approximate footprints (see pcb/multi_fpga/footprints.pretty/*.kicad_mod
+# file descriptions for what's approximated and why).
+FOOTPRINTS = {
+    "CMOD_S7":      "Package_DIP:DIP-48_W15.24mm_Socket",
+    "CMOD_A7_35T":  "Package_DIP:DIP-48_W15.24mm_Socket",
+    "FT232H_BRK":   "multi_fpga:FT232H_Breakout",
+    "TCXO_OSC":     "multi_fpga:TCXO_Can",
+}
+
 def _conn_lib(lib_name, ref_prefix, value, pins, desc=""):
     """pins: list of (pin_name, pin_number, elec_type) in top-to-bottom (screen) order."""
     n = len(pins)
@@ -315,7 +330,7 @@ def _conn_lib(lib_name, ref_prefix, value, pins, desc=""):
         '    (exclude_from_sim no) (in_bom yes) (on_board yes)\n'
         + _pp("Reference", ref_prefix, 0, body_hh + 2.54)
         + _pp("Value", value, 0, -(body_hh + 2.54))
-        + _pp("Footprint", "", 0, 0, hide=True)
+        + _pp("Footprint", FOOTPRINTS.get(lib_name, ""), 0, 0, hide=True)
         + _pp("Datasheet", "", 0, 0, hide=True)
         + _pp("Description", desc, 0, 0, hide=True)
         + f'    (symbol "{lib_name}_0_1"\n'
@@ -348,7 +363,7 @@ def _conn_instance(lib_name, ref, x, y, sch_uuid, pins, hide_value=False):
         f'    (property "Reference" "{ref}"\n'
         f'      (at {_f(x)} {_f(y - body_hh - 2.54)} 0)\n'
         f'      (effects (font (size 1.27 1.27))))\n'
-        f'    (property "Footprint" ""\n'
+        f'    (property "Footprint" "{FOOTPRINTS.get(lib_name, "")}"\n'
         f'      (at {_f(x)} {_f(y)} 0)\n'
         f'      (effects (font (size 1.27 1.27)) (hide yes)))\n'
         f'    (property "Datasheet" ""\n'
@@ -791,7 +806,7 @@ def main():
     print(f"Open {pro_path} in KiCad 10.")
     print("Next steps:")
     print("  1. Run ERC — expected clean; see SCHEMATIC_NOTES.md for accepted warning classes")
-    print("  2. Assign real footprints if this is laid out as a carrier PCB, not point-to-point wiring")
+    print("  2. Module footprints assigned (DIP-48 socket / FT232H_Breakout / TCXO_Can) -- see pcb/layout_multi_fpga.py")
     print("  3. Cross-check FPGA pin names here against a synthesized .xdc before wiring hardware")
 
 if __name__ == "__main__":
