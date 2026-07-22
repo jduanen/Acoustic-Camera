@@ -1,102 +1,245 @@
 (kicad_sch
-  (version 20250114)
-  (generator "multi_fpga_make_schematic")
-  (generator_version "1.0")
-  (uuid "42256cb4-1de8-4d50-932b-2a0e6c49e8d0")
-  (paper "A3")
-  (title_block
-    (title "Phase 4 — Multi-FPGA (Clustered) Alternative — Top Level")
-    (comment 1 "4x cluster (Cmod S7, 24 mics each) + 1x hub (Arty A7-35T) + Pi 5 via USB")
-    (comment 2 "See PHASE4.md #fpga--multi-fpga-clustered-alternative for full reasoning")
-    (comment 3 "Dev-board interconnect only -- not the 96-mic array itself (pcb/mic_array/)")
-  )
-  (lib_symbols)
-  (sheet
-    (at 20 25)
-    (size 70 40)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (stroke (width 0.1524) (type solid))
-    (fill (color 0 0 0 0))
-    (uuid "56f78586-8631-4eed-afc9-5803659f3079")
-    (property "Sheetname" "cluster_00"
-      (at 20 23.5 0)
-      (effects (font (size 1.524 1.524)) (justify left bottom)))
-    (property "Sheetfile" "cluster_00.kicad_sch"
-      (at 20 66.5 0)
-      (effects (font (size 1.27 1.27)) (justify left top)))
-    (instances
-      (project "multi_fpga"
-        (path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
-          (page "2")))))
-  (sheet
-    (at 105 25)
-    (size 70 40)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (stroke (width 0.1524) (type solid))
-    (fill (color 0 0 0 0))
-    (uuid "a1df328b-78cd-4343-a485-69fa4373dde7")
-    (property "Sheetname" "cluster_01"
-      (at 105 23.5 0)
-      (effects (font (size 1.524 1.524)) (justify left bottom)))
-    (property "Sheetfile" "cluster_01.kicad_sch"
-      (at 105 66.5 0)
-      (effects (font (size 1.27 1.27)) (justify left top)))
-    (instances
-      (project "multi_fpga"
-        (path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
-          (page "3")))))
-  (sheet
-    (at 190 25)
-    (size 70 40)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (stroke (width 0.1524) (type solid))
-    (fill (color 0 0 0 0))
-    (uuid "87e1317e-49f7-445b-b0ca-a3b3e18db00a")
-    (property "Sheetname" "cluster_02"
-      (at 190 23.5 0)
-      (effects (font (size 1.524 1.524)) (justify left bottom)))
-    (property "Sheetfile" "cluster_02.kicad_sch"
-      (at 190 66.5 0)
-      (effects (font (size 1.27 1.27)) (justify left top)))
-    (instances
-      (project "multi_fpga"
-        (path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
-          (page "4")))))
-  (sheet
-    (at 275 25)
-    (size 70 40)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (stroke (width 0.1524) (type solid))
-    (fill (color 0 0 0 0))
-    (uuid "b976834f-3718-4c19-bb5a-b95289fe47b4")
-    (property "Sheetname" "cluster_03"
-      (at 275 23.5 0)
-      (effects (font (size 1.524 1.524)) (justify left bottom)))
-    (property "Sheetfile" "cluster_03.kicad_sch"
-      (at 275 66.5 0)
-      (effects (font (size 1.27 1.27)) (justify left top)))
-    (instances
-      (project "multi_fpga"
-        (path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
-          (page "5")))))
-  (sheet
-    (at 360 25)
-    (size 70 40)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (stroke (width 0.1524) (type solid))
-    (fill (color 0 0 0 0))
-    (uuid "a2f064bc-109a-4166-813e-a42c3063120c")
-    (property "Sheetname" "hub"
-      (at 360 23.5 0)
-      (effects (font (size 1.524 1.524)) (justify left bottom)))
-    (property "Sheetfile" "hub.kicad_sch"
-      (at 360 66.5 0)
-      (effects (font (size 1.27 1.27)) (justify left top)))
-    (instances
-      (project "multi_fpga"
-        (path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
-          (page "6")))))
-  (sheet_instances
-    (path "/"
-      (page "1")))
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "42256cb4-1de8-4d50-932b-2a0e6c49e8d0")
+	(paper "A3")
+	(title_block
+		(title "Phase 4 — Multi-FPGA (Clustered) Alternative — Top Level")
+		(comment 1 "4x cluster (Cmod S7, 24 mics each) + 1x hub (Arty A7-35T) + Pi 5 via USB")
+		(comment 2 "See PHASE4.md #fpga--multi-fpga-clustered-alternative for full reasoning")
+		(comment 3 "Dev-board interconnect only -- not the 96-mic array itself (pcb/mic_array/)")
+	)
+	(lib_symbols)
+	(sheet
+		(at 20 25)
+		(size 70 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "56f78586-8631-4eed-afc9-5803659f3079")
+		(property "Sheetname" "cluster_00"
+			(at 20 23.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cluster_00.kicad_sch"
+			(at 20 66.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "top"
+				(path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
+					(page "2")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 190 25)
+		(size 70 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "87e1317e-49f7-445b-b0ca-a3b3e18db00a")
+		(property "Sheetname" "cluster_02"
+			(at 190 23.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cluster_02.kicad_sch"
+			(at 190 66.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "top"
+				(path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
+					(page "4")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 105 25)
+		(size 70 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "a1df328b-78cd-4343-a485-69fa4373dde7")
+		(property "Sheetname" "cluster_01"
+			(at 105 23.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cluster_01.kicad_sch"
+			(at 105 66.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "top"
+				(path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
+					(page "3")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 360 25)
+		(size 70 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "a2f064bc-109a-4166-813e-a42c3063120c")
+		(property "Sheetname" "hub"
+			(at 360 23.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "hub.kicad_sch"
+			(at 360 66.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "top"
+				(path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
+					(page "6")
+				)
+			)
+		)
+	)
+	(sheet
+		(at 275 25)
+		(size 70 40)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(stroke
+			(width 0.1524)
+			(type solid)
+		)
+		(fill
+			(color 0 0 0 0)
+		)
+		(uuid "b976834f-3718-4c19-bb5a-b95289fe47b4")
+		(property "Sheetname" "cluster_03"
+			(at 275 23.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.524 1.524)
+				)
+				(justify left bottom)
+			)
+		)
+		(property "Sheetfile" "cluster_03.kicad_sch"
+			(at 275 66.5 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left top)
+			)
+		)
+		(instances
+			(project "top"
+				(path "/42256cb4-1de8-4d50-932b-2a0e6c49e8d0"
+					(page "5")
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "1")
+		)
+	)
+	(embedded_fonts no)
 )
