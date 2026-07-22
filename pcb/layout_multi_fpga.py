@@ -60,9 +60,18 @@ CAP_FP_LIB  = "/usr/share/kicad/footprints/Capacitor_SMD.pretty"
 CAP_FP_NAME = "C_0603_1608Metric"
 
 # Radial margin beyond R_MAX_MM given to each cluster board for its Cmod S7
-# module + clearance (DIP-48 socket footprint spans ~58.4mm across its pad
-# rows lengthwise, plus margin on both ends).
-BOARD_OUTER_MARGIN_MM = 90.0
+# module + clearance -- just enough to fit it: 5mm clearance past the mic
+# ring, the DIP-48 socket's pad-row length including its ~1.6mm/end
+# courtyard overhang (measured from the loaded footprint's own bounding
+# box, not just its 58.42mm pad-to-pad span), and 6mm clearance past that
+# (module width also contributes diagonally at a rotated corner, so this
+# isn't razor-thin). Minimised per-board material, not a padded guess --
+# checked below by confirming the module's bounding box corners all land
+# inside the board outline they're meant to be on.
+MODULE_CLEARANCE_IN_MM  = 13.0
+MODULE_LENGTH_MM        = 61.64
+MODULE_CLEARANCE_OUT_MM = 6.0
+BOARD_OUTER_MARGIN_MM = MODULE_CLEARANCE_IN_MM + MODULE_LENGTH_MM + MODULE_CLEARANCE_OUT_MM
 R_BOARD_MAX_MM = R_MAX_MM + BOARD_OUTER_MARGIN_MM
 
 # ── Underbrink log-spiral helpers (mirrors notebooks/make_nb18.py exactly) ──
@@ -173,14 +182,22 @@ def place_cluster(board, c, mic_rows):
     # places DIP parts with the origin at pin 1, not body centre) just past
     # the mic ring, body extending further out from there.
     #
+    # The wedge's two boundary curves are the same spiral shape (see
+    # cluster_outline_points()), so its centre angle isn't the fixed
+    # 90c+30 that holds at r=R_MIN -- it drifts by +degrees(t) as radius
+    # grows (t = spiral parameter at that radius), since both boundary
+    # curves sweep together. Using the fixed inner-radius angle out at the
+    # module's radius put it ~50deg off-centre, straddling two boards.
+    # Evaluate the bisector at the module's own placement radius instead.
+    #
     # SetOrientationDegrees(t) maps local +Y to world direction
     # (sin t, cos t) (confirmed empirically: t=0 keeps +Y -> world +Y;
     # t=90 maps +Y -> world +X). To land local +Y on world angle phi
     # (using this script's (cos phi, sin phi) convention, matching
     # underbrink_array()'s x=r*cos(t), y=r*sin(t)), solve
     # (sin t, cos t) = (cos phi, sin phi) -> t = 90 - phi.
-    bisector_deg = 90.0 * c + 30.0
-    module_r = R_MAX_MM + 5.0  # pin-1 end, just clear of the mic ring
+    module_r = R_MAX_MM + MODULE_CLEARANCE_IN_MM  # pin-1 end, just clear of the mic ring
+    bisector_deg = 90.0 * c + 30.0 + math.degrees(_t_at_r(module_r))
     theta = math.radians(bisector_deg)
     mx, my = module_r * math.cos(theta), module_r * math.sin(theta)
     board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{c + 1}", mx, my, rot_deg=90.0 - bisector_deg))
