@@ -205,6 +205,14 @@ Remaining violations are all warnings, in the same classes already present in
   design's generator. `lib_symbol_mismatch` count is non-deterministic
   run-to-run (varies with the random per-instance UUIDs each regeneration
   produces) — cosmetic, not a connectivity issue.
+- `footprint_link_issues` (×2, `Y1`/`TCXO_OSC` and `A6`/`FT232H_BRK`) —
+  `kicad-cli sch erc` reports "configuration does not include the footprint
+  library 'multi_fpga'" even though `pcb/multi_fpga/fp-lib-table` exists at
+  the standard project-local location and defines that nickname; `kicad-cli`
+  appears not to merge project-local `fp-lib-table` into this particular
+  headless check (opening `multi_fpga.kicad_pro` in the GUI resolves it
+  normally, since that's the standard place KiCad looks). Cosmetic, same
+  category as the `lib_symbol_*` warnings above — not a connectivity issue.
 
 `endpoint_off_grid` no longer appears at all: every placement constant in
 both generators (`pcb/make_schematic.py` and
