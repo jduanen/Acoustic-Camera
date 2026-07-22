@@ -460,7 +460,16 @@ def make_cluster(idx):
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
     )
     n = len(cmod_pins)
-    CX, CY = 94 * GRID, 118 * GRID
+
+    # Arm sub-sheet block geometry, needed here to centre CMOD_S7 against it
+    # (used again below where the sheets themselves are placed).
+    AW, AH = 47 * GRID, 24 * GRID
+    AX, AY0 = 94 * GRID, 64 * GRID
+    ARM_GAP = 12 * GRID                        # y-spacing between stacked arm sheets
+    ARM_BLOCK_H = 2 * (AH + ARM_GAP) + AH      # 3 arms, 2 gaps between them
+
+    CX = AX + AW + 66 * GRID                   # clear of the arm sheets' right edge
+    CY = AY0 + ARM_BLOCK_H / 2                 # vertically centred on the 3-arm block
     # "A" (assembly/board module), not "U" — this project's "U" range is the
     # 96 mics (U1-U96, see make_arm()); reusing "U1" here collided with both
     # the first mic in every cluster's own arm_00-equivalent sheet and with
@@ -496,11 +505,9 @@ def make_cluster(idx):
 
     # 3 arm sub-sheets (this cluster's share of the 96-mic array, reused from
     # pcb/mic_array/'s per-mic wiring via make_arm() — see module docstring).
-    AW, AH = 47 * GRID, 24 * GRID
-    AX, AY0 = 16 * GRID, 32 * GRID
     for k in range(3):
         arm_idx = idx * 3 + k
-        ay = AY0 + k * (AH + 12 * GRID)
+        ay = AY0 + k * (AH + ARM_GAP)
         arm_sheet_uuid = _uid()
         page_num = arm_idx + 7   # pages: 1=top, 2-5=clusters, 6=hub, 7-18=arms
         buf.append(
@@ -591,7 +598,7 @@ def make_hub():
         ("VDD", "1", "power_in"), ("GND", "2", "power_in"),
         ("OE", "3", "input"), ("OUT", "4", "output"),
     ]
-    TX, TY = 252 * GRID, 47 * GRID
+    TX, TY = 276 * GRID, 145 * GRID
     buf.append(_conn_instance("TCXO_OSC", "Y1", TX, TY, sch_uuid, tcxo_pins))
     x, y = _conn_pin_xy(TX, TY, 0, 4)
     buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, STUB, sch_uuid))
@@ -609,7 +616,7 @@ def make_hub():
            ("RD#", "11", "passive"), ("WR#", "12", "passive")]
         + [("VCCIO", "13", "power_in"), ("GND", "14", "power_in")]
     )
-    FX, FY = 252 * GRID, 134 * GRID
+    FX, FY = 276 * GRID, 232 * GRID
     # "A" (assembly/board module) — was "U2", colliding with the 2nd mic; see
     # make_cluster()'s comment.
     buf.append(_conn_instance("FT232H_BRK", f"A{N_CLUSTERS + 2}", FX, FY, sch_uuid, ft232h_pins))
@@ -631,7 +638,7 @@ def make_hub():
     # isolated island here — see main()/_inject_pwr_flag_onto_net().
     for i, (lib_id, val) in enumerate(
             [("power:GND", "GND"), ("power:+5V", "+5V"), ("power:+3V3", "+3V3")]):
-        buf.append(_pwr_flag_pair(lib_id, val, 24 * GRID, 16 * GRID + i * 12 * GRID, sch_uuid))
+        buf.append(_pwr_flag_pair(lib_id, val, 108 * GRID, 84 * GRID + i * 12 * GRID, sch_uuid))
 
     buf.append(
         '  (text "USB-C/Micro-B cable to Raspberry Pi 5 USB 3.0 port\\n'
@@ -674,11 +681,14 @@ def make_top():
     SW, SH = 55 * GRID, 32 * GRID
     MARGIN_X, MARGIN_Y = 16 * GRID, 20 * GRID
     SPACING_X = SW + 12 * GRID
+    HUB_ROW_GAP = 24 * GRID   # clear space below the cluster row before the hub row
 
     names = [f"cluster_{i:02d}" for i in range(N_CLUSTERS)] + ["hub"]
     for i, name in enumerate(names):
-        sx = MARGIN_X + i * SPACING_X
-        sy = MARGIN_Y
+        if name == "hub":
+            sx, sy = MARGIN_X, MARGIN_Y + SH + HUB_ROW_GAP   # own row, not inline with clusters
+        else:
+            sx, sy = MARGIN_X + i * SPACING_X, MARGIN_Y
         sym_uuid = _uid()
         buf.append(
             f'  (sheet\n'
