@@ -1,1605 +1,5913 @@
 (kicad_sch
-  (version 20260306)
-  (generator "mic_array_make_schematic")
-  (generator_version "10.0")
-  (uuid "b37172d3-f58a-46c5-8047-510fc330b80e")
-  (paper "A3")
-  (title_block
-    (title "96-mic PDM Array — Arm 00 (mics 1–8)")
-    (comment 1 "IM72D128V01XTMA1 PDM MEMS mics")
-    (comment 2 "VDD = +1V8; each mic has 100 nF local decoupling")
-    (comment 3 "SEL=GND → L channel (CLK falling); SEL=+1V8 → R channel (CLK rising)")
-  )
-  (lib_symbols
-  (symbol "power:PWR_FLAG" (power)
-    (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))
-    (exclude_from_sim no) (in_bom yes) (on_board yes)
-    (property "Reference" "#FLG" (at 0 2.54 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Value" "PWR_FLAG" (at 0 4.83 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Footprint" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" "Declares its net externally supplied, so ERC does not require an on-schematic driver for it" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "PWR_FLAG_0_1"
-      (circle (center 0 1.905) (radius 0.635)
-        (stroke (width 0) (type default)) (fill (type none)))
-      (polyline (pts (xy 0 0) (xy 0 1.27))
-        (stroke (width 0) (type default)) (fill (type none))))
-    (symbol "PWR_FLAG_1_1"
-      (pin power_out line (at 0 0 90) (length 0)
-        (name "pwr" (effects (font (size 1.27 1.27))))
-        (number "1" (effects (font (size 1.27 1.27)))))))
-  (symbol "IM72D128"
-    (pin_numbers (hide yes)) (pin_names (offset 0))
-    (exclude_from_sim no) (in_bom yes) (on_board yes)
-    (property "Reference" "U" (at 0 8.89 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Value" "IM72D128V01XTMA1" (at 0 -8.89 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Footprint" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" "Infineon IM72D128 PDM MEMS mic, 72 dB SNR, IP57" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "IM72D128_0_1"
-      (rectangle (start -3.81 -3.81) (end 3.81 3.81)
-        (stroke (width 0) (type default)) (fill (type background))))
-    (symbol "IM72D128_1_1"
-      (pin power_in line (at 0 6.35 270) (length 2.54)
-        (name "VDD"  (effects (font (size 1.27 1.27))))
-        (number "1"  (effects (font (size 1.27 1.27)))))
-      (pin power_in line (at 0 -6.35 90) (length 2.54)
-        (name "GND"  (effects (font (size 1.27 1.27))))
-        (number "2"  (effects (font (size 1.27 1.27)))))
-      (pin tri_state line (at 6.35 1.27 180) (length 2.54)
-        (name "DATA" (effects (font (size 1.27 1.27))))
-        (number "3"  (effects (font (size 1.27 1.27)))))
-      (pin input line (at -6.35 -1.27 0) (length 2.54)
-        (name "CLK"  (effects (font (size 1.27 1.27))))
-        (number "4"  (effects (font (size 1.27 1.27)))))
-      (pin input line (at -6.35 1.27 0) (length 2.54)
-        (name "SEL"  (effects (font (size 1.27 1.27))))
-        (number "5"  (effects (font (size 1.27 1.27)))))))
-  (symbol "C"
-    (pin_numbers (hide yes)) (pin_names (offset 0.254))
-    (exclude_from_sim no) (in_bom yes) (on_board yes)
-    (property "Reference" "C" (at 0.64 2.54 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF" (at 0.64 -2.54 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" "" (at 0.96 -3.81 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" "100 nF decoupling capacitor, 0402" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "C_0_1"
-      (polyline (pts (xy -2.032 0.762) (xy 2.032 0.762))
-        (stroke (width 0.508) (type default)) (fill (type none)))
-      (polyline (pts (xy -2.032 -0.762) (xy 2.032 -0.762))
-        (stroke (width 0.508) (type default)) (fill (type none))))
-    (symbol "C_1_1"
-      (pin passive line (at 0 3.81 270) (length 2.794)
-        (name "~" (effects (font (size 1.27 1.27))))
-        (number "1" (effects (font (size 1.27 1.27)))))
-      (pin passive line (at 0 -3.81 90) (length 2.794)
-        (name "~" (effects (font (size 1.27 1.27))))
-        (number "2" (effects (font (size 1.27 1.27)))))))
-  (symbol "power:GND" (power)
-    (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))
-    (exclude_from_sim no) (in_bom yes) (on_board yes)
-    (property "Reference" "#PWR" (at 0 -6.35 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND" (at 0 -3.81 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Footprint" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "GND_0_1"
-      (polyline
-        (pts (xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27))
-        (stroke (width 0) (type default)) (fill (type none))))
-    (symbol "GND_1_1"
-      (pin power_in line (at 0 0 270) (length 0)
-        (name "~" (effects (font (size 1.27 1.27))))
-        (number "1" (effects (font (size 1.27 1.27)))))))
-  (symbol "power:+1V8" (power)
-    (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))
-    (exclude_from_sim no) (in_bom yes) (on_board yes)
-    (property "Reference" "#PWR" (at 0 -3.81 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8" (at 0 3.56 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Footprint" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" "" (at 0 0 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "+1V8_0_1"
-      (polyline (pts (xy -0.762 1.27) (xy 0 2.54))
-        (stroke (width 0) (type default)) (fill (type none)))
-      (polyline (pts (xy 0 2.54) (xy 0.762 1.27))
-        (stroke (width 0) (type default)) (fill (type none)))
-      (polyline (pts (xy 0 0) (xy 0 2.54))
-        (stroke (width 0) (type default)) (fill (type none))))
-    (symbol "+1V8_1_1"
-      (pin power_in line (at 0 0 90) (length 0)
-        (name "~" (effects (font (size 1.27 1.27))))
-        (number "1" (effects (font (size 1.27 1.27)))))))
-  )
-  (symbol (lib_id "IM72D128")
-    (at 80.01 40.64 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "06f8be0b-4fbe-4cf3-a16d-21586c6d636e")
-    (property "Reference" "U1"
-      (at 85.01 49.53 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 85.01 31.75 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 80.01 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "f11d3be2-4022-4d04-a7a7-fb721146555b"))
-    (pin "2" (uuid "8c599c97-bdb6-4421-823c-ef97c3ce72f7"))
-    (pin "3" (uuid "9d7fc6a8-928d-44ae-a004-534972971b82"))
-    (pin "4" (uuid "774df016-f904-4044-99b4-a4fba25807b5"))
-    (pin "5" (uuid "51011e70-99f3-4d7b-9801-6fe61ef5c49f"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U1") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 80.01 34.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5d775d4c-29b0-4377-a9e3-5c1726079887")
-    (property "Reference" "#PWR0001"
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "092804a5-9d6b-4bc8-b5e1-959da5ec6d63"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0001") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 80.01 46.99 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "8643d781-013b-4f58-a6ab-d188849822f3")
-    (property "Reference" "#PWR0002"
-      (at 80.01 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 80.01 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "9a3f307c-7384-442a-972f-d79609b33d86"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0002") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 73.66 39.37 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "c4b2be8c-3462-4fe0-8298-178e96261bba")
-    (property "Reference" "#PWR0003"
-      (at 73.66 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 73.66 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 73.66 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 73.66 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 73.66 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "e9b4853c-1616-4457-9e91-a7491ca5638b"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0003") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 101.6 38.1 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "0fb300d0-c20a-489b-af88-002736cf0a3c")
-    (property "Reference" "C1"
-      (at 103.6 36.6 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 103.6 39.6 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 101.6 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "d10283b5-42f6-4b7a-aac5-8e53fcc17a0b"))
-    (pin "2" (uuid "c2db1cbe-2c87-4e19-ae4c-328276f6b706"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C1") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 101.6 34.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f1d8ae7c-879a-4174-9c98-9cad9ff499b8")
-    (property "Reference" "#PWR0004"
-      (at 101.6 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 101.6 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "345b625b-a434-4fce-850c-0121d5fb6eba"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0004") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 101.6 41.91 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "68a089cb-e2d1-4370-a554-1cab232408fa")
-    (property "Reference" "#PWR0005"
-      (at 101.6 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 101.6 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "592f9f0c-b91c-4326-b98a-579b343aaed2"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0005") (unit 1)))))
-  (symbol (lib_id "IM72D128")
-    (at 80.01 80.01 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ade7f225-85ff-4c32-b1dc-e4e67d83e757")
-    (property "Reference" "U2"
-      (at 85.01 88.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 85.01 71.12 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 80.01 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "63c3aa61-ec2e-429f-afd1-688f00d4b8e8"))
-    (pin "2" (uuid "c2d326df-0348-4c36-8324-54074a507a93"))
-    (pin "3" (uuid "f06661f8-9bcb-43e3-b05f-937cbf419e22"))
-    (pin "4" (uuid "d120bbb4-a56a-4675-9bba-0b75eb32ecae"))
-    (pin "5" (uuid "0a2ed732-f502-4e46-98b2-a2c242a6968e"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U2") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 80.01 73.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "6a0cc424-4df4-4cfd-9eeb-bc775a96f960")
-    (property "Reference" "#PWR0006"
-      (at 80.01 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 80.01 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "62fc8511-c8e0-4318-bdde-25e60e6f9586"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0006") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 80.01 86.36 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f722bdfe-2286-4f92-89ec-431d79b7f52d")
-    (property "Reference" "#PWR0007"
-      (at 80.01 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 80.01 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "27b7a0e9-5fd7-4972-89a9-5bacd9091856"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0007") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 73.66 78.74 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "fcdec6b4-f646-40c6-883a-fc96c05f29bc")
-    (property "Reference" "#PWR0008"
-      (at 73.66 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 73.66 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 73.66 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 73.66 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 73.66 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8b4d4399-0be0-4f20-84c8-28851c3ca31b"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0008") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 101.6 77.47 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "bdcd86b4-7d4c-4da9-88a9-17f66d7faf4a")
-    (property "Reference" "C2"
-      (at 103.6 75.97 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 103.6 78.97 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 101.6 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "6074c8ad-da7f-4cfa-9983-07031f37ab37"))
-    (pin "2" (uuid "10d35c75-86fa-401d-915c-f38de5234d15"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C2") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 101.6 73.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "619ce4a0-009b-46c5-9033-c0096994adaa")
-    (property "Reference" "#PWR0009"
-      (at 101.6 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 101.6 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "c3ad34db-1008-4baa-8101-f0bc2832086d"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0009") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 101.6 81.28 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f90f25c0-80c9-44dc-ad58-8b4c88cbe8d9")
-    (property "Reference" "#PWR0010"
-      (at 101.6 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 101.6 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "1751db74-fa47-4310-bb66-748f03220b19"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0010") (unit 1)))))
-  (wire (pts (xy 73.66 41.91) (xy 68.58 41.91))
-    (stroke (width 0) (type default))
-    (uuid "cf64722b-86e2-4e23-bad0-1c503ade5f7a"))
-  (wire (pts (xy 68.58 41.91) (xy 68.58 81.28))
-    (stroke (width 0) (type default))
-    (uuid "7dfea305-18d9-46c6-acb7-cf6dbeb04bb1"))
-  (wire (pts (xy 68.58 81.28) (xy 73.66 81.28))
-    (stroke (width 0) (type default))
-    (uuid "dbcef82b-f96f-41af-8863-aa567a7cc681"))
-  (global_label "C0_PDM_CLK"
-    (shape input)
-    (at 68.58 41.91 180)
-    (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "80aa7155-e29e-44a8-8f0c-adfe0089a960")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 68.58 41.91 180)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (wire (pts (xy 86.36 39.37) (xy 86.36 78.74))
-    (stroke (width 0) (type default))
-    (uuid "9b59aa98-c800-4ddf-96c8-c589b3633b2a"))
-  (global_label "DATA_00"
-    (shape output)
-    (at 86.36 78.74 0)
-    (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "289537fe-dff6-4fa0-8468-499e3274ce18")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 86.36 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (symbol (lib_id "IM72D128")
-    (at 80.01 154.94 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "7c5dfa92-d87e-4698-ac58-319a15f144d5")
-    (property "Reference" "U3"
-      (at 85.01 163.83 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 85.01 146.05 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 80.01 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b10e8819-e3a9-4a43-907c-95f59f53b71b"))
-    (pin "2" (uuid "f6c2cb24-5cd6-4eab-9281-67cf3d1dfe8b"))
-    (pin "3" (uuid "84d082f3-a673-4e94-9bcb-01ea67a751e6"))
-    (pin "4" (uuid "c66d4eda-5eaf-4a07-a029-20ee1a56bc6c"))
-    (pin "5" (uuid "2508b71e-9920-4510-aa31-77f9c1ee325b"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U3") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 80.01 148.59 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "31f667c1-fd90-466d-8407-e1316849b4fb")
-    (property "Reference" "#PWR0011"
-      (at 80.01 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 80.01 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "a5283638-6d66-4d7e-91a2-56a8195c1b43"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0011") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 80.01 161.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f9401340-a8e2-4544-b211-83f5f3fe3b1f")
-    (property "Reference" "#PWR0012"
-      (at 80.01 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 80.01 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "c0b8d2db-3194-44b8-8a8d-c31452b370bf"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0012") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 73.66 153.67 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ed9ad861-cf9a-4d66-aabb-bb9662853351")
-    (property "Reference" "#PWR0013"
-      (at 73.66 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 73.66 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 73.66 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 73.66 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 73.66 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "31348c98-6644-42f5-8859-979cbf3dd696"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0013") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 101.6 152.4 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f67dd718-b5e4-4ebb-b190-c5499ffc559b")
-    (property "Reference" "C3"
-      (at 103.6 150.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 103.6 153.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 101.6 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "65b96fd8-ec62-442b-8e42-3a0bf00775cc"))
-    (pin "2" (uuid "9f0108d2-a510-467c-a17c-3e85e8cdc439"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C3") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 101.6 148.59 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "53fdb29c-6d86-45cc-b19a-6d68c15d9808")
-    (property "Reference" "#PWR0014"
-      (at 101.6 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 101.6 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "a7e01f5a-6c46-4e7a-a07b-61f34f9c8dd3"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0014") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 101.6 156.21 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "24bca0e6-1774-46e3-96c4-647e7e2d8e20")
-    (property "Reference" "#PWR0015"
-      (at 101.6 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 101.6 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "a0645fd7-8bab-48f5-82b0-d1e0c4d2384b"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0015") (unit 1)))))
-  (symbol (lib_id "IM72D128")
-    (at 80.01 194.31 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5b46988c-3807-406d-9c44-f985a551071b")
-    (property "Reference" "U4"
-      (at 85.01 203.2 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 85.01 185.42 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 80.01 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "1d707cf0-1ba1-4ea0-b279-3d4d4872a5e1"))
-    (pin "2" (uuid "35b32926-ee12-45e2-88bc-35855531e9d1"))
-    (pin "3" (uuid "05391172-e4c0-44ec-aa69-d78de4414db6"))
-    (pin "4" (uuid "9dd4b48f-d85a-49c7-8d84-eec231c5432b"))
-    (pin "5" (uuid "8ebe53d7-65f4-4d06-890e-73690bfe5ab7"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U4") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 80.01 187.96 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "7e23c5ca-8573-41c0-8bde-b61865a56e60")
-    (property "Reference" "#PWR0016"
-      (at 80.01 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 80.01 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "ef3b96b8-67d6-4dfc-b31f-c7424ff363c9"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0016") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 80.01 200.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "a9455272-f270-41cd-a767-815c7e89a1d6")
-    (property "Reference" "#PWR0017"
-      (at 80.01 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 80.01 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 80.01 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "cc64ac65-0650-49a2-a423-c9b48397f741"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0017") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 73.66 193.04 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "03c3eaae-101c-467d-8480-f6f977a9a786")
-    (property "Reference" "#PWR0018"
-      (at 73.66 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 73.66 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 73.66 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 73.66 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 73.66 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "3d386ee4-f181-4fc7-b6b6-4a155b143e9a"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0018") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 101.6 191.77 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "cb4d1fcf-c8e4-42f7-98fb-ad3fe836f0cf")
-    (property "Reference" "C4"
-      (at 103.6 190.27 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 103.6 193.27 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 101.6 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "5bbbeab2-19f2-4b24-9926-4ad7c564339f"))
-    (pin "2" (uuid "7a58f544-abf9-48dd-b54d-8a6d4a2fdbbb"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C4") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 101.6 187.96 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ba29f89c-6007-475e-af6c-b449a1a26401")
-    (property "Reference" "#PWR0019"
-      (at 101.6 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 101.6 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "72f4a02f-e6e7-43c2-a603-c4ba6cc8a5b7"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0019") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 101.6 195.58 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "e762c05b-c6e1-401b-baad-9e8decf3b099")
-    (property "Reference" "#PWR0020"
-      (at 101.6 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 101.6 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 101.6 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 101.6 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 101.6 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "2bb389a7-6222-409e-a09d-ae8edfd141ff"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0020") (unit 1)))))
-  (wire (pts (xy 73.66 156.21) (xy 68.58 156.21))
-    (stroke (width 0) (type default))
-    (uuid "84706c4c-5d3e-4e11-bdf7-21bfb78ca260"))
-  (wire (pts (xy 68.58 156.21) (xy 68.58 195.58))
-    (stroke (width 0) (type default))
-    (uuid "167cf043-f385-4fa9-8e80-c077d116a501"))
-  (wire (pts (xy 68.58 195.58) (xy 73.66 195.58))
-    (stroke (width 0) (type default))
-    (uuid "d01341f4-e061-4d87-b86b-656c6d062025"))
-  (global_label "C0_PDM_CLK"
-    (shape input)
-    (at 68.58 156.21 180)
-    (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "75da1dd9-8a67-46a1-9b4a-770e27dbd22b")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 68.58 156.21 180)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (wire (pts (xy 86.36 153.67) (xy 86.36 193.04))
-    (stroke (width 0) (type default))
-    (uuid "0fba1231-7ef9-4ea6-bd1b-e29578675ad5"))
-  (global_label "DATA_01"
-    (shape output)
-    (at 86.36 193.04 0)
-    (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "1c12f317-bfa2-41f2-b9eb-4ecb80ca2552")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 86.36 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (symbol (lib_id "IM72D128")
-    (at 229.87 40.64 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "8d52cb15-6c30-4394-9de0-b35de9318ede")
-    (property "Reference" "U5"
-      (at 234.87 49.53 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 234.87 31.75 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 229.87 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 40.64 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "744e1bd5-d384-4f1c-b603-7e6a99f49eae"))
-    (pin "2" (uuid "abbd2bcc-35ad-47d0-9d9c-1dc7cf64ee12"))
-    (pin "3" (uuid "57e81f23-c9cf-412e-9de0-6fd085879426"))
-    (pin "4" (uuid "43375b2b-2a8f-4b7d-936b-d18c5c82e8a9"))
-    (pin "5" (uuid "3e8aa9ac-e1d9-46d7-bfed-9d87cfc254be"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U5") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 229.87 34.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "058909d9-2c20-4843-b869-fa2ffa37c73a")
-    (property "Reference" "#PWR0021"
-      (at 229.87 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 229.87 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "fb883be1-a056-4b0b-a56c-41801a398bd0"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0021") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 229.87 46.99 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "22876513-eefb-4187-abda-40982b4e18d1")
-    (property "Reference" "#PWR0022"
-      (at 229.87 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 229.87 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 46.99 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "f7b6106d-cbd5-42f5-a518-6dde7f1d87ab"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0022") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 223.52 39.37 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "267d8692-5ed7-4a53-8717-daa357542cd7")
-    (property "Reference" "#PWR0023"
-      (at 223.52 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 223.52 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 223.52 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 223.52 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 223.52 39.37 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b99cf3c6-8238-435e-9fe2-7f1b728a2d75"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0023") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 251.46 38.1 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "bea0b4e3-4054-4bc8-91f0-3f0e13e76a16")
-    (property "Reference" "C5"
-      (at 253.46 36.6 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 253.46 39.6 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 251.46 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 38.1 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8a589fe2-f400-4495-a3c0-c893817dc55e"))
-    (pin "2" (uuid "3a892f2d-bb10-4f15-9e77-0cf4259cdce3"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C5") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 251.46 34.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "52916ccf-b6be-4072-b6c4-7a730a89064d")
-    (property "Reference" "#PWR0024"
-      (at 251.46 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 251.46 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "229ed416-a061-44d4-a77b-dac0190db231"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0024") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 251.46 41.91 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "3744aef3-4787-42c4-bd1c-300a6aea809a")
-    (property "Reference" "#PWR0025"
-      (at 251.46 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 251.46 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 41.91 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "0f18e51f-9b57-48f4-9e03-9a3315ced68a"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0025") (unit 1)))))
-  (symbol (lib_id "IM72D128")
-    (at 229.87 80.01 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "0f58dee3-3a24-478a-a0bd-de8f8ec6b462")
-    (property "Reference" "U6"
-      (at 234.87 88.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 234.87 71.12 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 229.87 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 80.01 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "cfd127ff-40e1-428c-bf7a-55ecb257d2a0"))
-    (pin "2" (uuid "8fb56e9d-ebd2-4b3b-a0b1-89a9dba7043d"))
-    (pin "3" (uuid "74132b92-471d-4b49-a84f-1c1f7127cea2"))
-    (pin "4" (uuid "7facb527-e17e-473e-9194-1df81a20c3e5"))
-    (pin "5" (uuid "a40e6970-2939-4bc8-b5ee-996ac9d737cf"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U6") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 229.87 73.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "afa34fdf-65c9-4d97-a3c4-fa848cf12316")
-    (property "Reference" "#PWR0026"
-      (at 229.87 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 229.87 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "bf8e2bcd-023c-4606-a431-51a6ddc3ba15"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0026") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 229.87 86.36 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "75128cd1-ea51-47b0-b50c-01dd5c2cead0")
-    (property "Reference" "#PWR0027"
-      (at 229.87 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 229.87 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 86.36 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "e49dd2cf-dbc8-4587-b4d7-66cf838e1050"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0027") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 223.52 78.74 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "26e72047-c274-41cf-b2ba-ff968b36fe12")
-    (property "Reference" "#PWR0028"
-      (at 223.52 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 223.52 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 223.52 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 223.52 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 223.52 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "18aaec8b-ce93-41c6-9e90-15a13b8444dd"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0028") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 251.46 77.47 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ce908adf-d0ac-43c5-9620-e9307e77c5c4")
-    (property "Reference" "C6"
-      (at 253.46 75.97 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 253.46 78.97 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 251.46 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 77.47 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "85147b8e-aa5d-48ec-bb62-e8683fe845fa"))
-    (pin "2" (uuid "c0b363d8-9fd5-41e4-9fae-48881971ad03"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C6") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 251.46 73.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "a31021b5-925c-4710-8111-0fd771df4d7f")
-    (property "Reference" "#PWR0029"
-      (at 251.46 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 251.46 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 73.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "377da186-abc0-45dd-bee4-5b21cb109c4c"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0029") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 251.46 81.28 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "9b461366-ca0d-4ca0-bc63-1e0be599468b")
-    (property "Reference" "#PWR0030"
-      (at 251.46 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 251.46 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 81.28 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "357b8f93-d39c-4459-bb4b-351710269857"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0030") (unit 1)))))
-  (wire (pts (xy 223.52 41.91) (xy 218.44 41.91))
-    (stroke (width 0) (type default))
-    (uuid "e32c5f42-0f22-4286-854b-f21a121767ee"))
-  (wire (pts (xy 218.44 41.91) (xy 218.44 81.28))
-    (stroke (width 0) (type default))
-    (uuid "ad3ddac5-3844-4e5b-87bc-ee898dbcd014"))
-  (wire (pts (xy 218.44 81.28) (xy 223.52 81.28))
-    (stroke (width 0) (type default))
-    (uuid "8837af33-b29f-43a1-8294-9a7ec3e49c87"))
-  (global_label "C0_PDM_CLK"
-    (shape input)
-    (at 218.44 41.91 180)
-    (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "7741511a-6d2f-4907-8368-0e99a75326a3")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 218.44 41.91 180)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (wire (pts (xy 236.22 39.37) (xy 236.22 78.74))
-    (stroke (width 0) (type default))
-    (uuid "1081a19c-6a9f-473f-8126-4f187e62a322"))
-  (global_label "DATA_02"
-    (shape output)
-    (at 236.22 78.74 0)
-    (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "07d4d236-6656-4765-a40b-3ef0a51a6cb2")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 236.22 78.74 0)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (symbol (lib_id "IM72D128")
-    (at 229.87 154.94 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "8a80285d-7552-4ce0-b366-4bc50f86fe38")
-    (property "Reference" "U7"
-      (at 234.87 163.83 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 234.87 146.05 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 229.87 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 154.94 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "1225b0c7-d68b-468d-b036-dd80d328e176"))
-    (pin "2" (uuid "b1232c04-75ad-4223-9739-2a706f951d17"))
-    (pin "3" (uuid "b5f81cfa-5570-4bcc-ae11-333b7e539f9a"))
-    (pin "4" (uuid "a6f9d85e-7b23-4fbc-888f-80d63886cec6"))
-    (pin "5" (uuid "b07a253a-3c3a-4150-ba99-2fb03368ef00"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U7") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 229.87 148.59 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "b653ea1f-61c5-42c1-a7ad-5febafa3f6ba")
-    (property "Reference" "#PWR0031"
-      (at 229.87 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 229.87 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "e38698e0-f20f-45ec-8e25-efdec6f6d0a4"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0031") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 229.87 161.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "09e411c5-ec66-45e0-a2ba-35cef2b518c2")
-    (property "Reference" "#PWR0032"
-      (at 229.87 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 229.87 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 161.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8b7f6a9b-ad4f-49e3-92d0-0d5e5035133f"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0032") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 223.52 153.67 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "55e3f5ed-d1b2-4b73-80d4-1ce63bec7b18")
-    (property "Reference" "#PWR0033"
-      (at 223.52 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 223.52 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 223.52 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 223.52 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 223.52 153.67 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "96da32cc-f0d2-4775-9af9-2caaf7a96809"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0033") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 251.46 152.4 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "a2c2411d-dc43-4fa7-a3dd-4b67dd1f1c62")
-    (property "Reference" "C7"
-      (at 253.46 150.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 253.46 153.9 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 251.46 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 152.4 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "fdd1fb11-0701-4261-bc5b-48548eb3cd5d"))
-    (pin "2" (uuid "2f61a952-d465-422b-b4b4-4e304fbb23b6"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C7") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 251.46 148.59 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "dbf27bc5-ce89-4d68-9cfc-1856644074f5")
-    (property "Reference" "#PWR0034"
-      (at 251.46 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 251.46 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 148.59 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b6b24ceb-f74c-4f84-be01-14e606fa130a"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0034") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 251.46 156.21 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "36b585bd-443d-4e1d-af13-b0cb6bd49ef0")
-    (property "Reference" "#PWR0035"
-      (at 251.46 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 251.46 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 156.21 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "60c3dbb4-fa44-42fe-899a-d496336a4147"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0035") (unit 1)))))
-  (symbol (lib_id "IM72D128")
-    (at 229.87 194.31 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "b8ce7c89-ee81-4926-8aeb-08cf2cb9c1c4")
-    (property "Reference" "U8"
-      (at 234.87 203.2 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "IM72D128V01XTMA1"
-      (at 234.87 185.42 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 229.87 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 194.31 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "4d6b6625-736d-456f-81c6-5e21b8cd57f2"))
-    (pin "2" (uuid "56f65ee2-4328-41b3-b133-e03ea2c3c3b7"))
-    (pin "3" (uuid "95c5cc64-28c2-49d6-818c-af2d3e1b1ee2"))
-    (pin "4" (uuid "315f8441-6f19-4399-b5ca-b74e0934311b"))
-    (pin "5" (uuid "45c5df00-9b9f-4ff0-bcbb-877bbd6cc0eb"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "U8") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 229.87 187.96 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "8179d373-a1bd-4056-9a46-668a9f62e545")
-    (property "Reference" "#PWR0036"
-      (at 229.87 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 229.87 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "083840f8-888f-4274-9678-2cbb679db55b"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0036") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 229.87 200.66 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "b9d4e6d8-4825-4c6b-b2d2-eceb03b12f85")
-    (property "Reference" "#PWR0037"
-      (at 229.87 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 229.87 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 229.87 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 229.87 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 229.87 200.66 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8a845ad5-89f4-470e-a06d-eb0151bdec18"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0037") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 223.52 193.04 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "12b56761-7d86-4a11-8ce8-71422b5b360a")
-    (property "Reference" "#PWR0038"
-      (at 223.52 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 223.52 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 223.52 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 223.52 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 223.52 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7172416c-6cbd-453c-8ee9-c57e08b5e152"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0038") (unit 1)))))
-  (symbol (lib_id "C")
-    (at 251.46 191.77 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "46b1e1bb-cb18-4018-9a65-7b1c6094f737")
-    (property "Reference" "C8"
-      (at 253.46 190.27 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Value" "100nF"
-      (at 253.46 193.27 0)
-      (effects (font (size 1.27 1.27)) (justify left)))
-    (property "Footprint" ""
-      (at 251.46 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 191.77 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "acce1cbe-6d7c-44cc-af7c-deaafbb2be7c"))
-    (pin "2" (uuid "6a93367f-fdb2-4f6e-83dc-a6528a3baf53"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "C8") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
-    (at 251.46 187.96 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "12dad9a1-0c8d-4649-ac15-becebc75b2be")
-    (property "Reference" "#PWR0039"
-      (at 251.46 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
-      (at 251.46 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 187.96 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "cb94c262-cc07-4e09-9ff6-fafce98abc13"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0039") (unit 1)))))
-  (symbol (lib_id "power:GND")
-    (at 251.46 195.58 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "0d5a7405-f804-4e83-99ea-92bdf899b332")
-    (property "Reference" "#PWR0040"
-      (at 251.46 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "GND"
-      (at 251.46 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Footprint" ""
-      (at 251.46 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 251.46 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 251.46 195.58 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7c5f3fe6-12c1-40ae-9218-080a66a55701"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#PWR0040") (unit 1)))))
-  (wire (pts (xy 223.52 156.21) (xy 218.44 156.21))
-    (stroke (width 0) (type default))
-    (uuid "18ff6f7e-734e-47de-a994-cfa1fbaaa8e0"))
-  (wire (pts (xy 218.44 156.21) (xy 218.44 195.58))
-    (stroke (width 0) (type default))
-    (uuid "03677ab3-eea7-4192-997e-e88d95f21824"))
-  (wire (pts (xy 218.44 195.58) (xy 223.52 195.58))
-    (stroke (width 0) (type default))
-    (uuid "0b21a5af-0d2a-48a3-b74b-97ff1678ad89"))
-  (global_label "C0_PDM_CLK"
-    (shape input)
-    (at 218.44 156.21 180)
-    (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "05263765-e3ec-487b-b740-39249c22245d")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 218.44 156.21 180)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (wire (pts (xy 236.22 153.67) (xy 236.22 193.04))
-    (stroke (width 0) (type default))
-    (uuid "373f9a48-c2b7-4b49-adfc-83f8857f0632"))
-  (global_label "DATA_03"
-    (shape output)
-    (at 236.22 193.04 0)
-    (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "2e1ee011-5b0d-49b1-b2dc-3ce3b3f3ce0b")
-    (property "Intersheetrefs" "${INTERSHEET_REFS}"
-      (at 236.22 193.04 0)
-      (effects (font (size 1.27 1.27)) (hide yes))))
-  (symbol (lib_id "power:PWR_FLAG")
-    (at 80.01 34.29 0)
-    (unit 1)
-    (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5396997a-cd2e-4879-b482-cdc880df39e9")
-    (property "Reference" "#FLG01"
-      (at 80.01 29.21 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Value" "PWR_FLAG"
-      (at 80.01 26.67 0)
-      (effects (font (size 1.27 1.27))))
-    (property "Footprint" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Datasheet" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Description" ""
-      (at 80.01 34.29 0)
-      (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "eba40cf4-7e72-4387-9207-f09821273a47"))
-    (instances (project "multi_fpga"
-      (path "/b37172d3-f58a-46c5-8047-510fc330b80e" (reference "#FLG01") (unit 1)))))
-  (sheet_instances
-    (path "/"
-      (page "7")))
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "b37172d3-f58a-46c5-8047-510fc330b80e")
+	(paper "A3")
+	(title_block
+		(title "96-mic PDM Array — Arm 00 (mics 1–8)")
+		(comment 1 "IM72D128V01XTMA1 PDM MEMS mics")
+		(comment 2 "VDD = +1V8; each mic has 100 nF local decoupling")
+		(comment 3 "SEL=GND → L channel (CLK falling); SEL=+1V8 → R channel (CLK rising)")
+	)
+	(lib_symbols
+		(symbol "C"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0.254)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "C"
+				(at 0.64 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "100nF"
+				(at 0.64 -2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" ""
+				(at 0.96 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "100 nF decoupling capacitor, 0402"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "C_0_1"
+				(polyline
+					(pts
+						(xy -2.032 0.762) (xy 2.032 0.762)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy -2.032 -0.762) (xy 2.032 -0.762)
+					)
+					(stroke
+						(width 0.508)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "C_1_1"
+				(pin passive line
+					(at 0 3.81 270)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -3.81 90)
+					(length 2.794)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "IM72D128"
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at 0 8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "IM72D128V01XTMA1"
+				(at 0 -8.89 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Infineon IM72D128 PDM MEMS mic, 72 dB SNR, IP57"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "IM72D128_0_1"
+				(rectangle
+					(start -3.81 -3.81)
+					(end 3.81 3.81)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+			)
+			(symbol "IM72D128_1_1"
+				(pin power_in line
+					(at 0 6.35 270)
+					(length 2.54)
+					(name "VDD"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 0 -6.35 90)
+					(length 2.54)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin tri_state line
+					(at 6.35 1.27 180)
+					(length 2.54)
+					(name "DATA"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -6.35 -1.27 0)
+					(length 2.54)
+					(name "CLK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -6.35 1.27 0)
+					(length 2.54)
+					(name "SEL"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:+1V8"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "+1V8"
+				(at 0 3.56 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "+1V8_0_1"
+				(polyline
+					(pts
+						(xy -0.762 1.27) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 2.54) (xy 0.762 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 2.54)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "+1V8_1_1"
+				(pin power_in line
+					(at 0 0 90)
+					(length 0)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:GND"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#PWR"
+				(at 0 -6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "GND"
+				(at 0 -3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "GND_0_1"
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 -1.27) (xy 1.27 -1.27) (xy 0 -2.54) (xy -1.27 -1.27) (xy 0 -1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "GND_1_1"
+				(pin power_in line
+					(at 0 0 270)
+					(length 0)
+					(name "~"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+		(symbol "power:PWR_FLAG"
+			(power global)
+			(pin_numbers
+				(hide yes)
+			)
+			(pin_names
+				(offset 0)
+				(hide yes)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "#FLG"
+				(at 0 2.54 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "PWR_FLAG"
+				(at 0 4.83 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" ""
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "Declares its net externally supplied, so ERC does not require an on-schematic driver for it"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "PWR_FLAG_0_1"
+				(circle
+					(center 0 1.905)
+					(radius 0.635)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+				(polyline
+					(pts
+						(xy 0 0) (xy 0 1.27)
+					)
+					(stroke
+						(width 0)
+						(type default)
+					)
+					(fill
+						(type none)
+					)
+				)
+			)
+			(symbol "PWR_FLAG_1_1"
+				(pin power_out line
+					(at 0 0 90)
+					(length 0)
+					(name "pwr"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(wire
+		(pts
+			(xy 218.44 156.21) (xy 218.44 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "03677ab3-eea7-4192-997e-e88d95f21824")
+	)
+	(wire
+		(pts
+			(xy 218.44 195.58) (xy 223.52 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0b21a5af-0d2a-48a3-b74b-97ff1678ad89")
+	)
+	(wire
+		(pts
+			(xy 86.36 153.67) (xy 86.36 193.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "0fba1231-7ef9-4ea6-bd1b-e29578675ad5")
+	)
+	(wire
+		(pts
+			(xy 236.22 39.37) (xy 236.22 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "1081a19c-6a9f-473f-8126-4f187e62a322")
+	)
+	(wire
+		(pts
+			(xy 68.58 156.21) (xy 68.58 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "167cf043-f385-4fa9-8e80-c077d116a501")
+	)
+	(wire
+		(pts
+			(xy 223.52 156.21) (xy 218.44 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "18ff6f7e-734e-47de-a994-cfa1fbaaa8e0")
+	)
+	(wire
+		(pts
+			(xy 236.22 153.67) (xy 236.22 193.04)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "373f9a48-c2b7-4b49-adfc-83f8857f0632")
+	)
+	(wire
+		(pts
+			(xy 68.58 41.91) (xy 68.58 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "7dfea305-18d9-46c6-acb7-cf6dbeb04bb1")
+	)
+	(wire
+		(pts
+			(xy 73.66 156.21) (xy 68.58 156.21)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "84706c4c-5d3e-4e11-bdf7-21bfb78ca260")
+	)
+	(wire
+		(pts
+			(xy 218.44 81.28) (xy 223.52 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8837af33-b29f-43a1-8294-9a7ec3e49c87")
+	)
+	(wire
+		(pts
+			(xy 86.36 39.37) (xy 86.36 78.74)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9b59aa98-c800-4ddf-96c8-c589b3633b2a")
+	)
+	(wire
+		(pts
+			(xy 218.44 41.91) (xy 218.44 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ad3ddac5-3844-4e5b-87bc-ee898dbcd014")
+	)
+	(wire
+		(pts
+			(xy 73.66 41.91) (xy 68.58 41.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "cf64722b-86e2-4e23-bad0-1c503ade5f7a")
+	)
+	(wire
+		(pts
+			(xy 68.58 195.58) (xy 73.66 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d01341f4-e061-4d87-b86b-656c6d062025")
+	)
+	(wire
+		(pts
+			(xy 68.58 81.28) (xy 73.66 81.28)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "dbcef82b-f96f-41af-8863-aa567a7cc681")
+	)
+	(wire
+		(pts
+			(xy 223.52 41.91) (xy 218.44 41.91)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "e32c5f42-0f22-4286-854b-f21a121767ee")
+	)
+	(global_label "C0_PDM_CLK"
+		(shape input)
+		(at 218.44 156.21 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "05263765-e3ec-487b-b740-39249c22245d")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 218.44 156.21 180)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "DATA_02"
+		(shape output)
+		(at 236.22 78.74 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "07d4d236-6656-4765-a40b-3ef0a51a6cb2")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 236.22 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "DATA_01"
+		(shape output)
+		(at 86.36 193.04 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "1c12f317-bfa2-41f2-b9eb-4ecb80ca2552")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 86.36 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "DATA_00"
+		(shape output)
+		(at 86.36 78.74 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "289537fe-dff6-4fa0-8468-499e3274ce18")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 86.36 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "DATA_03"
+		(shape output)
+		(at 236.22 193.04 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left)
+		)
+		(uuid "2e1ee011-5b0d-49b1-b2dc-3ce3b3f3ce0b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 236.22 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "C0_PDM_CLK"
+		(shape input)
+		(at 68.58 156.21 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "75da1dd9-8a67-46a1-9b4a-770e27dbd22b")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 68.58 156.21 180)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "C0_PDM_CLK"
+		(shape input)
+		(at 218.44 41.91 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "7741511a-6d2f-4907-8368-0e99a75326a3")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 218.44 41.91 180)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "C0_PDM_CLK"
+		(shape input)
+		(at 68.58 41.91 180)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "80aa7155-e29e-44a8-8f0c-adfe0089a960")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 68.58 41.91 180)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 73.66 193.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "03c3eaae-101c-467d-8480-f6f977a9a786")
+		(property "Reference" "#PWR0018"
+			(at 73.66 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 73.66 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "3d386ee4-f181-4fc7-b6b6-4a155b143e9a")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0018")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0018")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 229.87 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "058909d9-2c20-4843-b869-fa2ffa37c73a")
+		(property "Reference" "#PWR0021"
+			(at 229.87 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 229.87 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fb883be1-a056-4b0b-a56c-41801a398bd0")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0021")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0021")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 80.01 40.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "06f8be0b-4fbe-4cf3-a16d-21586c6d636e")
+		(property "Reference" "U1"
+			(at 85.01 49.53 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 85.01 31.75 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f11d3be2-4022-4d04-a7a7-fb721146555b")
+		)
+		(pin "2"
+			(uuid "8c599c97-bdb6-4421-823c-ef97c3ce72f7")
+		)
+		(pin "3"
+			(uuid "9d7fc6a8-928d-44ae-a004-534972971b82")
+		)
+		(pin "4"
+			(uuid "774df016-f904-4044-99b4-a4fba25807b5")
+		)
+		(pin "5"
+			(uuid "51011e70-99f3-4d7b-9801-6fe61ef5c49f")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U1")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 229.87 161.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "09e411c5-ec66-45e0-a2ba-35cef2b518c2")
+		(property "Reference" "#PWR0032"
+			(at 229.87 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 229.87 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8b7f6a9b-ad4f-49e3-92d0-0d5e5035133f")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0032")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0032")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 251.46 195.58 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "0d5a7405-f804-4e83-99ea-92bdf899b332")
+		(property "Reference" "#PWR0040"
+			(at 251.46 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 251.46 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7c5f3fe6-12c1-40ae-9218-080a66a55701")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0040")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0040")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 229.87 80.01 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "0f58dee3-3a24-478a-a0bd-de8f8ec6b462")
+		(property "Reference" "U6"
+			(at 234.87 88.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 234.87 71.12 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cfd127ff-40e1-428c-bf7a-55ecb257d2a0")
+		)
+		(pin "2"
+			(uuid "8fb56e9d-ebd2-4b3b-a0b1-89a9dba7043d")
+		)
+		(pin "3"
+			(uuid "74132b92-471d-4b49-a84f-1c1f7127cea2")
+		)
+		(pin "4"
+			(uuid "7facb527-e17e-473e-9194-1df81a20c3e5")
+		)
+		(pin "5"
+			(uuid "a40e6970-2939-4bc8-b5ee-996ac9d737cf")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U6")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 101.6 38.1 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "0fb300d0-c20a-489b-af88-002736cf0a3c")
+		(property "Reference" "C1"
+			(at 103.6 36.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 103.6 39.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "d10283b5-42f6-4b7a-aac5-8e53fcc17a0b")
+		)
+		(pin "2"
+			(uuid "c2db1cbe-2c87-4e19-ae4c-328276f6b706")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C1")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C1")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 223.52 193.04 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "12b56761-7d86-4a11-8ce8-71422b5b360a")
+		(property "Reference" "#PWR0038"
+			(at 223.52 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 223.52 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 223.52 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 223.52 193.04 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "7172416c-6cbd-453c-8ee9-c57e08b5e152")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0038")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0038")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 251.46 187.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "12dad9a1-0c8d-4649-ac15-becebc75b2be")
+		(property "Reference" "#PWR0039"
+			(at 251.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 251.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cb94c262-cc07-4e09-9ff6-fafce98abc13")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0039")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0039")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 229.87 46.99 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "22876513-eefb-4187-abda-40982b4e18d1")
+		(property "Reference" "#PWR0022"
+			(at 229.87 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 229.87 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "f7b6106d-cbd5-42f5-a518-6dde7f1d87ab")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0022")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0022")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 101.6 156.21 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "24bca0e6-1774-46e3-96c4-647e7e2d8e20")
+		(property "Reference" "#PWR0015"
+			(at 101.6 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 101.6 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a0645fd7-8bab-48f5-82b0-d1e0c4d2384b")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0015")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0015")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 223.52 39.37 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "267d8692-5ed7-4a53-8717-daa357542cd7")
+		(property "Reference" "#PWR0023"
+			(at 223.52 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 223.52 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 223.52 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 223.52 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b99cf3c6-8238-435e-9fe2-7f1b728a2d75")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0023")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0023")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 223.52 78.74 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "26e72047-c274-41cf-b2ba-ff968b36fe12")
+		(property "Reference" "#PWR0028"
+			(at 223.52 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 223.52 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 223.52 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 223.52 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "18aaec8b-ce93-41c6-9e90-15a13b8444dd")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0028")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0028")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 80.01 148.59 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "31f667c1-fd90-466d-8407-e1316849b4fb")
+		(property "Reference" "#PWR0011"
+			(at 80.01 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 80.01 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a5283638-6d66-4d7e-91a2-56a8195c1b43")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0011")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0011")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 251.46 156.21 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "36b585bd-443d-4e1d-af13-b0cb6bd49ef0")
+		(property "Reference" "#PWR0035"
+			(at 251.46 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 251.46 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 156.21 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "60c3dbb4-fa44-42fe-899a-d496336a4147")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0035")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0035")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 251.46 41.91 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "3744aef3-4787-42c4-bd1c-300a6aea809a")
+		(property "Reference" "#PWR0025"
+			(at 251.46 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 251.46 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "0f18e51f-9b57-48f4-9e03-9a3315ced68a")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0025")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0025")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 251.46 191.77 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "46b1e1bb-cb18-4018-9a65-7b1c6094f737")
+		(property "Reference" "C8"
+			(at 253.46 190.27 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 253.46 193.27 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "acce1cbe-6d7c-44cc-af7c-deaafbb2be7c")
+		)
+		(pin "2"
+			(uuid "6a93367f-fdb2-4f6e-83dc-a6528a3baf53")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C8")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 251.46 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "52916ccf-b6be-4072-b6c4-7a730a89064d")
+		(property "Reference" "#PWR0024"
+			(at 251.46 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 251.46 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "229ed416-a061-44d4-a77b-dac0190db231")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0024")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0024")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:PWR_FLAG")
+		(at 80.01 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "5396997a-cd2e-4879-b482-cdc880df39e9")
+		(property "Reference" "#FLG01"
+			(at 80.01 29.21 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "PWR_FLAG"
+			(at 80.01 26.67 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "eba40cf4-7e72-4387-9207-f09821273a47")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#FLG01")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#FLG01")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 101.6 148.59 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "53fdb29c-6d86-45cc-b19a-6d68c15d9808")
+		(property "Reference" "#PWR0014"
+			(at 101.6 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 101.6 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "a7e01f5a-6c46-4e7a-a07b-61f34f9c8dd3")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0014")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0014")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 223.52 153.67 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "55e3f5ed-d1b2-4b73-80d4-1ce63bec7b18")
+		(property "Reference" "#PWR0033"
+			(at 223.52 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 223.52 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 223.52 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 223.52 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 223.52 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "96da32cc-f0d2-4775-9af9-2caaf7a96809")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0033")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0033")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 80.01 194.31 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "5b46988c-3807-406d-9c44-f985a551071b")
+		(property "Reference" "U4"
+			(at 85.01 203.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 85.01 185.42 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1d707cf0-1ba1-4ea0-b279-3d4d4872a5e1")
+		)
+		(pin "2"
+			(uuid "35b32926-ee12-45e2-88bc-35855531e9d1")
+		)
+		(pin "3"
+			(uuid "05391172-e4c0-44ec-aa69-d78de4414db6")
+		)
+		(pin "4"
+			(uuid "9dd4b48f-d85a-49c7-8d84-eec231c5432b")
+		)
+		(pin "5"
+			(uuid "8ebe53d7-65f4-4d06-890e-73690bfe5ab7")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U4")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 80.01 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "5d775d4c-29b0-4377-a9e3-5c1726079887")
+		(property "Reference" "#PWR0001"
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "092804a5-9d6b-4bc8-b5e1-959da5ec6d63")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0001")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0001")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 101.6 73.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "619ce4a0-009b-46c5-9033-c0096994adaa")
+		(property "Reference" "#PWR0009"
+			(at 101.6 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 101.6 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c3ad34db-1008-4baa-8101-f0bc2832086d")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0009")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0009")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 101.6 41.91 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "68a089cb-e2d1-4370-a554-1cab232408fa")
+		(property "Reference" "#PWR0005"
+			(at 101.6 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 101.6 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 41.91 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "592f9f0c-b91c-4326-b98a-579b343aaed2")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0005")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0005")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 80.01 73.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "6a0cc424-4df4-4cfd-9eeb-bc775a96f960")
+		(property "Reference" "#PWR0006"
+			(at 80.01 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 80.01 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "62fc8511-c8e0-4318-bdde-25e60e6f9586")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0006")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0006")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 229.87 86.36 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "75128cd1-ea51-47b0-b50c-01dd5c2cead0")
+		(property "Reference" "#PWR0027"
+			(at 229.87 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 229.87 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e49dd2cf-dbc8-4587-b4d7-66cf838e1050")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0027")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0027")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 80.01 154.94 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7c5dfa92-d87e-4698-ac58-319a15f144d5")
+		(property "Reference" "U3"
+			(at 85.01 163.83 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 85.01 146.05 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b10e8819-e3a9-4a43-907c-95f59f53b71b")
+		)
+		(pin "2"
+			(uuid "f6c2cb24-5cd6-4eab-9281-67cf3d1dfe8b")
+		)
+		(pin "3"
+			(uuid "84d082f3-a673-4e94-9bcb-01ea67a751e6")
+		)
+		(pin "4"
+			(uuid "c66d4eda-5eaf-4a07-a029-20ee1a56bc6c")
+		)
+		(pin "5"
+			(uuid "2508b71e-9920-4510-aa31-77f9c1ee325b")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U3")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 80.01 187.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "7e23c5ca-8573-41c0-8bde-b61865a56e60")
+		(property "Reference" "#PWR0016"
+			(at 80.01 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 80.01 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "ef3b96b8-67d6-4dfc-b31f-c7424ff363c9")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0016")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0016")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 229.87 187.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8179d373-a1bd-4056-9a46-668a9f62e545")
+		(property "Reference" "#PWR0036"
+			(at 229.87 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 229.87 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "083840f8-888f-4274-9678-2cbb679db55b")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0036")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0036")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 80.01 46.99 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8643d781-013b-4f58-a6ab-d188849822f3")
+		(property "Reference" "#PWR0002"
+			(at 80.01 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 80.01 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 46.99 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "9a3f307c-7384-442a-972f-d79609b33d86")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0002")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0002")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 229.87 154.94 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8a80285d-7552-4ce0-b366-4bc50f86fe38")
+		(property "Reference" "U7"
+			(at 234.87 163.83 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 234.87 146.05 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 154.94 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1225b0c7-d68b-468d-b036-dd80d328e176")
+		)
+		(pin "2"
+			(uuid "b1232c04-75ad-4223-9739-2a706f951d17")
+		)
+		(pin "3"
+			(uuid "b5f81cfa-5570-4bcc-ae11-333b7e539f9a")
+		)
+		(pin "4"
+			(uuid "a6f9d85e-7b23-4fbc-888f-80d63886cec6")
+		)
+		(pin "5"
+			(uuid "b07a253a-3c3a-4150-ba99-2fb03368ef00")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U7")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 229.87 40.64 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "8d52cb15-6c30-4394-9de0-b35de9318ede")
+		(property "Reference" "U5"
+			(at 234.87 49.53 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 234.87 31.75 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 40.64 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "744e1bd5-d384-4f1c-b603-7e6a99f49eae")
+		)
+		(pin "2"
+			(uuid "abbd2bcc-35ad-47d0-9d9c-1dc7cf64ee12")
+		)
+		(pin "3"
+			(uuid "57e81f23-c9cf-412e-9de0-6fd085879426")
+		)
+		(pin "4"
+			(uuid "43375b2b-2a8f-4b7d-936b-d18c5c82e8a9")
+		)
+		(pin "5"
+			(uuid "3e8aa9ac-e1d9-46d7-bfed-9d87cfc254be")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U5")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 251.46 81.28 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "9b461366-ca0d-4ca0-bc63-1e0be599468b")
+		(property "Reference" "#PWR0030"
+			(at 251.46 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 251.46 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "357b8f93-d39c-4459-bb4b-351710269857")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0030")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0030")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 251.46 152.4 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a2c2411d-dc43-4fa7-a3dd-4b67dd1f1c62")
+		(property "Reference" "C7"
+			(at 253.46 150.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 253.46 153.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "fdd1fb11-0701-4261-bc5b-48548eb3cd5d")
+		)
+		(pin "2"
+			(uuid "2f61a952-d465-422b-b4b4-4e304fbb23b6")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C7")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C7")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 251.46 73.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a31021b5-925c-4710-8111-0fd771df4d7f")
+		(property "Reference" "#PWR0029"
+			(at 251.46 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 251.46 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "377da186-abc0-45dd-bee4-5b21cb109c4c")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0029")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0029")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 80.01 200.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "a9455272-f270-41cd-a767-815c7e89a1d6")
+		(property "Reference" "#PWR0017"
+			(at 80.01 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 80.01 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "cc64ac65-0650-49a2-a423-c9b48397f741")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0017")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0017")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 80.01 80.01 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ade7f225-85ff-4c32-b1dc-e4e67d83e757")
+		(property "Reference" "U2"
+			(at 85.01 88.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 85.01 71.12 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "63c3aa61-ec2e-429f-afd1-688f00d4b8e8")
+		)
+		(pin "2"
+			(uuid "c2d326df-0348-4c36-8324-54074a507a93")
+		)
+		(pin "3"
+			(uuid "f06661f8-9bcb-43e3-b05f-937cbf419e22")
+		)
+		(pin "4"
+			(uuid "d120bbb4-a56a-4675-9bba-0b75eb32ecae")
+		)
+		(pin "5"
+			(uuid "0a2ed732-f502-4e46-98b2-a2c242a6968e")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U2")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 229.87 73.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "afa34fdf-65c9-4d97-a3c4-fa848cf12316")
+		(property "Reference" "#PWR0026"
+			(at 229.87 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 229.87 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 73.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "bf8e2bcd-023c-4606-a431-51a6ddc3ba15")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0026")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0026")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 229.87 148.59 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "b653ea1f-61c5-42c1-a7ad-5febafa3f6ba")
+		(property "Reference" "#PWR0031"
+			(at 229.87 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 229.87 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e38698e0-f20f-45ec-8e25-efdec6f6d0a4")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0031")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0031")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "IM72D128")
+		(at 229.87 194.31 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "b8ce7c89-ee81-4926-8aeb-08cf2cb9c1c4")
+		(property "Reference" "U8"
+			(at 234.87 203.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "IM72D128V01XTMA1"
+			(at 234.87 185.42 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 194.31 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "4d6b6625-736d-456f-81c6-5e21b8cd57f2")
+		)
+		(pin "2"
+			(uuid "56f65ee2-4328-41b3-b133-e03ea2c3c3b7")
+		)
+		(pin "3"
+			(uuid "95c5cc64-28c2-49d6-818c-af2d3e1b1ee2")
+		)
+		(pin "4"
+			(uuid "315f8441-6f19-4399-b5ca-b74e0934311b")
+		)
+		(pin "5"
+			(uuid "45c5df00-9b9f-4ff0-bcbb-877bbd6cc0eb")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "U8")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "U8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 229.87 200.66 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "b9d4e6d8-4825-4c6b-b2d2-eceb03b12f85")
+		(property "Reference" "#PWR0037"
+			(at 229.87 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 229.87 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 229.87 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 229.87 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 229.87 200.66 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8a845ad5-89f4-470e-a06d-eb0151bdec18")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0037")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0037")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 101.6 187.96 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ba29f89c-6007-475e-af6c-b449a1a26401")
+		(property "Reference" "#PWR0019"
+			(at 101.6 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 101.6 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 187.96 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "72f4a02f-e6e7-43c2-a603-c4ba6cc8a5b7")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0019")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0019")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 101.6 77.47 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "bdcd86b4-7d4c-4da9-88a9-17f66d7faf4a")
+		(property "Reference" "C2"
+			(at 103.6 75.97 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 103.6 78.97 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "6074c8ad-da7f-4cfa-9983-07031f37ab37")
+		)
+		(pin "2"
+			(uuid "10d35c75-86fa-401d-915c-f38de5234d15")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C2")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C2")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 251.46 38.1 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "bea0b4e3-4054-4bc8-91f0-3f0e13e76a16")
+		(property "Reference" "C5"
+			(at 253.46 36.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 253.46 39.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 38.1 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8a589fe2-f400-4495-a3c0-c893817dc55e")
+		)
+		(pin "2"
+			(uuid "3a892f2d-bb10-4f15-9e77-0cf4259cdce3")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C5")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C5")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 73.66 39.37 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "c4b2be8c-3462-4fe0-8298-178e96261bba")
+		(property "Reference" "#PWR0003"
+			(at 73.66 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 73.66 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 39.37 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "e9b4853c-1616-4457-9e91-a7491ca5638b")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0003")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0003")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 101.6 191.77 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "cb4d1fcf-c8e4-42f7-98fb-ad3fe836f0cf")
+		(property "Reference" "C4"
+			(at 103.6 190.27 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 103.6 193.27 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 191.77 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "5bbbeab2-19f2-4b24-9926-4ad7c564339f")
+		)
+		(pin "2"
+			(uuid "7a58f544-abf9-48dd-b54d-8a6d4a2fdbbb")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C4")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C4")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 251.46 77.47 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ce908adf-d0ac-43c5-9620-e9307e77c5c4")
+		(property "Reference" "C6"
+			(at 253.46 75.97 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 253.46 78.97 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 77.47 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "85147b8e-aa5d-48ec-bb62-e8683fe845fa")
+		)
+		(pin "2"
+			(uuid "c0b363d8-9fd5-41e4-9fae-48881971ad03")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C6")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C6")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 251.46 148.59 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "dbf27bc5-ce89-4d68-9cfc-1856644074f5")
+		(property "Reference" "#PWR0034"
+			(at 251.46 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 251.46 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 251.46 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 251.46 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 251.46 148.59 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "b6b24ceb-f74c-4f84-be01-14e606fa130a")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0034")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0034")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 101.6 195.58 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "e762c05b-c6e1-401b-baad-9e8decf3b099")
+		(property "Reference" "#PWR0020"
+			(at 101.6 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 101.6 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 195.58 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2bb389a7-6222-409e-a09d-ae8edfd141ff")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0020")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0020")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 73.66 153.67 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "ed9ad861-cf9a-4d66-aabb-bb9662853351")
+		(property "Reference" "#PWR0013"
+			(at 73.66 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 73.66 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 153.67 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "31348c98-6644-42f5-8859-979cbf3dd696")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0013")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0013")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 101.6 34.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f1d8ae7c-879a-4174-9c98-9cad9ff499b8")
+		(property "Reference" "#PWR0004"
+			(at 101.6 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 101.6 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 34.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "345b625b-a434-4fce-850c-0121d5fb6eba")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0004")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0004")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "C")
+		(at 101.6 152.4 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f67dd718-b5e4-4ebb-b190-c5499ffc559b")
+		(property "Reference" "C3"
+			(at 103.6 150.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Value" "100nF"
+			(at 103.6 153.9 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 152.4 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "65b96fd8-ec62-442b-8e42-3a0bf00775cc")
+		)
+		(pin "2"
+			(uuid "9f0108d2-a510-467c-a17c-3e85e8cdc439")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "C3")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "C3")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 80.01 86.36 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f722bdfe-2286-4f92-89ec-431d79b7f52d")
+		(property "Reference" "#PWR0007"
+			(at 80.01 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 80.01 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 86.36 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "27b7a0e9-5fd7-4972-89a9-5bacd9091856")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0007")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0007")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 101.6 81.28 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f90f25c0-80c9-44dc-ad58-8b4c88cbe8d9")
+		(property "Reference" "#PWR0010"
+			(at 101.6 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 101.6 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 101.6 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 101.6 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 101.6 81.28 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "1751db74-fa47-4310-bb66-748f03220b19")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0010")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0010")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 80.01 161.29 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "f9401340-a8e2-4544-b211-83f5f3fe3b1f")
+		(property "Reference" "#PWR0012"
+			(at 80.01 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 80.01 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 80.01 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 80.01 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 80.01 161.29 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "c0b8d2db-3194-44b8-8a8d-c31452b370bf")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0012")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0012")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+1V8")
+		(at 73.66 78.74 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "fcdec6b4-f646-40c6-883a-fc96c05f29bc")
+		(property "Reference" "#PWR0008"
+			(at 73.66 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+1V8"
+			(at 73.66 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 73.66 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 73.66 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" ""
+			(at 73.66 78.74 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8b4d4399-0be0-4f20-84c8-28851c3ca31b")
+		)
+		(instances
+			(project "top"
+				(path "/a52b473e-631a-4983-aea6-1ecb4f62461b/25a035a8-7083-4f3e-8cfe-294d11c202c0/07c28948-5643-4a97-ab6a-89daf23ada06"
+					(reference "#PWR0008")
+					(unit 1)
+				)
+			)
+			(project "multi_fpga"
+				(path "/b37172d3-f58a-46c5-8047-510fc330b80e"
+					(reference "#PWR0008")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(sheet_instances
+		(path "/"
+			(page "7")
+		)
+	)
 )
