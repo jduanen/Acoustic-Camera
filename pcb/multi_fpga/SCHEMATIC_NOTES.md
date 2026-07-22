@@ -25,9 +25,9 @@ internal board schematic.
 | File | Contents |
 |---|---|
 | `top.kicad_sch` | 4x cluster sub-sheet + 1x hub sub-sheet |
-| `cluster_00..03.kicad_sch` | Cmod S7 (U1) + spoke bus to hub + 3x arm sub-sheet |
+| `cluster_00..03.kicad_sch` | Cmod S7 (A1-A4) + spoke bus to hub + 3x arm sub-sheet |
 | `arm_00..11.kicad_sch` | Per-mic wiring (8 mics each), reused from `pcb/mic_array/` |
-| `hub.kicad_sch` | Arty A7-35T (U1) + 4x spoke bus + TCXO (Y1) + USB bridge (U2) |
+| `hub.kicad_sch` | Arty A7-35T (A5) + 4x spoke bus + TCXO (Y1) + USB bridge (A6) |
 
 Page numbering: 1 = top, 2-5 = cluster_00-03, 6 = hub, 7-18 = arm_00-11 (in
 cluster order: cluster N's arms are 3N, 3N+1, 3N+2, i.e. pages 7+3N..9+3N).
@@ -38,11 +38,16 @@ cluster order: cluster N's arms are 3N, 3N+1, 3N+2, i.e. pages 7+3N..9+3N).
 
 | Ref | Sheet | Part |
 |---|---|---|
-| U1 | cluster_NN | Digilent Cmod S7 (XC7S25-1CSGA225C) |
+| A1-A4 | cluster_00-03 | Digilent Cmod S7 (XC7S25-1CSGA225C), one per cluster |
 | U1-U96, C1-C96 | arm_NN | IM72D128 mics + decoupling caps — same numbering as `pcb/mic_array/` |
-| U1 | hub | Digilent Arty A7-35T (XC7A35TICSG324-1L) |
-| U2 | hub | FTDI FT232H USB-FIFO breakout (e.g. Adafruit #2264) |
+| A5 | hub | Digilent Arty A7-35T (XC7A35TICSG324-1L) |
+| A6 | hub | FTDI FT232H USB-FIFO breakout (e.g. Adafruit #2264) |
 | Y1 | hub | 12.288 MHz TCXO (NDK NZ2520SD or TXC 7M series, ±2.5 ppm) |
+
+Dev-board/breakout modules use the "A" (assembly) prefix, not "U" — the "U"
+range is reserved for the 96 mics (`U1`-`U96`). Originally these all used
+"U1"/"U2" and collided both with mic `U1`/`U2` and with each other (all 4
+clusters' Cmod S7 said "U1"); fixed by moving them to their own prefix.
 
 ---
 
@@ -96,7 +101,7 @@ across the four 9-pin header blocks before wiring.
 ## Host interface: USB bridge to Raspberry Pi 5
 
 No GbE MAC or RGMII PHY on the hub — see PHASE4.md's "Host interface" section.
-`U2` (FT232H) talks a synchronous 245-mode 8-bit FIFO to the hub over the
+`A6` (FT232H) talks a synchronous 245-mode 8-bit FIFO to the hub over the
 Arty's shield connector (`IO0`-`IO7` = data, `IO8`-`IO11` = `RXF#`/`TXE#`/
 `RD#`/`WR#`), then a USB cable to a Raspberry Pi 5 USB 3.0 port (device is
 USB2 Hi-Speed, ~320 Mbps, well over the 110 Mbps payload). The Arty's own
@@ -147,6 +152,29 @@ found by inspection:
   pin's outer tip toward the body centre, not outward; with 5 pins this
   close together, anything above `offset 0` collides. Fixed by setting it to
   `0`, which places each name right at its own pin tip.
+
+Two more weren't ERC violations *or* electrical bugs, but duplicate reference
+designators — a project-wide annotation check the KiCad GUI reports
+separately from `kicad-cli sch erc` (which doesn't catch either of these):
+
+- **CMOD_S7/Arty/FT232H reused the "U" mic range.** All 4 clusters' CMOD_S7
+  said `U1` (colliding with each other *and* with the first mic in every
+  arm sheet), and the hub's Arty/FT232H said `U1`/`U2` (colliding with mics
+  1 and 2). Fixed by moving these dev-board modules to their own "A"
+  (assembly) prefix: `A1`-`A4` per cluster, `A5` (Arty), `A6` (FT232H) — see
+  the reference designator table above.
+- **`#PWR0001`-`#PWR0018`-ish duplicated across files.**
+  `pcb/make_schematic.py` and `pcb/make_schematic_multi_fpga.py` each kept
+  their own independent `_pwr_n` counter for auto-numbering `#PWR` symbols,
+  both starting at 0. `main()` calls `make_arm()` (12x, via
+  `make_schematic.py`'s counter) before `make_cluster()`/`make_hub()` (via
+  this file's own, separate counter) — so the low numbers in the arm-file
+  group and the cluster/hub-file group collided, since KiCad treats the
+  whole project as one flat reference namespace regardless of which file a
+  symbol is defined in. Fixed by having `make_schematic_multi_fpga.py`'s
+  `_pref()` share `make_schematic.py`'s counter instead of keeping its own
+  (imported as `ms`, incrementing `ms._pwr_n[0]`) — the numbering is now one
+  continuous sequence (`#PWR0001`-`#PWR0498`) across the whole project.
 
 Remaining violations are all warnings, in the same classes already present in
 `pcb/mic_array/`'s own ERC output:

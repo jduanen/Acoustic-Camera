@@ -40,6 +40,7 @@ import sys
 import uuid as _uuid_mod
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import make_schematic as ms  # noqa: E402 — shared #PWR counter, see _pref() below
 from make_schematic import make_arm, GRID  # noqa: E402 — reuse the primary design's per-mic wiring
 
 # ── project constants ─────────────────────────────────────────────────────────
@@ -82,14 +83,19 @@ SHIELD_PINS_USED = [
 
 # ── helpers (mirrors pcb/make_schematic.py conventions) ───────────────────────
 
-_pwr_n = [0]
-
 def _uid():
     return str(_uuid_mod.uuid4())
 
 def _pref():
-    _pwr_n[0] += 1
-    return f"#PWR{_pwr_n[0]:04d}"
+    # Shares make_schematic.py's counter (imported above) rather than keeping
+    # a separate one — main() calls make_arm() (12x, via make_schematic.py's
+    # own _pwr()/_pref()) before make_cluster()/make_hub() (via this file's).
+    # Two independent counters both starting at #PWR0001 produced duplicate
+    # references project-wide (arm files' #PWR000N colliding with cluster/hub
+    # files' #PWR000N) since KiCad treats the whole project as one flat
+    # reference namespace.
+    ms._pwr_n[0] += 1
+    return f"#PWR{ms._pwr_n[0]:04d}"
 
 def _f(x):
     """Float -> 2-dp string, trailing zeros stripped."""
@@ -441,7 +447,11 @@ def make_cluster(idx):
     )
     n = len(cmod_pins)
     CX, CY = 94 * GRID, 118 * GRID
-    buf.append(_conn_instance("CMOD_S7", "U1", CX, CY, sch_uuid, cmod_pins))
+    # "A" (assembly/board module), not "U" — this project's "U" range is the
+    # 96 mics (U1-U96, see make_arm()); reusing "U1" here collided with both
+    # the first mic in every cluster's own arm_00-equivalent sheet and with
+    # every other cluster's own CMOD_S7 (all 4 clusters previously said "U1").
+    buf.append(_conn_instance("CMOD_S7", f"A{idx + 1}", CX, CY, sch_uuid, cmod_pins))
 
     # PDM_CLK: this cluster's own forwarded-clock copy (not shared with other
     # clusters — see PHASE4.md Spoke link). PDM_D00..D11: tie straight to the
@@ -538,7 +548,9 @@ def make_hub():
     n = len(arty_pins)
 
     AX, AY = 118 * GRID, 197 * GRID
-    buf.append(_conn_instance("ARTY_A7_35T", "U1", AX, AY, sch_uuid, arty_pins))
+    # "A" (assembly/board module) continuing the clusters' A1-A4 — see
+    # make_cluster()'s comment on why this isn't "U1" (mic-range collision).
+    buf.append(_conn_instance("ARTY_A7_35T", f"A{N_CLUSTERS + 1}", AX, AY, sch_uuid, arty_pins))
 
     # 4x Pmod spoke buses: pins 0..31, 8 per cluster in ARTY_PMOD_ORDER order
     for cidx, pmod in enumerate(ARTY_PMOD_ORDER):
@@ -586,7 +598,9 @@ def make_hub():
         + [("VCCIO", "13", "power_in"), ("GND", "14", "power_in")]
     )
     FX, FY = 252 * GRID, 134 * GRID
-    buf.append(_conn_instance("FT232H_BRK", "U2", FX, FY, sch_uuid, ft232h_pins))
+    # "A" (assembly/board module) — was "U2", colliding with the 2nd mic; see
+    # make_cluster()'s comment.
+    buf.append(_conn_instance("FT232H_BRK", f"A{N_CLUSTERS + 2}", FX, FY, sch_uuid, ft232h_pins))
     ft232h_nets = [f"USB_D{i}" for i in range(8)] + ["USB_RXF_N", "USB_TXE_N", "USB_RD_N", "USB_WR_N"]
     for i, net in enumerate(ft232h_nets):
         x, y = _conn_pin_xy(FX, FY, i, len(ft232h_pins))
