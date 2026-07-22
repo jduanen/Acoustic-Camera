@@ -574,7 +574,7 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
 
 **WIP**
 
-*Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · FPGA hub board (PDM → GbE) · co-located video camera
+*Phase 4 hardware sub-tasks** (can be parallelized): mic array PCB · multi-FPGA cluster/hub boards (PDM → USB to Pi 5) · co-located video camera
 
 <a id="phase-5"></a>
 ### Phase 5: ML-based approach
