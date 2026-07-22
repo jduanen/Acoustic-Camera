@@ -58,6 +58,18 @@ N_ARMS_TOTAL = 12
 ARMS_PER_CLUSTER = 3
 N_CLUSTERS   = 4
 
+# The board's own inner edge has to sit CLOSER to centre than R_MIN_MM, not
+# AT it: mics are placed unrotated (fixed orientation regardless of their
+# angular position, matching pcb/place_mics.py's precedent for the
+# single-FPGA board), so an innermost mic's asymmetric courtyard
+# (IM72D128, -2.7..3.15mm x -2.25..2.25mm around its centre) doesn't sit
+# symmetrically about its own radial direction -- at some of the 12 arms'
+# angles, a footprint corner reaches as close as r=21.15mm to the array
+# centre even though the mic's own centre is at r=R_MIN_MM=25mm. Checked
+# across all 12 arms' innermost mics, not just arm 0. 20.0mm leaves ~1.1mm
+# margin past the worst case.
+BOARD_INNER_RADIUS_MM = 20.0
+
 ROOT       = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH   = os.path.join(ROOT, "..", "test", "phase4", "array_xy.csv")
 OUTDIR     = os.path.join(ROOT, "multi_fpga")
@@ -107,17 +119,25 @@ def _r_at_t(t):
     return R_MIN_MM * math.exp(_B * t)
 
 
-def _cut_curve_points(offset_deg, n=24, t_max=None):
+def _cut_curve_points(offset_deg, n=24, t_min=None, t_max=None):
     """Sample points (mm) along the boundary spiral rotated by offset_deg,
-    from r=R_MIN_MM (t=0) out to r=R_BOARD_MAX_MM (t=t_max). Looks up the
-    current R_BOARD_MAX_MM fresh each call (rather than a bound default
-    argument) since main() finalises that value only after searching for
-    where the Cmod S7 modules actually land -- see R_BOARD_MAX_MM comment."""
+    from r=BOARD_INNER_RADIUS_MM (t=t_min) out to r=R_BOARD_MAX_MM
+    (t=t_max). t_min is negative (BOARD_INNER_RADIUS_MM < R_MIN_MM, i.e.
+    before the spiral's own t=0 point) -- the log-spiral formula is smooth
+    and well-defined there too, so this just continues the same curve
+    shape a little further inward; the "same shape rotated by a constant
+    offset" tiling argument doesn't care what t range is used, only that
+    both boundary curves use the same one. Looks up the current
+    R_BOARD_MAX_MM fresh each call (rather than a bound default argument)
+    since main() finalises that value only after searching for where the
+    Cmod S7 modules actually land -- see R_BOARD_MAX_MM comment."""
+    if t_min is None:
+        t_min = _t_at_r(BOARD_INNER_RADIUS_MM)
     if t_max is None:
         t_max = _t_at_r(R_BOARD_MAX_MM)
     pts = []
     for i in range(n):
-        t = t_max * i / (n - 1)
+        t = t_min + (t_max - t_min) * i / (n - 1)
         r = _r_at_t(t)
         theta = t + math.radians(offset_deg)
         pts.append((r * math.cos(theta), r * math.sin(theta)))
@@ -145,7 +165,14 @@ def cluster_outline_points(c):
     before, after = cluster_bounds_deg(c)
     cut_before = _cut_curve_points(before)
     cut_after = _cut_curve_points(after)
-    inner_arc = _arc_points(R_MIN_MM, before, after)
+    # Inner arc/cut curves now start at BOARD_INNER_RADIUS_MM (< R_MIN_MM),
+    # not R_MIN_MM itself -- see that constant's comment for why (innermost
+    # mics' unrotated, asymmetric courtyards otherwise poke past the inner
+    # edge). Same "actual endpoint, not the un-swept angle" fix as the outer
+    # arc below: at t=t_min (now negative), each cut curve's angle is
+    # offset_deg + degrees(t_min), not just offset_deg.
+    t_min_deg = math.degrees(_t_at_r(BOARD_INNER_RADIUS_MM))
+    inner_arc = _arc_points(BOARD_INNER_RADIUS_MM, before + t_min_deg, after + t_min_deg)
     # The outer arc must connect the two cut curves' actual endpoints at
     # r=R_BOARD_MAX_MM, not the "before"/"after" angles -- those only apply
     # at r=R_MIN_MM (t=0). Both curves sweep an extra degrees(t_max) of
