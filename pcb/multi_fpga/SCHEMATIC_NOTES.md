@@ -111,8 +111,10 @@ S7 at r=91.5mm/43.8deg (rotation 0deg) — three different angles, not
 radially in line the way an earlier revision of this design had them;
 that's what the manual edits actually did, so that's what this
 approximates. Keeping the connector and standoff close to centre is what
-lets the hub board be smaller (`HUB_RADIUS_MM` ~93mm vs. 105mm with the
-connectors originally co-located with the Cmod S7). The 8 Pmod signals
+lets the hub board be smaller (`HUB_HALF_SIDE_MM` ~95mm half-side vs.
+105mm radius with the connectors originally co-located with the Cmod S7 —
+see "Hub board: square outline..." below for the switch from a circular to
+a square hub). The 8 Pmod signals
 reach this connector via a PCB trace from the Cmod's Pmod pins, not a
 direct plug-in; routing those traces is a later, not-yet-done pass (see
 below).
@@ -173,6 +175,47 @@ above; routing traces from the socket to those DIP pins (on both boards —
 cluster board: Cmod S7 Pmod to connector; hub board: connector to
 `CMOD_A7_35T_DIP` pins) is a later, not-yet-done pass (this project is
 still placement-only, see `pcb/layout_multi_fpga.py`'s module docstring).
+
+### Hub board: square outline, axis-aligned modules, camera keepout
+
+The hub board (`place_hub()`) was reworked from a circular outline with
+`CMOD_A7_35T`/`FT232H_Breakout`/`TCXO_Can` mounted tangentially at angled
+positions, to a **square outline with all 3 modules mounted axis-aligned**
+(rotation ∈ {0, 90, 180, 270}deg only — "horizontal and vertical", no
+angled/tangential placement). `HUB_HALF_SIDE_MM` replaces the old
+`HUB_RADIUS_MM`, computed the same way (from the actual furthest reach of
+all hub content, plus a 10mm margin) but as a largest-axis-extent
+(`max(|x|,|y|)`) rather than a Euclidean radius, since a square's sizing
+constraint is per-axis, not radial.
+
+New fixed placements (`HUB_CMOD_A7_XY_MM`/`_ROT_DEG`,
+`HUB_FT232H_XY_MM`/`_ROT_DEG`, `HUB_TCXO_XY_MM`/`_ROT_DEG` in
+`pcb/layout_multi_fpga.py`), found by treating the 4 spoke
+sockets/standoffs (already axis-aligned themselves, since
+`CLUSTER_HUB_CONNECTOR_ROT_DEG=0.0`) plus the centre keepout (below) as a
+fixed obstacle field and fitting each module into a clear cardinal-axis
+lane: `CMOD_A7_35T` horizontal straddling the +X axis (`(25, 7.62)`,
+rot=90deg), `FT232H` vertical straddling the +Y axis (`(0, 48)`, rot=0deg),
+`TCXO` vertical on the -Y axis (`(0, -30)`, rot=0deg). Verified
+collision-free against the socket/standoff obstacle field (plain AABB
+overlap, exact here since every obstacle involved is already axis-aligned)
+and against each other.
+
+A **35×35mm keepout** (`KEEPOUT_SIZE_MM`) centred on the hub reserves space
+for the camera — drawn as a reference square on the `User.Comments` layer
+(`add_keepout_square()`), not a physical `Edge.Cuts` cutout, so it's
+visible in KiCad but doesn't change the board's fabricated shape. All 3
+relocated modules are clear of it; only the camera's own hardware
+(`HCAM1`/`HCAM2` mounting holes, the camera cutout itself) sits inside it,
+which is expected.
+
+The camera **cutout diameter** (`CAMERA_CUTOUT_DIA_MM`) was shrunk from
+20mm to 12mm so it no longer overlaps `HCAM1`/`HCAM2` (at
+±`CAMERA_MOUNT_HOLE_SPACING_MM`/2 = ±10.5mm, courtyard half-extent
+~2.975mm) — 20mm diameter (10mm radius) left those mount holes' courtyards
+overlapping the cutout edge; 12mm diameter (6mm radius) leaves a clean
+~2mm annular gap (verified: closest `HCAM1`/`HCAM2` courtyard corner to
+centre is 8.09mm).
 
 **Signal integrity flag (not solved, carried forward for the HDL/routing
 pass)**: a plain 2x6 Pmod-style header/socket gives only 1 shared GND pin

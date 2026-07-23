@@ -252,7 +252,7 @@ def _true_corners(px_mm, py_mm, rot_deg, local_corners):
             for lx, ly in local_corners]
 
 
-def add_outline(board, points_mm, width_mm=0.15):
+def add_outline(board, points_mm, width_mm=0.15, layer=pcbnew.Edge_Cuts):
     shape = pcbnew.PCB_SHAPE(board)
     shape.SetShape(pcbnew.SHAPE_T_POLY)
     poly = pcbnew.SHAPE_POLY_SET()
@@ -260,9 +260,22 @@ def add_outline(board, points_mm, width_mm=0.15):
     for x, y in points_mm:
         poly.Append(pcbnew.VECTOR2I_MM(x, y))
     shape.SetPolyShape(poly)
-    shape.SetLayer(pcbnew.Edge_Cuts)
+    shape.SetLayer(layer)
     shape.SetWidth(pcbnew.FromMM(width_mm))
     board.Add(shape)
+
+
+def add_keepout_square(board, half_side_mm, cx_mm=0.0, cy_mm=0.0):
+    """A square reference outline on the User.Comments layer (not
+    Edge.Cuts) marking a placement-exclusion zone -- documentation only,
+    not a physical cutout. Used for the hub's centre camera keepout."""
+    pts = [
+        (cx_mm - half_side_mm, cy_mm - half_side_mm),
+        (cx_mm + half_side_mm, cy_mm - half_side_mm),
+        (cx_mm + half_side_mm, cy_mm + half_side_mm),
+        (cx_mm - half_side_mm, cy_mm + half_side_mm),
+    ]
+    add_outline(board, pts, width_mm=0.1, layer=pcbnew.Cmts_User)
 
 
 def add_circle_cutout(board, cx_mm, cy_mm, radius_mm, n=32, width_mm=0.15):
@@ -455,7 +468,7 @@ def build_cluster(board, c, mic_rows, module_placement):
 # flagged signal-integrity caveat (shared Pmod ground / spoke CLK jitter
 # risk, not solved in this pass).
 
-HUB_RADIUS_MM = R_MAX_MM  # placeholder, overwritten in main() once the hub's
+HUB_HALF_SIDE_MM = R_MAX_MM  # placeholder, overwritten in main() once the hub's
                           # own component placements (below) are known -- see
                           # that override for why this can no longer be a
                           # fixed guess now that the spoke connectors moved
@@ -467,8 +480,18 @@ HUB_RADIUS_MM = R_MAX_MM  # placeholder, overwritten in main() once the hub's
 # session -- cutout sized generously and flagged to confirm against
 # Raspberry Pi's mechanical drawing before fab, same for the mounting-hole
 # spacing (placeholder, camera modules typically use 2 small holes).
-CAMERA_CUTOUT_DIA_MM = 20.0
+# Shrunk from 20mm so there's real annular clearance to HCAM1/HCAM2 (at
+# +-CAMERA_MOUNT_HOLE_SPACING_MM/2 = +-10.5mm, courtyard half-extent
+# ~2.975mm) -- 20mm dia (10mm radius) left the mount holes' courtyards
+# overlapping the cutout edge.
+CAMERA_CUTOUT_DIA_MM = 12.0
 CAMERA_MOUNT_HOLE_SPACING_MM = 21.0
+
+# Placement-exclusion zone reserved for the camera module, centred on the
+# hub -- drawn as a User.Comments reference square (add_keepout_square()),
+# not a physical Edge.Cuts cutout. All 3 hub modules below are placed
+# clear of this.
+KEEPOUT_SIZE_MM = 35.0
 
 # Raspberry Pi 5: 85x56mm board, M2.5 mounting holes on the same pattern as
 # Pi 4 (official mechanical drawing referenced but exact offsets not
@@ -479,54 +502,42 @@ CAMERA_MOUNT_HOLE_SPACING_MM = 21.0
 # mounting holes are modelled here, not a fabricated outline (it's a
 # purchased board, not one this project cuts).
 RPI5_HOLE_HALF_SPACING_MM = (29.0, 24.5)  # placeholder half-spacing (58x49mm pattern)
-RPI5_CENTRE_XY_MM = (0.0, -160.0)  # clear of HUB_RADIUS_MM entirely (105mm) -- Pi 5 is a
+RPI5_CENTRE_XY_MM = (0.0, -160.0)  # clear of the hub's own footprint entirely -- Pi 5 is a
                                     # purchased board on its own standoffs, doesn't need to
                                     # share the hub board's own footprint at all
 
 
-def _tangential_dip48_pose(r_mm, angle_deg):
-    """Placement math for a DIP-48 module mounted TANGENTIALLY, centred on
-    angle_deg at radius r_mm (short/local+X axis radial, long/local+Y axis
-    tangential -- see the earlier tangential-Cmod-S7 derivation this
-    reuses). Used for the hub's own CMOD_A7_35T: unlike the clusters'
-    Cmod S7, there's no narrowing arm-gap to fit here, so mounting it
-    tangentially (minimising radial reach) rather than radially keeps the
-    hub board small -- the whole point of moving the spoke connectors
-    close to centre in the first place."""
-    rot_deg = -angle_deg
-    theta = math.radians(angle_deg)
-    rot_rad = math.radians(rot_deg)
-    half_len = (_local_courtyard_corners(DIP48_LIB, DIP48_NAME)[2][1]
-                - _local_courtyard_corners(DIP48_LIB, DIP48_NAME)[0][1]) / 2.0
-    mx = r_mm * math.cos(theta) - half_len * math.sin(rot_rad)
-    my = r_mm * math.sin(theta) - half_len * math.cos(rot_rad)
-    return mx, my, rot_deg
-
-
 # Hub's own CMOD_A7_35T + FT232H + TCXO placements -- module-level so both
-# place_hub() and main()'s HUB_RADIUS_MM computation use the exact same
+# place_hub() and main()'s HUB_HALF_SIDE_MM computation use the exact same
 # numbers (previously duplicated by hand in both places, which is exactly
-# how a mismatch slipped in once already). Recomputed after the connector/
-# standoff positions moved (see CLUSTER_HUB_CONNECTOR_*/CLUSTER_STANDOFF_*
-# above) -- the obstacle field they present to the hub's own parts changed
-# along with them. Checked computationally (brute-force angular scan
-# against the connectors' tangential footprints, the standoffs, and the
-# camera cutout/mount holes): at r=60mm, CMOD_A7_35T (tangential) has a
-# clear ~29.5deg window centred on 263.95deg (and, by the 90deg
-# rotational symmetry, on 353.95/83.95/173.95deg too) -- used 3 of those
-# 4 equivalent slots for CMOD_A7_35T/FT232H/TCXO.
-HUB_CMOD_A7_R_MM, HUB_CMOD_A7_DEG = 60.0, 83.95
-HUB_FT232H_R_MM, HUB_FT232H_DEG = 50.0, 173.95
-HUB_TCXO_R_MM, HUB_TCXO_DEG = 45.0, 353.95
+# how a mismatch slipped in once already).
+#
+# Axis-aligned ("horizontal and vertical", 0/90/180/270deg only, no
+# tangential/angled mounting) per the user's request, placed clear of the
+# KEEPOUT_SIZE_MM centre keepout and the 4 spoke sockets/standoffs
+# (obstacle field computed from cluster_hub_connector_xy()/
+# cluster_standoff_xy() for all 4 quadrants -- those sockets/standoffs
+# happen to already be axis-aligned themselves since
+# CLUSTER_HUB_CONNECTOR_ROT_DEG=0.0, so a plain AABB check against them is
+# exact, not just a conservative approximation):
+#   CMOD_A7_35T: horizontal, straddling the +X axis, clear of J1/H1B and
+#   J4/H4B in the +-Y quadrants above/below it.
+#   FT232H: vertical, straddling the +Y axis, clear of J1/H1B and J2/H2B
+#   in the quadrants either side of it.
+#   TCXO (small): vertical, on the -Y axis, clear of J3/H3B/J4/H4B.
+HUB_CMOD_A7_XY_MM = (25.0, 7.62)
+HUB_CMOD_A7_ROT_DEG = 90.0
+HUB_FT232H_XY_MM = (0.0, 48.0)
+HUB_FT232H_ROT_DEG = 0.0
+HUB_TCXO_XY_MM = (0.0, -30.0)
+HUB_TCXO_ROT_DEG = 0.0
 
 
 def place_hub(board):
-    add_outline(board, [
-        (HUB_RADIUS_MM * math.cos(2 * math.pi * i / 64),
-         HUB_RADIUS_MM * math.sin(2 * math.pi * i / 64))
-        for i in range(64)
-    ])
+    half = HUB_HALF_SIDE_MM
+    add_outline(board, [(-half, -half), (half, -half), (half, half), (-half, half)])
     add_circle_cutout(board, 0.0, 0.0, CAMERA_CUTOUT_DIA_MM / 2.0)
+    add_keepout_square(board, KEEPOUT_SIZE_MM / 2.0)
 
     # 4x spoke connector sockets -- exact same (x,y) as each cluster's own
     # connector (cluster_hub_connector_xy() reused directly), so the
@@ -541,20 +552,14 @@ def place_hub(board):
 
     # Hub's own CMOD_A7_35T + FT232H + TCXO -- see the HUB_CMOD_A7_*/
     # HUB_FT232H_*/HUB_TCXO_* constants above for placement reasoning.
-    # Mounted close to centre and (for CMOD_A7_35T) tangentially -- see
-    # _tangential_dip48_pose() -- since keeping the hub small was the point
-    # of this whole rearrangement.
-    ax, ay, arot = _tangential_dip48_pose(HUB_CMOD_A7_R_MM, HUB_CMOD_A7_DEG)
-    board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{N_CLUSTERS + 1}", ax, ay, rot_deg=arot))
+    ax, ay = HUB_CMOD_A7_XY_MM
+    board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{N_CLUSTERS + 1}", ax, ay, rot_deg=HUB_CMOD_A7_ROT_DEG))
 
-    board.Add(load_fp(LOCAL_LIB, "FT232H_Breakout", f"A{N_CLUSTERS + 2}",
-                       HUB_FT232H_R_MM * math.cos(math.radians(HUB_FT232H_DEG)),
-                       HUB_FT232H_R_MM * math.sin(math.radians(HUB_FT232H_DEG)),
-                       rot_deg=90.0 - HUB_FT232H_DEG))
+    fx, fy = HUB_FT232H_XY_MM
+    board.Add(load_fp(LOCAL_LIB, "FT232H_Breakout", f"A{N_CLUSTERS + 2}", fx, fy, rot_deg=HUB_FT232H_ROT_DEG))
 
-    board.Add(load_fp(LOCAL_LIB, "TCXO_Can", "Y1",
-                       HUB_TCXO_R_MM * math.cos(math.radians(HUB_TCXO_DEG)),
-                       HUB_TCXO_R_MM * math.sin(math.radians(HUB_TCXO_DEG))))
+    tx, ty = HUB_TCXO_XY_MM
+    board.Add(load_fp(LOCAL_LIB, "TCXO_Can", "Y1", tx, ty, rot_deg=HUB_TCXO_ROT_DEG))
 
     # Camera mount (placeholder mounting holes either side of the cutout).
     cx0, cy0 = CAMERA_MOUNT_HOLE_SPACING_MM / 2.0, 0.0
@@ -595,30 +600,34 @@ def main():
     global R_BOARD_MAX_MM
     R_BOARD_MAX_MM = max(R_MAX_MM + 5.0, max_reach + 3.0)  # 3mm clearance past the furthest module corner found
 
-    # HUB_RADIUS_MM likewise depends on where the hub's own content actually
-    # lands -- no longer the spoke connectors (moved close to centre, see
-    # cluster_hub_connector_xy()), now whichever of CMOD_A7_35T/FT232H/TCXO
-    # reaches furthest. Computed the same way as R_BOARD_MAX_MM: place
+    # HUB_HALF_SIDE_MM likewise depends on where the hub's own content
+    # actually lands -- computed the same way as R_BOARD_MAX_MM: place
     # everything (in local coordinate math only, nothing drawn yet), find
-    # the furthest true corner, add a small margin.
-    global HUB_RADIUS_MM
+    # the furthest |x| and |y| reach (not Euclidean radius -- the hub is a
+    # SQUARE now, so what matters is the largest axis-aligned extent, not
+    # distance from centre), add a small margin.
+    global HUB_HALF_SIDE_MM
     hub_reach = 0.0
     dip48_corners = _local_courtyard_corners(DIP48_LIB, DIP48_NAME)
     socket_corners = _local_courtyard_corners(SPOKE_SOCKET_LIB, SPOKE_SOCKET_NAME)
     ft_corners = _local_courtyard_corners(LOCAL_LIB, "FT232H_Breakout")
     tcxo_corners = _local_courtyard_corners(LOCAL_LIB, "TCXO_Can")
+
+    def _reach(corners):
+        return max(max(abs(x), abs(y)) for x, y in corners)
+
     for c in range(N_CLUSTERS):
         sx, sy, srot = cluster_hub_connector_xy(c)
-        hub_reach = max(hub_reach, max(math.hypot(x, y) for x, y in _true_corners(sx, sy, srot, socket_corners)))
-    ax, ay, arot = _tangential_dip48_pose(HUB_CMOD_A7_R_MM, HUB_CMOD_A7_DEG)
-    hub_reach = max(hub_reach, max(math.hypot(x, y) for x, y in _true_corners(ax, ay, arot, dip48_corners)))
-    fx = HUB_FT232H_R_MM * math.cos(math.radians(HUB_FT232H_DEG))
-    fy = HUB_FT232H_R_MM * math.sin(math.radians(HUB_FT232H_DEG))
-    hub_reach = max(hub_reach, max(math.hypot(x, y) for x, y in _true_corners(fx, fy, 90.0 - HUB_FT232H_DEG, ft_corners)))
-    tx = HUB_TCXO_R_MM * math.cos(math.radians(HUB_TCXO_DEG))
-    ty = HUB_TCXO_R_MM * math.sin(math.radians(HUB_TCXO_DEG))
-    hub_reach = max(hub_reach, max(math.hypot(x, y) for x, y in _true_corners(tx, ty, 0.0, tcxo_corners)))
-    HUB_RADIUS_MM = hub_reach + 10.0  # margin past the furthest corner found
+        hub_reach = max(hub_reach, _reach(_true_corners(sx, sy, srot, socket_corners)))
+        hx, hy = cluster_standoff_xy(c)
+        hub_reach = max(hub_reach, _reach(_true_corners(hx, hy, 0.0, _local_courtyard_corners(MOUNTHOLE_LIB, STANDOFF_HOLE_NAME))))
+    ax, ay = HUB_CMOD_A7_XY_MM
+    hub_reach = max(hub_reach, _reach(_true_corners(ax, ay, HUB_CMOD_A7_ROT_DEG, dip48_corners)))
+    fx, fy = HUB_FT232H_XY_MM
+    hub_reach = max(hub_reach, _reach(_true_corners(fx, fy, HUB_FT232H_ROT_DEG, ft_corners)))
+    tx, ty = HUB_TCXO_XY_MM
+    hub_reach = max(hub_reach, _reach(_true_corners(tx, ty, HUB_TCXO_ROT_DEG, tcxo_corners)))
+    HUB_HALF_SIDE_MM = hub_reach + 10.0  # margin past the furthest corner found
 
     # Build pass: now that R_BOARD_MAX_MM is final, draw outlines + place
     # everything. ONE arm board design (built at c=0, the canonical/
@@ -656,7 +665,7 @@ def main():
 
     print(f"Total footprints across both files: {total_fp}")
     print(f"R_BOARD_MAX_MM = {R_BOARD_MAX_MM:.2f}")
-    print(f"HUB_RADIUS_MM = {HUB_RADIUS_MM:.2f} (was 105.00 with connectors at r=87.8)")
+    print(f"HUB_HALF_SIDE_MM = {HUB_HALF_SIDE_MM:.2f} (square hub, side = {2 * HUB_HALF_SIDE_MM:.2f}mm)")
 
 
 if __name__ == "__main__":
