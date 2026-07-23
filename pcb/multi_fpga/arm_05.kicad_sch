@@ -2,7 +2,7 @@
   (version 20260306)
   (generator "mic_array_make_schematic")
   (generator_version "10.0")
-  (uuid "d86cc4ec-12d5-4f4e-a02e-2ff5b291f258")
+  (uuid "5d7632df-4dd9-49c8-8f8f-66c4273f0f4c")
   (paper "A3")
   (title_block
     (title "96-mic PDM Array — Arm 05 (mics 41–48)")
@@ -30,19 +30,19 @@
     (symbol "IM72D128_1_1"
       (pin power_in line (at 0 6.35 270) (length 2.54)
         (name "VDD"  (effects (font (size 1.27 1.27))))
-        (number "1"  (effects (font (size 1.27 1.27)))))
+        (number "2"  (effects (font (size 1.27 1.27)))))
       (pin power_in line (at 0 -6.35 90) (length 2.54)
         (name "GND"  (effects (font (size 1.27 1.27))))
-        (number "2"  (effects (font (size 1.27 1.27)))))
+        (number "5"  (effects (font (size 1.27 1.27)))))
       (pin tri_state line (at 6.35 1.27 180) (length 2.54)
         (name "DATA" (effects (font (size 1.27 1.27))))
-        (number "3"  (effects (font (size 1.27 1.27)))))
+        (number "1"  (effects (font (size 1.27 1.27)))))
       (pin input line (at -6.35 -1.27 0) (length 2.54)
         (name "CLK"  (effects (font (size 1.27 1.27))))
-        (number "4"  (effects (font (size 1.27 1.27)))))
+        (number "3"  (effects (font (size 1.27 1.27)))))
       (pin input line (at -6.35 1.27 0) (length 2.54)
         (name "SEL"  (effects (font (size 1.27 1.27))))
-        (number "5"  (effects (font (size 1.27 1.27)))))))
+        (number "4"  (effects (font (size 1.27 1.27)))))))
   (symbol "C"
     (pin_numbers (hide yes)) (pin_names (offset 0.254))
     (exclude_from_sim no) (in_bom yes) (on_board yes)
@@ -89,12 +89,12 @@
       (pin power_in line (at 0 0 270) (length 0)
         (name "~" (effects (font (size 1.27 1.27))))
         (number "1" (effects (font (size 1.27 1.27)))))))
-  (symbol "power:+1V8" (power)
+  (symbol "power:C1_1V8" (power)
     (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))
     (exclude_from_sim no) (in_bom yes) (on_board yes)
     (property "Reference" "#PWR" (at 0 -3.81 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8" (at 0 3.56 0)
+    (property "Value" "C1_1V8" (at 0 3.56 0)
       (effects (font (size 1.27 1.27))))
     (property "Footprint" "" (at 0 0 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -102,14 +102,14 @@
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Description" "" (at 0 0 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (symbol "+1V8_0_1"
+    (symbol "C1_1V8_0_1"
       (polyline (pts (xy -0.762 1.27) (xy 0 2.54))
         (stroke (width 0) (type default)) (fill (type none)))
       (polyline (pts (xy 0 2.54) (xy 0.762 1.27))
         (stroke (width 0) (type default)) (fill (type none)))
       (polyline (pts (xy 0 0) (xy 0 2.54))
         (stroke (width 0) (type default)) (fill (type none))))
-    (symbol "+1V8_1_1"
+    (symbol "C1_1V8_1_1"
       (pin power_in line (at 0 0 90) (length 0)
         (name "~" (effects (font (size 1.27 1.27))))
         (number "1" (effects (font (size 1.27 1.27)))))))
@@ -118,7 +118,7 @@
     (at 80.01 40.64 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5a49654d-c90b-4150-81ad-6bc550fb9168")
+    (uuid "bdceee0a-caa9-46c6-8337-a7abe9e425af")
     (property "Reference" "U41"
       (at 85.01 49.53 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -134,22 +134,22 @@
     (property "Description" ""
       (at 80.01 40.64 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "baa458f6-b394-422b-9c2e-ff8050b7e0b4"))
-    (pin "2" (uuid "9d10f128-298f-4c86-9c52-3657b050468d"))
-    (pin "3" (uuid "a56c58bf-6ed7-4c36-b5a6-74eaec4396c3"))
-    (pin "4" (uuid "0521947b-54dc-47fa-aa10-e62c87a99cb8"))
-    (pin "5" (uuid "d82a29bb-bcc3-4bdf-ae46-2fda2ad279f1"))
+    (pin "1" (uuid "41663520-e199-4d5f-b1c4-346cea902738"))
+    (pin "2" (uuid "bb8d0d08-2a11-4fc9-8140-a4ccb62d29b4"))
+    (pin "3" (uuid "8130e762-54a8-4250-8070-0a07ff0e1494"))
+    (pin "4" (uuid "eda19c09-038b-48b8-a3eb-a613e743fb88"))
+    (pin "5" (uuid "c94254ad-ae51-4c2c-908f-6a97e4ba0aab"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U41") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U41") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 80.01 34.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "6205ad3a-522d-4856-b401-a43f45291380")
+    (uuid "4e28219b-8c6f-4633-bbfb-12cb99ed60c1")
     (property "Reference" "#PWR0201"
       (at 80.01 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 80.01 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -161,14 +161,14 @@
     (property "Description" ""
       (at 80.01 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "cc348f48-c650-4591-bad4-21863deb82dc"))
+    (pin "1" (uuid "03d349e7-11c3-40d6-b8ca-01327754dd85"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0201") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0201") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 80.01 46.99 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "aba1090c-e75a-40d7-8b92-51cb60e2fcac")
+    (uuid "0104e6a6-66d8-462e-bf8e-1942b06c3149")
     (property "Reference" "#PWR0202"
       (at 80.01 46.99 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -184,14 +184,14 @@
     (property "Description" ""
       (at 80.01 46.99 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7cf8b2bc-13f7-44fe-be68-7f7a1fc6c903"))
+    (pin "1" (uuid "9aaba9af-a41f-4dd7-a1dc-f6dac001738b"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0202") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0202") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 73.66 39.37 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "00ae90f3-a5b7-4876-8a6f-c90a8f3b5aa5")
+    (uuid "a4ad4762-9007-44ef-9e5c-ddcdc653b2e4")
     (property "Reference" "#PWR0203"
       (at 73.66 39.37 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -207,14 +207,14 @@
     (property "Description" ""
       (at 73.66 39.37 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "d8fc7c74-dfc6-4639-b0e5-38a108414e86"))
+    (pin "1" (uuid "ba1912d9-496b-4f26-80a3-76a249fb0078"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0203") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0203") (unit 1)))))
   (symbol (lib_id "C")
     (at 101.6 38.1 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ead1612e-65b3-475c-93ab-d22d56d844d3")
+    (uuid "90ab5de3-beac-408d-8c50-b2e515f4a81b")
     (property "Reference" "C41"
       (at 103.6 36.6 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -230,19 +230,19 @@
     (property "Description" ""
       (at 101.6 38.1 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "86ab00d7-24fd-4c5a-a546-46c5ed4202aa"))
-    (pin "2" (uuid "7e8368bb-b139-4653-a40a-b3ee5f23caa4"))
+    (pin "1" (uuid "c257bb80-2ebd-4fab-8a4a-c9a36688a6af"))
+    (pin "2" (uuid "46b8ede9-fd52-42d5-850c-91255d93786c"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C41") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C41") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 101.6 34.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "c39fbe65-8119-4e4e-a510-60bdf497b323")
+    (uuid "184eac4e-b88d-45ad-ba11-d695dbbb45e7")
     (property "Reference" "#PWR0204"
       (at 101.6 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 101.6 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -254,14 +254,14 @@
     (property "Description" ""
       (at 101.6 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "6ff3cf14-f08c-4db6-82d6-335efdfce3fe"))
+    (pin "1" (uuid "db918e5c-971d-4126-9fba-0d01f5da74c9"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0204") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0204") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 101.6 41.91 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "21499b74-5234-4e73-95ee-968a7e3ba025")
+    (uuid "74f29ed5-b6b9-4577-aac0-e6dfcecdd4da")
     (property "Reference" "#PWR0205"
       (at 101.6 41.91 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -277,14 +277,14 @@
     (property "Description" ""
       (at 101.6 41.91 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "2a0204cd-8c80-4332-9c1b-9578ed88751f"))
+    (pin "1" (uuid "49aea170-a36e-43ce-923e-c139bf1c2d1d"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0205") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0205") (unit 1)))))
   (symbol (lib_id "IM72D128")
     (at 80.01 80.01 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "777f5672-b822-43c4-8091-6c3dd766aac5")
+    (uuid "6f3b4af2-cbbe-44de-a670-00d7a48c79ec")
     (property "Reference" "U42"
       (at 85.01 88.9 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -300,22 +300,22 @@
     (property "Description" ""
       (at 80.01 80.01 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "f6588547-4db4-49ca-8fb1-0f4054ad6e34"))
-    (pin "2" (uuid "65a8bfa0-6ffc-498f-a75d-c19c1d9ade49"))
-    (pin "3" (uuid "78de8258-ce5c-443d-8a04-79c4393c1c2a"))
-    (pin "4" (uuid "dcba5d94-5125-4900-9c7c-a1045f770a0a"))
-    (pin "5" (uuid "6b8f23e2-eefb-488f-a3da-286c08bdcbdc"))
+    (pin "1" (uuid "c3eb0498-ed08-486e-9375-5344aad13c50"))
+    (pin "2" (uuid "8a8f77db-8e15-4a37-bf77-41d205518733"))
+    (pin "3" (uuid "fe063720-90f9-4978-a10c-fb0d69e7287f"))
+    (pin "4" (uuid "b05481e1-15c1-4573-a6e3-9e0ce32bbbd0"))
+    (pin "5" (uuid "aad19d98-456c-4249-96bc-fdc5af88ae7d"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U42") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U42") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 80.01 73.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "4785c881-3a06-4e7f-b1e4-3119a052dce1")
+    (uuid "a43ad225-417f-4df7-8cf9-4c81d97aa6d1")
     (property "Reference" "#PWR0206"
       (at 80.01 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 80.01 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -327,14 +327,14 @@
     (property "Description" ""
       (at 80.01 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "4a515cbf-2081-4849-8f3e-92a6e8db2bd9"))
+    (pin "1" (uuid "d20e56e7-e50d-410e-a2b1-a2725a1fd88f"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0206") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0206") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 80.01 86.36 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "dcae9cd5-8ebe-4d83-a17c-9a9fc743c4bd")
+    (uuid "7c1cfaa6-e093-447d-97f5-eeae062446df")
     (property "Reference" "#PWR0207"
       (at 80.01 86.36 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -350,18 +350,18 @@
     (property "Description" ""
       (at 80.01 86.36 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "e625de04-586a-422e-a205-94396ea268ea"))
+    (pin "1" (uuid "e0562205-b97b-4a7e-90d7-d1b8829a9fdb"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0207") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0207") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 73.66 78.74 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "e2e975de-6270-4b51-b0ee-dc229cee2515")
+    (uuid "20f7c327-5ced-4361-9977-e9d6ccdb3356")
     (property "Reference" "#PWR0208"
       (at 73.66 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 73.66 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -373,14 +373,14 @@
     (property "Description" ""
       (at 73.66 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "210b52df-d511-4dea-9ceb-83eb693238cf"))
+    (pin "1" (uuid "29a26bbe-b86b-4863-91c8-adae911fe330"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0208") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0208") (unit 1)))))
   (symbol (lib_id "C")
     (at 101.6 77.47 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "79c59aaa-df5a-4eb8-8760-f75d16386bce")
+    (uuid "921c09b6-30f8-4bd5-a030-9dab2a6fd358")
     (property "Reference" "C42"
       (at 103.6 75.97 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -396,19 +396,19 @@
     (property "Description" ""
       (at 101.6 77.47 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "192fd845-c09c-42b0-bc7a-2ddd9ceb4238"))
-    (pin "2" (uuid "2eba5083-245e-4091-befe-6ff53789358a"))
+    (pin "1" (uuid "78225d84-ca22-4a25-9326-8e1389815172"))
+    (pin "2" (uuid "3f99487e-d523-4b4c-8b23-a343573ea27c"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C42") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C42") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 101.6 73.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "fad74635-03db-43b4-ba6d-c01c98c27d04")
+    (uuid "4578983d-798f-43da-b865-48e5c04e7da6")
     (property "Reference" "#PWR0209"
       (at 101.6 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 101.6 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -420,14 +420,14 @@
     (property "Description" ""
       (at 101.6 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7ac1009b-62a2-4fb8-8d45-c471697f0dd9"))
+    (pin "1" (uuid "7328b4da-803e-4853-b1dd-c46b914e8f0a"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0209") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0209") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 101.6 81.28 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "c982b375-687f-4d74-8558-b78425a2bd02")
+    (uuid "bec5bc88-58f7-4869-af72-df95ecc40b7a")
     (property "Reference" "#PWR0210"
       (at 101.6 81.28 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -443,34 +443,34 @@
     (property "Description" ""
       (at 101.6 81.28 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "6f13f169-b25b-4936-b7d6-19f10584df44"))
+    (pin "1" (uuid "0298dc95-78d2-4f8e-804b-0d3b33f92e52"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0210") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0210") (unit 1)))))
   (wire (pts (xy 73.66 41.91) (xy 68.58 41.91))
     (stroke (width 0) (type default))
-    (uuid "8b32c0bd-35eb-4932-8c5b-c8d57cdf8012"))
+    (uuid "280d95d5-4f26-4551-8c2e-06767a4a2784"))
   (wire (pts (xy 68.58 41.91) (xy 68.58 81.28))
     (stroke (width 0) (type default))
-    (uuid "bcd6cfff-8146-468f-a379-0e76cdf12529"))
+    (uuid "36589653-1369-4a6c-b3b1-9b2f1c48308b"))
   (wire (pts (xy 68.58 81.28) (xy 73.66 81.28))
     (stroke (width 0) (type default))
-    (uuid "5f850553-986f-4a91-a7f3-ad0a924dff06"))
+    (uuid "ffc21b48-f8ff-44b6-88a9-f1dd6aaae6e4"))
   (global_label "C1_PDM_CLK"
     (shape input)
     (at 68.58 41.91 180)
     (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "0d1971a7-ef1c-4492-beda-8aef198007f9")
+    (uuid "46f904c4-eba0-4696-a799-2ba6df2b6426")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 68.58 41.91 180)
       (effects (font (size 1.27 1.27)) (hide yes))))
   (wire (pts (xy 86.36 39.37) (xy 86.36 78.74))
     (stroke (width 0) (type default))
-    (uuid "653987eb-09d9-4039-9b78-91133e5299ed"))
+    (uuid "570eeda7-b6b4-43c2-8587-0a8e1432ae47"))
   (global_label "DATA_20"
     (shape output)
     (at 86.36 78.74 0)
     (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "f352a9fa-6df3-492a-afee-0a408ec71366")
+    (uuid "49d20acb-b5a6-4222-aa06-657bbe811172")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 86.36 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes))))
@@ -478,7 +478,7 @@
     (at 80.01 154.94 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "91494c9f-3189-417c-8973-8d54ab948bd8")
+    (uuid "de444b19-4770-4e36-9d0e-1999c616d8c6")
     (property "Reference" "U43"
       (at 85.01 163.83 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -494,22 +494,22 @@
     (property "Description" ""
       (at 80.01 154.94 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8aab1c31-c67d-4abe-9522-7623e3b64cc7"))
-    (pin "2" (uuid "fba3cbb7-8e79-4da3-9cec-5489cab84532"))
-    (pin "3" (uuid "0059eaa6-c160-4b1f-acbf-ccc58b36e73d"))
-    (pin "4" (uuid "a423cc1b-a1f0-4f70-ba50-4fa734baac8c"))
-    (pin "5" (uuid "13c16613-29d1-40f8-95b4-9031da314af1"))
+    (pin "1" (uuid "e9713e13-f351-4faa-92e5-69814738e601"))
+    (pin "2" (uuid "b9b1810b-2b35-4532-8440-9490f5db7856"))
+    (pin "3" (uuid "e2707766-3183-453c-8a64-8dd8e10c67ce"))
+    (pin "4" (uuid "6383e63d-0bfa-4862-8640-12c246e1251c"))
+    (pin "5" (uuid "20b6c3f5-35c1-4fc1-b58a-c1b8aa238db2"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U43") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U43") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 80.01 148.59 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "9ad35996-88fc-4ddb-a4a8-51c79b46fa24")
+    (uuid "784e0f8e-1025-4e28-bb67-6111f71504c4")
     (property "Reference" "#PWR0211"
       (at 80.01 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 80.01 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -521,14 +521,14 @@
     (property "Description" ""
       (at 80.01 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8066c9c2-fdcb-4c83-b237-c8696b480a1d"))
+    (pin "1" (uuid "2795afdc-cc45-468e-a42b-99e044fe2968"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0211") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0211") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 80.01 161.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "53dd3f8c-fcbe-4f4c-91c1-d946cf36a8da")
+    (uuid "6b530793-176f-47e4-9a42-4812dc1f8aff")
     (property "Reference" "#PWR0212"
       (at 80.01 161.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -544,14 +544,14 @@
     (property "Description" ""
       (at 80.01 161.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "4aa6ac86-153b-469e-994b-181439966719"))
+    (pin "1" (uuid "9564da1a-2833-460f-a124-500e50b998f0"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0212") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0212") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 73.66 153.67 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "2819ee54-6795-4932-81f1-12633b65a361")
+    (uuid "43758048-8762-43c4-b306-69521447c348")
     (property "Reference" "#PWR0213"
       (at 73.66 153.67 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -567,14 +567,14 @@
     (property "Description" ""
       (at 73.66 153.67 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "2606f853-da28-4c8e-bf11-2b9629b006ef"))
+    (pin "1" (uuid "56afdb33-2009-484f-82b5-3e065704bf19"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0213") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0213") (unit 1)))))
   (symbol (lib_id "C")
     (at 101.6 152.4 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "6ca7138a-f166-42b6-b77f-b162e4f92f24")
+    (uuid "51ed72b6-4c75-4d5b-99ed-e51e4d5559d9")
     (property "Reference" "C43"
       (at 103.6 150.9 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -590,19 +590,19 @@
     (property "Description" ""
       (at 101.6 152.4 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7130ae7c-2c42-45e1-b9e7-4beba21818f1"))
-    (pin "2" (uuid "b05f81b7-86c3-4c6a-b943-63d214dd34c0"))
+    (pin "1" (uuid "a1c66ebb-6325-444c-a485-d273e23427a7"))
+    (pin "2" (uuid "0b3dc43b-77c1-41a6-b849-ca6df65f26c7"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C43") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C43") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 101.6 148.59 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5fe74339-02ea-4524-97de-66801b1c56ae")
+    (uuid "8a172c1d-1bc2-4d98-a7ba-303487a2e6b3")
     (property "Reference" "#PWR0214"
       (at 101.6 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 101.6 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -614,14 +614,14 @@
     (property "Description" ""
       (at 101.6 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b3e730d2-4909-4e26-9eb5-c336ae4305c4"))
+    (pin "1" (uuid "180ee3be-7218-4f22-9c73-5e48897f28b1"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0214") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0214") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 101.6 156.21 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "b49b500e-9867-453e-899c-faf8011446cd")
+    (uuid "e2748657-21cc-451d-a96b-869e991d82c4")
     (property "Reference" "#PWR0215"
       (at 101.6 156.21 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -637,14 +637,14 @@
     (property "Description" ""
       (at 101.6 156.21 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "bb399941-8991-45d4-9fae-dd926466ea11"))
+    (pin "1" (uuid "63019be7-1611-43f7-9e9b-3b165bfbab58"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0215") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0215") (unit 1)))))
   (symbol (lib_id "IM72D128")
     (at 80.01 194.31 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "545b31d5-95ad-42ff-836f-614854beca88")
+    (uuid "0905e461-326a-44d3-9cb4-af0663fe3008")
     (property "Reference" "U44"
       (at 85.01 203.2 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -660,22 +660,22 @@
     (property "Description" ""
       (at 80.01 194.31 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "1a72fc45-a925-4e45-a5e7-d62a605a819f"))
-    (pin "2" (uuid "12ffd7f1-c9d1-4d37-b0f3-0c1b5c915f96"))
-    (pin "3" (uuid "243b354d-44b8-4b1a-b604-e53e7e52da0b"))
-    (pin "4" (uuid "23a1f5b8-a8df-491c-8505-6e184f0ffa33"))
-    (pin "5" (uuid "fae06a6b-a484-4e60-bac3-380a26e77c76"))
+    (pin "1" (uuid "76a1c50f-8e80-4de9-abba-25027815dd88"))
+    (pin "2" (uuid "de607cce-4c15-4e88-9b80-388c5aa9b987"))
+    (pin "3" (uuid "7b93a130-7841-4fa6-8a4c-1e799abf0374"))
+    (pin "4" (uuid "d5fa048c-bda7-426d-9fdc-566f73cf877d"))
+    (pin "5" (uuid "2a542558-6724-47f7-90c4-e08d29ac206b"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U44") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U44") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 80.01 187.96 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "ff3d8a7d-9665-4304-825c-19782adccba9")
+    (uuid "e100430e-84f1-4abd-a7cd-dd9949834ee5")
     (property "Reference" "#PWR0216"
       (at 80.01 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 80.01 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -687,14 +687,14 @@
     (property "Description" ""
       (at 80.01 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "0c100001-3082-4b96-ab32-4f54682ea027"))
+    (pin "1" (uuid "57161559-610a-48af-b79c-468a6f6de97c"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0216") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0216") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 80.01 200.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "4c5990ec-6549-47cc-991d-152e98283cb5")
+    (uuid "1f8bfe5b-6535-4a1b-9069-15eaeffa8936")
     (property "Reference" "#PWR0217"
       (at 80.01 200.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -710,18 +710,18 @@
     (property "Description" ""
       (at 80.01 200.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "42f8de80-c7e8-4796-8704-6eb53262f7e5"))
+    (pin "1" (uuid "a69a1fb9-2d64-45bc-8947-df8baeb8cb23"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0217") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0217") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 73.66 193.04 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "9f06609d-1a81-48fe-aa65-79545b81ea8d")
+    (uuid "43042bc5-2079-4fc8-85b8-a4a57d5636d2")
     (property "Reference" "#PWR0218"
       (at 73.66 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 73.66 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -733,14 +733,14 @@
     (property "Description" ""
       (at 73.66 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "3dbf646f-4d71-46f9-8462-16e03b0a1bd4"))
+    (pin "1" (uuid "ccad0f20-2943-4be0-9aab-4a54b1b7da07"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0218") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0218") (unit 1)))))
   (symbol (lib_id "C")
     (at 101.6 191.77 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "1055d13a-b1e1-4dfd-9093-aef7960152f8")
+    (uuid "f933da49-4721-4264-bde9-f5a27dc1c002")
     (property "Reference" "C44"
       (at 103.6 190.27 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -756,19 +756,19 @@
     (property "Description" ""
       (at 101.6 191.77 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "9f9750ff-43f3-4b4d-9247-fa0138b23dcb"))
-    (pin "2" (uuid "3a55589a-dc85-47c8-90d1-3aea21df4d77"))
+    (pin "1" (uuid "91414901-bb27-4640-8535-976ad98fdc5f"))
+    (pin "2" (uuid "f6a1c273-9f8a-4733-97e1-6d676b1edbbb"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C44") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C44") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 101.6 187.96 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "762fd952-1b92-4b80-9484-cde04da349c3")
+    (uuid "7dfc60ef-37c0-4649-bc46-199dd5e9b22b")
     (property "Reference" "#PWR0219"
       (at 101.6 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 101.6 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -780,14 +780,14 @@
     (property "Description" ""
       (at 101.6 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "8abcffea-e47d-4c14-b6f0-1ebcb2c7d0d2"))
+    (pin "1" (uuid "2a9bee7c-e4c7-4cfb-9a82-45c4fb65d5c9"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0219") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0219") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 101.6 195.58 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "cf542278-0e74-46f5-8401-2f032aacd619")
+    (uuid "20fa229b-62fa-4c41-a56f-baf1cf643dc0")
     (property "Reference" "#PWR0220"
       (at 101.6 195.58 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -803,34 +803,34 @@
     (property "Description" ""
       (at 101.6 195.58 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b6bded47-96b9-4bcf-8309-668ae78a8ec5"))
+    (pin "1" (uuid "4a77c330-7144-4c7e-a453-5636b1c70880"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0220") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0220") (unit 1)))))
   (wire (pts (xy 73.66 156.21) (xy 68.58 156.21))
     (stroke (width 0) (type default))
-    (uuid "924ed6c5-194f-4bb3-b0ad-45ced7e14980"))
+    (uuid "50b0bfc3-aed5-452d-804e-f78bf515078c"))
   (wire (pts (xy 68.58 156.21) (xy 68.58 195.58))
     (stroke (width 0) (type default))
-    (uuid "cfaeb59a-df8e-4ec2-8de3-7056b37baf18"))
+    (uuid "12e467f5-e30a-426b-9b87-c8937e33ed70"))
   (wire (pts (xy 68.58 195.58) (xy 73.66 195.58))
     (stroke (width 0) (type default))
-    (uuid "9a14f33f-d6bd-47af-a4c9-93e927c833b4"))
+    (uuid "d67fe563-876e-4944-b029-99851147ac28"))
   (global_label "C1_PDM_CLK"
     (shape input)
     (at 68.58 156.21 180)
     (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "dae88859-3100-4076-a6be-ec1f9ef19da4")
+    (uuid "d5025e90-810b-4a57-b397-68f339bf30a9")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 68.58 156.21 180)
       (effects (font (size 1.27 1.27)) (hide yes))))
   (wire (pts (xy 86.36 153.67) (xy 86.36 193.04))
     (stroke (width 0) (type default))
-    (uuid "2e316b3c-eb7f-4976-9612-938a6142c092"))
+    (uuid "d5d37840-078a-44c3-a39a-37f90a1f274a"))
   (global_label "DATA_21"
     (shape output)
     (at 86.36 193.04 0)
     (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "5a621e7b-1451-41bd-90aa-b96047bf8b76")
+    (uuid "33ffc0cb-02cf-4eb0-9679-7c22bfe23380")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 86.36 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes))))
@@ -838,7 +838,7 @@
     (at 229.87 40.64 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5bf8ce66-0ec3-489d-8e15-d7b333c79e81")
+    (uuid "793d9273-5308-4b10-84dc-764322d1c035")
     (property "Reference" "U45"
       (at 234.87 49.53 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -854,22 +854,22 @@
     (property "Description" ""
       (at 229.87 40.64 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "d9be309c-a7be-4288-8ccc-cfbc9ee478a6"))
-    (pin "2" (uuid "bd47af24-8afa-4346-b793-c5de125dc459"))
-    (pin "3" (uuid "91b3fbe9-78fc-48e2-9646-273f0c10c0b1"))
-    (pin "4" (uuid "602689df-f4db-47a9-82fd-9f77559a3048"))
-    (pin "5" (uuid "7eaca231-4eff-48c6-b395-668abdddbdfb"))
+    (pin "1" (uuid "9439d6ae-7e64-4e54-b3ab-f156d9a8a145"))
+    (pin "2" (uuid "a28037a1-56f4-480c-bba9-45fc649f525a"))
+    (pin "3" (uuid "9c864ca1-061e-497c-9244-9898644cd7a6"))
+    (pin "4" (uuid "2f050298-64cc-4436-bcad-992075fd3547"))
+    (pin "5" (uuid "1f20c67c-0f96-4128-8b51-ac541b5a51d8"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U45") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U45") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 229.87 34.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "dfca9280-655f-4255-8d88-f8904e6b654c")
+    (uuid "b6f8a39a-d018-4720-bac7-22541dd36f42")
     (property "Reference" "#PWR0221"
       (at 229.87 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 229.87 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -881,14 +881,14 @@
     (property "Description" ""
       (at 229.87 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "5b7ee035-a79d-4e23-beb2-9d1743460832"))
+    (pin "1" (uuid "d1659a2a-dda1-40b2-b8e5-004a20cf1196"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0221") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0221") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 229.87 46.99 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "8d68c35e-5972-4c01-805f-9c1e1dada38d")
+    (uuid "5e0abfb0-3e07-47d0-b65d-95e708da73e1")
     (property "Reference" "#PWR0222"
       (at 229.87 46.99 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -904,14 +904,14 @@
     (property "Description" ""
       (at 229.87 46.99 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "96559aac-08e1-48cc-ae53-ad03c5350c90"))
+    (pin "1" (uuid "830226f4-f190-462e-82fa-3be2605935a3"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0222") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0222") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 223.52 39.37 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "7df95309-78c2-46c6-84cc-7acad0390807")
+    (uuid "bad75c1a-429d-404e-a610-a9fea2954dcd")
     (property "Reference" "#PWR0223"
       (at 223.52 39.37 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -927,14 +927,14 @@
     (property "Description" ""
       (at 223.52 39.37 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "0aee92df-c9be-42a7-97cc-b2db59f10f1b"))
+    (pin "1" (uuid "81a7c48a-b542-499b-81e9-1bb3543920d8"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0223") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0223") (unit 1)))))
   (symbol (lib_id "C")
     (at 251.46 38.1 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "df8c1838-f7a1-460a-8345-2d91d2984fa4")
+    (uuid "7ee610e0-da1a-4af0-8558-f665f3862af8")
     (property "Reference" "C45"
       (at 253.46 36.6 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -950,19 +950,19 @@
     (property "Description" ""
       (at 251.46 38.1 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "07ae079e-317e-4b80-8e68-d724750ec126"))
-    (pin "2" (uuid "93474e84-ff79-4bd7-9bce-c6c08dc8fd49"))
+    (pin "1" (uuid "22643a2b-a5dd-4730-bf9e-c11017530927"))
+    (pin "2" (uuid "efe65e43-227a-4979-ab20-7f2778e14c61"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C45") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C45") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 251.46 34.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "320948a7-4e89-4cf3-b87c-a759e9cd59e2")
+    (uuid "7c60bd7f-e033-455b-871c-574794d809ec")
     (property "Reference" "#PWR0224"
       (at 251.46 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 251.46 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -974,14 +974,14 @@
     (property "Description" ""
       (at 251.46 34.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "693de984-a40d-4df1-b0a7-ba147995c9d6"))
+    (pin "1" (uuid "a211c329-404c-474c-925b-6e52b91e323a"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0224") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0224") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 251.46 41.91 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "9054b49b-cf3b-459a-beb6-236e73d5fe77")
+    (uuid "ecc2519e-2690-45bb-b820-56c7a19a0167")
     (property "Reference" "#PWR0225"
       (at 251.46 41.91 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -997,14 +997,14 @@
     (property "Description" ""
       (at 251.46 41.91 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "6d3df0a6-0b50-4f4c-a3d8-9a3dfaa9c71b"))
+    (pin "1" (uuid "6d43112d-45cc-4067-ac28-b009112887a7"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0225") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0225") (unit 1)))))
   (symbol (lib_id "IM72D128")
     (at 229.87 80.01 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "21e1be5f-2ff0-43c4-8d43-30b0cfe1cd22")
+    (uuid "8211432e-9fde-4201-9aaa-2d1a7922a804")
     (property "Reference" "U46"
       (at 234.87 88.9 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1020,22 +1020,22 @@
     (property "Description" ""
       (at 229.87 80.01 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b7710f84-e6e1-44e2-9324-9d2a5c5b4481"))
-    (pin "2" (uuid "82e32333-d6e0-424d-83ea-99047898ea9c"))
-    (pin "3" (uuid "af230509-9ae3-411e-977b-72f054fa6fec"))
-    (pin "4" (uuid "a118407b-7a45-451c-84c6-8c6f6c74ef75"))
-    (pin "5" (uuid "310912e6-0816-40d3-ba5d-5c6a1c21cbb3"))
+    (pin "1" (uuid "b2a0759a-b09d-4e1f-aa8d-1733c185a1a6"))
+    (pin "2" (uuid "28225d3d-be03-4e81-8175-462689b1ac56"))
+    (pin "3" (uuid "93f12c6d-8093-4d18-a83d-3aea97558055"))
+    (pin "4" (uuid "4c546c60-8fbc-430a-81e8-8208a36f8c09"))
+    (pin "5" (uuid "cbfd498d-7e19-46f1-ad7c-af49acb11238"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U46") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U46") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 229.87 73.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "d697aca0-45a7-45f1-9473-806fdc76e8b8")
+    (uuid "ce6ebf6a-b65a-414e-bbb5-5b425cacaabe")
     (property "Reference" "#PWR0226"
       (at 229.87 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 229.87 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1047,14 +1047,14 @@
     (property "Description" ""
       (at 229.87 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "c189720d-ad2f-4647-a31f-d90bf6ec63a9"))
+    (pin "1" (uuid "7a945512-0726-4f6f-ab56-2912f1773ddf"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0226") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0226") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 229.87 86.36 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "4bc6e4f2-f639-41b4-9d24-a72d0c19b12a")
+    (uuid "ab317e67-7763-4ccf-ae2f-762b8e62a271")
     (property "Reference" "#PWR0227"
       (at 229.87 86.36 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1070,18 +1070,18 @@
     (property "Description" ""
       (at 229.87 86.36 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "3eea1d6a-0290-443f-9f16-ee6ffcda5eb4"))
+    (pin "1" (uuid "dc56a7a2-82c6-4fc9-817c-b680ff95afc6"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0227") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0227") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 223.52 78.74 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "3e98e781-e3cd-48e0-b326-bb4b9318169f")
+    (uuid "fac8a786-79f7-4d51-8789-1cb2e65926e0")
     (property "Reference" "#PWR0228"
       (at 223.52 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 223.52 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1093,14 +1093,14 @@
     (property "Description" ""
       (at 223.52 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "7efdfd8e-d265-4a41-927d-272ad3796135"))
+    (pin "1" (uuid "502af8b8-bc6c-40c7-b7b6-8ed6c2a00d69"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0228") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0228") (unit 1)))))
   (symbol (lib_id "C")
     (at 251.46 77.47 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "583c5434-9891-4e8d-8d92-8317342c6368")
+    (uuid "619db3b1-aca2-481a-baa5-ed1886707729")
     (property "Reference" "C46"
       (at 253.46 75.97 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1116,19 +1116,19 @@
     (property "Description" ""
       (at 251.46 77.47 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "2c2de0ee-fc5b-421e-bb09-d91e6730930a"))
-    (pin "2" (uuid "1c4e8cd2-6c94-4968-8f06-24cdbd2c86f7"))
+    (pin "1" (uuid "c77830b3-e47c-4720-9efb-0230d20a97ad"))
+    (pin "2" (uuid "0ad31583-5f01-49a5-9c26-1da177b3f0c9"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C46") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C46") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 251.46 73.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "7c57b2b6-389e-49e5-bbc2-7730bdfe154d")
+    (uuid "27fa54b1-b12f-4aa1-996f-fe7271f853c3")
     (property "Reference" "#PWR0229"
       (at 251.46 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 251.46 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1140,14 +1140,14 @@
     (property "Description" ""
       (at 251.46 73.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "29f96af8-69f4-45c7-af59-75ed67a1a4bf"))
+    (pin "1" (uuid "8c4d4eae-158a-44ea-8c28-cf6bb805b627"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0229") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0229") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 251.46 81.28 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "976b50bb-6688-4bce-a110-c117d6e92770")
+    (uuid "c327bbcf-0feb-4c26-ac1e-76b3949f7cd2")
     (property "Reference" "#PWR0230"
       (at 251.46 81.28 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1163,34 +1163,34 @@
     (property "Description" ""
       (at 251.46 81.28 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "11a3d560-e907-49c8-b2f8-c37b66b1a8a6"))
+    (pin "1" (uuid "4575010d-db02-4866-b06e-2cf6a4a8c024"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0230") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0230") (unit 1)))))
   (wire (pts (xy 223.52 41.91) (xy 218.44 41.91))
     (stroke (width 0) (type default))
-    (uuid "5c7527dd-d594-4ec7-88f7-70d0f151b5c2"))
+    (uuid "1e531602-bc07-4ec1-ad3b-11e35dc79872"))
   (wire (pts (xy 218.44 41.91) (xy 218.44 81.28))
     (stroke (width 0) (type default))
-    (uuid "5e1fb451-bdd4-427f-8095-5a2701564fb9"))
+    (uuid "a9c31fa7-8bfe-42e8-844b-a4d101307b16"))
   (wire (pts (xy 218.44 81.28) (xy 223.52 81.28))
     (stroke (width 0) (type default))
-    (uuid "38edf883-a286-4526-bd5b-63ebd33447af"))
+    (uuid "bf9930be-183a-4df1-b76f-ce54f60f7dfe"))
   (global_label "C1_PDM_CLK"
     (shape input)
     (at 218.44 41.91 180)
     (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "930133eb-4b67-413c-993d-1f68c60eb7f4")
+    (uuid "19ea0715-30ac-4f55-83dc-e564597135eb")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 218.44 41.91 180)
       (effects (font (size 1.27 1.27)) (hide yes))))
   (wire (pts (xy 236.22 39.37) (xy 236.22 78.74))
     (stroke (width 0) (type default))
-    (uuid "84e13965-8642-4304-8fca-c1b18b3c7201"))
+    (uuid "0df864c9-3a9d-4c92-a2c1-a3f7746871a1"))
   (global_label "DATA_22"
     (shape output)
     (at 236.22 78.74 0)
     (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "1b33f0fa-2d72-4ae7-a301-5f4a7b86e142")
+    (uuid "ed6262ba-8a2a-41b2-a4bc-ef544ecb8e6a")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 236.22 78.74 0)
       (effects (font (size 1.27 1.27)) (hide yes))))
@@ -1198,7 +1198,7 @@
     (at 229.87 154.94 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5ea85350-7a4a-43a9-b19a-e6fa470a66b2")
+    (uuid "05080302-9a33-407f-8a3e-4604ef8eb746")
     (property "Reference" "U47"
       (at 234.87 163.83 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1214,22 +1214,22 @@
     (property "Description" ""
       (at 229.87 154.94 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "ec7e832d-6aed-467b-abc4-572362a6a06f"))
-    (pin "2" (uuid "58027174-55b8-4eb2-bdf7-36beee380e87"))
-    (pin "3" (uuid "75b5843c-3ea0-4ff2-9efd-0dbf890926ff"))
-    (pin "4" (uuid "cb9aee73-9b72-464a-9e6a-c85a8a9bf66e"))
-    (pin "5" (uuid "1f8946a6-9858-4e26-b76e-6ee64089d9a9"))
+    (pin "1" (uuid "ca94ac0a-f966-4096-9dc8-317cdf80f513"))
+    (pin "2" (uuid "2f632fbe-b60b-4812-a654-e82dba378040"))
+    (pin "3" (uuid "a8f23de7-109d-446d-9355-47618f01a773"))
+    (pin "4" (uuid "28e7078b-734a-4bf0-ac64-afb033a72b23"))
+    (pin "5" (uuid "d55506a7-55a8-417a-98c6-7198379abb5a"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U47") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U47") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 229.87 148.59 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "5810f1f3-7115-4211-9838-c4591e69a2cd")
+    (uuid "31aa192e-fb2c-4750-a9f9-4febb372a16d")
     (property "Reference" "#PWR0231"
       (at 229.87 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 229.87 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1241,14 +1241,14 @@
     (property "Description" ""
       (at 229.87 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "e96f183e-cfa5-4a6d-9f39-9c1048ea2dd0"))
+    (pin "1" (uuid "61d145a6-ccd4-4c83-83e6-bb01e327bbc2"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0231") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0231") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 229.87 161.29 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "f8e87b7e-06eb-4c13-976c-44ab43ae0e2d")
+    (uuid "d02181f9-b94a-48dc-8836-1816c44a9390")
     (property "Reference" "#PWR0232"
       (at 229.87 161.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1264,14 +1264,14 @@
     (property "Description" ""
       (at 229.87 161.29 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "3b27dc6e-9777-4875-9569-d1a6e64cac43"))
+    (pin "1" (uuid "31e65462-aa47-4bb9-97d9-e948dfe1601f"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0232") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0232") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 223.52 153.67 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "0904727c-0ff7-42b9-8aa8-b640003d2fe1")
+    (uuid "b3032867-f2f3-459a-aa08-1a1dbb928508")
     (property "Reference" "#PWR0233"
       (at 223.52 153.67 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1287,14 +1287,14 @@
     (property "Description" ""
       (at 223.52 153.67 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "fcf5afc9-0818-4249-8cd7-1b66874c6576"))
+    (pin "1" (uuid "d90744df-5099-4a2f-9d84-6fc38c360cab"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0233") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0233") (unit 1)))))
   (symbol (lib_id "C")
     (at 251.46 152.4 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "df4807da-dbcf-41ed-8cea-f3ea79c31a1c")
+    (uuid "5d57c528-fd7e-42df-a72c-eab05414c2ff")
     (property "Reference" "C47"
       (at 253.46 150.9 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1310,19 +1310,19 @@
     (property "Description" ""
       (at 251.46 152.4 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "1a4576b4-941c-496a-81de-fa56d950473b"))
-    (pin "2" (uuid "bbb5d59e-f018-4790-84e0-e99b380a6577"))
+    (pin "1" (uuid "831818a9-fbc2-456d-a5a6-02229b88ff4b"))
+    (pin "2" (uuid "ee16823c-24b2-40ac-8f42-0b124e5d1d3b"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C47") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C47") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 251.46 148.59 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "6fe977fe-9490-4318-bc82-f4570f1da872")
+    (uuid "8122fdf6-36ae-4259-8cae-16099450a80c")
     (property "Reference" "#PWR0234"
       (at 251.46 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 251.46 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1334,14 +1334,14 @@
     (property "Description" ""
       (at 251.46 148.59 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "a13aa175-6d8a-46af-a0c5-6de548ec3bf2"))
+    (pin "1" (uuid "1020d7e2-da50-4cad-ad2c-4424bb1ff635"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0234") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0234") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 251.46 156.21 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "7fc3f9bd-7b6d-48c9-bacc-c15d4501db59")
+    (uuid "1eb3e8e8-5bbb-4c59-a046-921f5034d19a")
     (property "Reference" "#PWR0235"
       (at 251.46 156.21 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1357,14 +1357,14 @@
     (property "Description" ""
       (at 251.46 156.21 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "540ccf4a-0fa7-4db5-826f-4e9ba5c26351"))
+    (pin "1" (uuid "825ecc42-4458-4eb5-926f-b5819add1168"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0235") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0235") (unit 1)))))
   (symbol (lib_id "IM72D128")
     (at 229.87 194.31 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "a55be32a-49b7-4215-ac51-cbdb8dac9d74")
+    (uuid "ea5deabe-fb14-4048-a80a-fe84b2e8d786")
     (property "Reference" "U48"
       (at 234.87 203.2 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1380,22 +1380,22 @@
     (property "Description" ""
       (at 229.87 194.31 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "ff017f53-33a4-4d10-83d1-c046b48fd863"))
-    (pin "2" (uuid "96adcc2f-75cb-4930-9e13-76bf278630f5"))
-    (pin "3" (uuid "06e75fb4-7043-4cff-8d88-87b3179dffeb"))
-    (pin "4" (uuid "46f90448-d279-4b4a-b9d8-471b82a5f303"))
-    (pin "5" (uuid "150cd4b6-b40b-4e74-9344-7a285e374705"))
+    (pin "1" (uuid "82e60ebf-fbf2-4e7f-9955-792d6b0d48dc"))
+    (pin "2" (uuid "4484089c-f4c6-479e-9d21-ad1234bf4c30"))
+    (pin "3" (uuid "ca53b230-beb0-40b8-9827-90086a56aab6"))
+    (pin "4" (uuid "1179ce8d-5011-415b-aa1f-b2b5a78bcc60"))
+    (pin "5" (uuid "6f0cba14-7ef6-4d91-960d-7a6d781cef7a"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "U48") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "U48") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 229.87 187.96 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "daae5757-c3cb-4fde-8a06-6ad41bf39152")
+    (uuid "6ca4b29c-4e83-4b40-ac27-44a7c297a7f0")
     (property "Reference" "#PWR0236"
       (at 229.87 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 229.87 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1407,14 +1407,14 @@
     (property "Description" ""
       (at 229.87 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "526b6fe2-26fc-4c52-8e87-bfd04f68de13"))
+    (pin "1" (uuid "315413ae-a8f5-47bd-9646-7e606040ad87"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0236") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0236") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 229.87 200.66 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "475b28fa-3b9a-4a60-b603-11b0b51cde1d")
+    (uuid "94daed41-8dab-4eee-a274-a5e49eff7f84")
     (property "Reference" "#PWR0237"
       (at 229.87 200.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1430,18 +1430,18 @@
     (property "Description" ""
       (at 229.87 200.66 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "c2a0f337-2075-4a6c-8c0b-97fd945c1c9f"))
+    (pin "1" (uuid "3871a2e9-ea23-4050-ae2f-fdef09bb521e"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0237") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0237") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 223.52 193.04 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "373c1e2c-c003-410d-8f96-04e06732a5ad")
+    (uuid "e4bc3446-ee9d-4e3e-9427-153e3e638c67")
     (property "Reference" "#PWR0238"
       (at 223.52 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 223.52 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1453,14 +1453,14 @@
     (property "Description" ""
       (at 223.52 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "4f94764c-407c-4f6c-946d-def0b23431f7"))
+    (pin "1" (uuid "cfdf7839-ab37-4080-b7b0-c931f1fc1576"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0238") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0238") (unit 1)))))
   (symbol (lib_id "C")
     (at 251.46 191.77 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "342833ec-ba8a-4085-9c4a-aba4d05813fd")
+    (uuid "14fb2efc-0528-4056-b3b8-1ff49a9294fb")
     (property "Reference" "C48"
       (at 253.46 190.27 0)
       (effects (font (size 1.27 1.27)) (justify left)))
@@ -1476,19 +1476,19 @@
     (property "Description" ""
       (at 251.46 191.77 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "6263e317-37a9-47e5-bfaf-4e1fc2dbcf67"))
-    (pin "2" (uuid "838220d2-498e-415b-8144-b7095db6c643"))
+    (pin "1" (uuid "ba174fde-477d-4748-ad6f-dc3c0dc2cc3b"))
+    (pin "2" (uuid "bf2f50ba-e730-4d13-873b-cedbca212f78"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "C48") (unit 1)))))
-  (symbol (lib_id "power:+1V8")
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "C48") (unit 1)))))
+  (symbol (lib_id "power:C1_1V8")
     (at 251.46 187.96 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "20730032-5898-4a96-92df-9bbc175fe50e")
+    (uuid "45f2544d-8b87-41f4-8952-055a19df1015")
     (property "Reference" "#PWR0239"
       (at 251.46 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (property "Value" "+1V8"
+    (property "Value" "C1_1V8"
       (at 251.46 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
     (property "Footprint" ""
@@ -1500,14 +1500,14 @@
     (property "Description" ""
       (at 251.46 187.96 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "2aa011f1-6c8b-4e90-9a08-93e86c37e0c0"))
+    (pin "1" (uuid "7043226d-6205-4c0e-8cb2-19bb8262dda5"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0239") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0239") (unit 1)))))
   (symbol (lib_id "power:GND")
     (at 251.46 195.58 0)
     (unit 1)
     (exclude_from_sim no) (in_bom yes) (on_board yes) (dnp no)
-    (uuid "014d5cce-7d3b-4d84-b26e-7023a96a30b8")
+    (uuid "7ba12594-147d-41d0-b56b-1a30c06b4699")
     (property "Reference" "#PWR0240"
       (at 251.46 195.58 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
@@ -1523,34 +1523,34 @@
     (property "Description" ""
       (at 251.46 195.58 0)
       (effects (font (size 1.27 1.27)) (hide yes)))
-    (pin "1" (uuid "b2a6aff1-b0d7-4149-acad-0af920909656"))
+    (pin "1" (uuid "fb44cc9e-ffe6-4715-936d-6827276294b9"))
     (instances (project "multi_fpga"
-      (path "/d86cc4ec-12d5-4f4e-a02e-2ff5b291f258" (reference "#PWR0240") (unit 1)))))
+      (path "/5d7632df-4dd9-49c8-8f8f-66c4273f0f4c" (reference "#PWR0240") (unit 1)))))
   (wire (pts (xy 223.52 156.21) (xy 218.44 156.21))
     (stroke (width 0) (type default))
-    (uuid "db467685-46f9-495d-b3e0-2725aefd8d72"))
+    (uuid "0b6c0827-6a90-4360-a859-0e1fd6ea91db"))
   (wire (pts (xy 218.44 156.21) (xy 218.44 195.58))
     (stroke (width 0) (type default))
-    (uuid "34fab6ec-45a0-4121-8627-b0a8d3f25e27"))
+    (uuid "634d27fc-d4b7-4bc4-8edd-c4466ca81c99"))
   (wire (pts (xy 218.44 195.58) (xy 223.52 195.58))
     (stroke (width 0) (type default))
-    (uuid "3f6a83ad-bf77-4e88-8089-28bc80c931d4"))
+    (uuid "99b91c93-e838-4c34-849f-b81e3e809eab"))
   (global_label "C1_PDM_CLK"
     (shape input)
     (at 218.44 156.21 180)
     (effects (font (size 1.27 1.27)) (justify right mirror))
-    (uuid "82f51087-1724-4c63-a83a-847c80793114")
+    (uuid "0cd6aafd-5406-4da7-abb7-5e8dfa085b58")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 218.44 156.21 180)
       (effects (font (size 1.27 1.27)) (hide yes))))
   (wire (pts (xy 236.22 153.67) (xy 236.22 193.04))
     (stroke (width 0) (type default))
-    (uuid "4f9a42d2-a61d-442d-be65-75b228428c2c"))
+    (uuid "e5c3cf48-48c8-44fb-a33c-6d7007366574"))
   (global_label "DATA_23"
     (shape output)
     (at 236.22 193.04 0)
     (effects (font (size 1.27 1.27)) (justify left))
-    (uuid "26046521-024d-47f7-b8e2-fdd624ca1550")
+    (uuid "a4a5f35c-b818-409a-9853-67b527e72093")
     (property "Intersheetrefs" "${INTERSHEET_REFS}"
       (at 236.22 193.04 0)
       (effects (font (size 1.27 1.27)) (hide yes))))

@@ -161,12 +161,16 @@ way it always was: both sides call the identical position formula (at
 whichever of the 4 angles is relevant) before either file's own
 page-centring shift is applied.
 
-Digilent's standard Pmod pinout already reserves pins 5/11 (VCC) and 6/12
-(GND) on every 2x6 Pmod, previously unmodelled on `CMOD_S7_PMOD_JA`'s
-8-signal-only pin list (`SPOKE_VU`/`SPOKE_GND` in `make_cluster()`, wired to
-the same +5V/GND net as this project's other rails) — so the hub also
-sources +5V/GND out to each cluster board through the same connector,
-rather than assuming independent power per cluster board.
+An earlier revision of this design tried to carry +5V/GND out to each
+cluster board over this same Pmod connector (`SPOKE_VU`/`SPOKE_GND` at
+Pmod positions 6/5). That turned out not to be physically possible:
+Digilent's real Cmod S7 schematic (`datasheets/Cmod+S7_sch-public.pdf`)
+shows those positions are hard-wired on the module itself to
+`GND`/`VCC3V3` — that module's own onboard regulator output, generated
+locally from its own `VU` — not a spare power-input pin. Driving the hub's
++5V into it would fight the Cmod's own regulator. See "Power
+architecture" below for how +5V actually reaches each cluster board now
+(a separate dedicated connector).
 
 This connector is the *physical entry point* for the 8 spoke signals onto
 the hub board only — which of the hub's `CMOD_A7_35T_DIP` pins each one
@@ -238,6 +242,58 @@ side so link jitter doesn't propagate straight into the sample clock.
 
 ---
 
+## Power architecture
+
+Source: an external 5V/4A+ supply into the Raspberry Pi 5's USB-C port;
+the Pi 5's own +5V rail is tapped to power the hub board and (via a
+dedicated connector, below) each of the 4 arm boards. `+5V`/`GND` are
+externally supplied throughout (`PWR_FLAG`-satisfied, no on-schematic
+source — see "ERC: zero errors").
+
+- **+5V distribution**: reaches the hub board directly (feeds `A5`/Cmod
+  A7-35T's own `VU`). Reaching each arm board needs a connector separate
+  from the spoke bus — see the spoke-connector section above for why that
+  one can't carry it (its Pmod power pins are the Cmod's own onboard
+  regulator output, not a usable input). Instead: a small dedicated 2-pin
+  connector, `J2` (`PinHeader_1x02_P2.54mm_Vertical`) on the arm board,
+  mating `J5`-`J8` (`PinSocket_1x02_P2.54mm_Vertical`, one per cluster) on
+  the hub, mounted next to the existing spoke connector at each quadrant.
+  Pin 1 = `+5V`, pin 2 = `GND`.
+- **+1.8V (mic array)**: one LDO per arm board, `VR1` (MCP1700T-1802E/TT,
+  SOT-23, 250mA — plenty for ~31mA/board at 24 mics × ~1.3mA typical per
+  the datasheet), fed from that board's own `+5V` (via `J2`), output on
+  `C{idx}_1V8` — a per-cluster-scoped net (via `make_arm()`'s `vdd_label`
+  parameter in `pcb/make_schematic.py`), not the single-FPGA design's
+  shared `+1V8` power symbol, since 4 independent LDOs can't share one
+  global net. Bypass caps `C25`(in)/`C26`(out), 1uF ceramic per the
+  datasheet's typical application circuit.
+- **+3.3V (hub's FT232H + TCXO)**: one LDO on the hub, `VR5`
+  (MCP1700T-3302E/TT, same family/package), fed from the hub's own `+5V`,
+  output on `+3V3` (only ever exists on this one board, no per-cluster
+  naming needed). Bypass caps `C1`(in)/`C2`(out).
+- Both LDOs are simple linear regulators, not switching bucks — loads are
+  tens of mA, heat is negligible, and this avoids inductor placement on
+  boards that are already tight (especially the arm board).
+- MCP1700's exact SOT-23 pin-to-function mapping (`LDO_PINS` in
+  `pcb/make_schematic_multi_fpga.py`: pad1=GND, pad2=OUT, pad3=IN) and the
+  mic/Cmod S7 current-draw estimates above are flagged to confirm against
+  the datasheet before ordering hardware, same confidence level this file
+  uses elsewhere (e.g. `CMOD_A7_35T_DIP` pin 16).
+
+**Decoupling cap placement (mics)**: each mic's own cap (`C1`-`C24`) is
+now placed as close as physically possible to that specific mic's VDD
+(pin 2) and GND (pin 5) pads — not just "somewhere near the mic," which
+the previous radial-offset scheme did (see `_mic_and_cap_xy()` in
+`pcb/layout_multi_fpga.py`). Found by a directed search over cap
+position/rotation minimising the worse of the two resulting stub lengths,
+subject to staying >=0.2mm clear of the mic's DATA/CLOCK pads and its own
+NPTH hole: cap pad "1" lands ~0.68mm from VDD, pad "2" ~0.28mm from GND.
+This depends on the corrected mic pinout above — the old (wrong) pin
+numbering would have made "close to VDD/GND" close to the wrong physical
+locations entirely.
+
+---
+
 ## PDM wiring (per cluster)
 
 13 signals (`C{n}_PDM_CLK` + `DATA_00`-`DATA_47`, 2 mics per data line, global
@@ -290,17 +346,15 @@ were fixed at the root rather than documented as accepted:
   fixed by giving the IM72D128 `DATA` pin `tri_state` electrical type instead
   of `output` in `pcb/make_schematic.py`'s `_lib_mic()`, matching the mic's
   real behavior (tri-stated on the half-cycle it isn't selected).
-- `power_pin_not_driven` on GND/+5V/+3V3/+1V8 — no battery/regulator-output
-  symbol is modeled at this dev-board-interconnect scope, so ERC has no
-  driver for these externally-supplied rails. Fixed with `power:PWR_FLAG`
-  symbols (the standard KiCad idiom for this): one pair each for GND/+5V/+3V3
-  in `hub.kicad_sch`, and one for +1V8 stacked onto an existing +1V8 instance
-  in `arm_00.kicad_sch` — see `_pwr_flag_pair()` / `_inject_pwr_flag_onto_net()`
-  in `pcb/make_schematic_multi_fpga.py`. +1V8 needed the different treatment
-  because it has no natural home at the cluster/hub level (it's the mic-local
-  supply rail); a fresh isolated flag pair for a net with no other same-named
-  usage in that file wasn't reliably recognized as connected by ERC, so it's
-  attached to an already-used instance instead.
+- `power_pin_not_driven` on GND/+5V — these are genuinely externally
+  supplied (from the Raspberry Pi 5, see "Power architecture" below), no
+  on-schematic source, so ERC has no driver for them. Fixed with
+  `power:PWR_FLAG` symbols (the standard KiCad idiom for this): one pair
+  each for GND/+5V in `hub.kicad_sch` — see `_pwr_flag_pair()` in
+  `pcb/make_schematic_multi_fpga.py`. `+3V3`/`+1V8` (`C{idx}_1V8`) used to
+  need the same treatment, but now that `VR1`/`VR5` (the per-board LDOs)
+  drive them with a real output pin, ERC is satisfied naturally — no flag
+  needed, and adding one would be redundant.
 
 Two further defects weren't ERC violations at all (KiCad's type-conflict
 rules don't cover them) but were real bugs in the generated schematic,
@@ -317,6 +371,26 @@ found by inspection:
   pin's outer tip toward the body centre, not outward; with 5 pins this
   close together, anything above `offset 0` collides. Fixed by setting it to
   `0`, which places each name right at its own pin tip.
+- **Every mic's pin *numbers* were wrong — a real, board-killing bug, not
+  just a cosmetic one.** `_lib_mic()` used an invented numbering
+  (1=VDD, 2=GND, 3=DATA, 4=CLK, 5=SEL) that doesn't match the real
+  IM72D128V01 part at all. The actual pinout (confirmed against both the
+  datasheet's Table 9 and the vendor's own KiCad symbol,
+  `pcb/IM72D128/KiCad/IM72D128V.kicad_sym`, already in the project but
+  never cross-checked against): **1=DATA, 2=VDD, 3=CLOCK, 4=SELECT,
+  5=GND**. As coded, the PCB net-assignment script
+  (`pcb/route_arm_board.py`) drove these wrong numbers straight onto
+  physical footprint pads — pad 1 (really DATA) would have had +1.8V
+  driven onto it, and pad 2 (really VDD) would have been shorted straight
+  to GND, on every one of the 96 mics. Found by the user comparing the
+  generated schematic against the vendor CAD files directly (`./lib`),
+  not by any automated check — ERC/DRC have no way to catch "these pin
+  numbers don't match the real part," since nothing in this project
+  encodes the datasheet as ground truth to check against. Fixed by
+  correcting only the `number` fields in `_lib_mic()` (pin names/positions
+  were already fine) and correspondingly `route_arm_board.py`'s
+  `mic_nets()`. See "Power architecture" below for the cap-placement and
+  GND-stub consequences.
 
 Two more weren't ERC violations *or* electrical bugs, but duplicate reference
 designators — a project-wide annotation check the KiCad GUI reports
