@@ -520,13 +520,18 @@ RPI5_CENTRE_XY_MM = (0.0, -160.0)  # clear of the hub's own footprint entirely -
 # happen to already be axis-aligned themselves since
 # CLUSTER_HUB_CONNECTOR_ROT_DEG=0.0, so a plain AABB check against them is
 # exact, not just a conservative approximation):
-#   CMOD_A7_35T: horizontal, straddling the +X axis, clear of J1/H1B and
-#   J4/H4B in the +-Y quadrants above/below it.
+#   CMOD_A7_35T: vertical, tucked between the centre keepout and the
+#   J3/J4/H3B/H4B connectors in the lower-right, clear of everything --
+#   position/rotation match the user's manual edit of A5 on hub.kicad_pcb
+#   (extracted the same way as CMOD_S7_PLACEMENT_*/CLUSTER_HUB_CONNECTOR_*
+#   above: recovered the file's page-centring shift from A6/H*B/J*/HCAM*,
+#   which all matched a single uniform translation exactly, then subtracted
+#   it back out of A5's saved position).
 #   FT232H: vertical, straddling the +Y axis, clear of J1/H1B and J2/H2B
 #   in the quadrants either side of it.
 #   TCXO (small): vertical, on the -Y axis, clear of J3/H3B/J4/H4B.
-HUB_CMOD_A7_XY_MM = (25.0, 7.62)
-HUB_CMOD_A7_ROT_DEG = 90.0
+HUB_CMOD_A7_XY_MM = (41.88, -44.705)
+HUB_CMOD_A7_ROT_DEG = 0.0
 HUB_FT232H_XY_MM = (0.0, 48.0)
 HUB_FT232H_ROT_DEG = 0.0
 HUB_TCXO_XY_MM = (0.0, -30.0)
