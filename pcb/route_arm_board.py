@@ -195,14 +195,68 @@ def add_power_zones(board):
     return zones
 
 
+SEL_STUB_WIDTH_MM = 0.2  # thinner than the board's normal 0.25mm track (this
+                         # jumper stays entirely inside the mic footprint's
+                         # own ~2.5mm envelope, right next to pads 3/4
+                         # (DATA/CLK, different nets) and the NPTH hole) but
+                         # not below the board's own 0.2mm minimum track
+                         # width rule (m_TrackMinWidth).
+
+
+def fix_sel_stubs(board):
+    """Pad 5 (SEL) on every one of the 24 mics sits too close to that same
+    mic's own NPTH mounting hole for the GND pour or Freerouting's traces to
+    legally approach it (see the routing summary -- confirmed as a footprint-
+    geometry constraint hitting all 24 mics identically, not a fluke).
+    Fixed by hand here rather than via more autorouting: pad 5 connects to
+    pad 2 (GND, for the 12 odd-ref/L mics where SEL=GND) or pad 1 (+1V8, for
+    the 12 even-ref/R mics where SEL=+1V8) directly, with a short track
+    entirely inside the mic's own footprint -- both target pads already sit
+    further from the NPTH hole than pad 5 does (the hole is on the +X side
+    of the footprint; pads 1/2 are on the -X side), so this path never has
+    to get any closer to the hole than pad 5's own position already is."""
+    fixed = 0
+    for fp in board.GetFootprints():
+        ref = fp.GetReference()
+        if not (ref.startswith("U") and ref[1:].isdigit()):
+            continue
+        g = int(ref[1:]) - 1
+        is_l = (g % 2 == 0)
+        pad5 = fp.FindPadByNumber("5")
+        target = fp.FindPadByNumber("2" if is_l else "1")
+        if pad5 is None or target is None:
+            continue
+        track = pcbnew.PCB_TRACK(board)
+        track.SetStart(pad5.GetPosition())
+        track.SetEnd(target.GetPosition())
+        track.SetWidth(pcbnew.FromMM(SEL_STUB_WIDTH_MM))
+        track.SetLayer(pcbnew.F_Cu)
+        track.SetNetCode(pad5.GetNetCode())
+        board.Add(track)
+        fixed += 1
+    return fixed
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dsn", help="export a Specctra DSN file for Freerouting after net assignment")
     ap.add_argument("--ses", help="import a routed Specctra SES file back onto the board")
     ap.add_argument("--zones", action="store_true", help="add GND (B.Cu) / +1V8 (F.Cu) pour zones and fill them")
+    ap.add_argument("--fix-sel", action="store_true",
+                     help="manually stitch each mic's SEL pad (pad 5) to its rail pad (1 or 2); "
+                          "see fix_sel_stubs() docstring for why this can't be left to the autorouter/zone")
     args = ap.parse_args()
 
     board = pcbnew.LoadBoard(PCB_PATH)
+
+    if args.fix_sel:
+        fixed = fix_sel_stubs(board)
+        zones = [z for z in board.Zones() if z.GetZoneName() == "GND_POUR"]
+        for zone in zones:
+            pcbnew.ZONE_FILLER(board).Fill([zone])
+        board.Save(PCB_PATH)
+        print(f"Stitched {fixed} SEL pads directly to their rail pad, refilled {len(zones)} zone(s).")
+        return
 
     if args.ses:
         ok = pcbnew.ImportSpecctraSES(board, args.ses)
