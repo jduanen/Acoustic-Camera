@@ -93,12 +93,72 @@ design specifically; cross-check before committing to real hardware.
 ### Spoke connector (mechanical): board-to-board, no cable
 
 The hub now mounts at the physical centre of the array (standoff- and
-connector-mated to all 4 cluster boards — see `pcb/layout_multi_fpga.py`'s
+connector-mated to all 4 arm boards — see `pcb/layout_multi_fpga.py`'s
 `place_hub()`), which changed how each spoke physically gets from a
 cluster's Cmod S7 to the hub, compared to earlier revisions of this
-document: **a plain 2.54mm 2x6 pin header, plugged directly into the Cmod
-S7's Pmod JA socket, pointing straight back toward the hub and mating with
-a matching 2x6 socket soldered to the hub board** — no cable anywhere.
+document: **a plain 2.54mm 2x6 header (arm board) mates with a matching
+2x6 socket (hub board)** — no cable anywhere. This connector is no longer
+plugged directly into the Cmod S7's own Pmod JA socket. Its position (and
+the mechanical standoff's, and the Cmod S7's own) are fixed constants
+approximating manual KiCad edits the user made — see
+`CLUSTER_HUB_CONNECTOR_*`/`CLUSTER_STANDOFF_*`/`CMOD_S7_PLACEMENT_*` in
+`pcb/layout_multi_fpga.py` for exactly how those were recovered each time
+(find the file's manual page-centring translation by comparing a mic's
+actual position against its known `array_xy.csv` position, subtract it
+back out). Current values: connector at r=48.3mm/25.6deg (offset from the
+cluster's own 90c base, rotation 0deg), standoff at r=69.6mm/37.4deg, Cmod
+S7 at r=91.5mm/43.8deg (rotation 0deg) — three different angles, not
+radially in line the way an earlier revision of this design had them;
+that's what the manual edits actually did, so that's what this
+approximates. Keeping the connector and standoff close to centre is what
+lets the hub board be smaller (`HUB_RADIUS_MM` ~93mm vs. 105mm with the
+connectors originally co-located with the Cmod S7). The 8 Pmod signals
+reach this connector via a PCB trace from the Cmod's Pmod pins, not a
+direct plug-in; routing those traces is a later, not-yet-done pass (see
+below).
+
+Each board file is also individually recentred on its own A4 page
+(`center_board_on_page()`) — purely cosmetic (doesn't affect fabrication),
+matching the same manual edit.
+
+### One arm board design, fabricated 4x (not 4 distinct board files)
+
+`pcb/layout_multi_fpga.py` used to emit 4 separate files
+(`cluster_00..03.kicad_pcb`), each built at its own rotated angle. The user
+then hand-laid-out the arm board once (on `cluster_00`) and asked for that
+single design to be reused for all 4 quadrants instead: **one
+`arm_board.kicad_pcb`, fabricated 4x, physically mounted rotated
+0/90/180/270deg around the hub** to form the full 96-mic array — not 4
+distinct boards. This works because the whole array is exactly 4-fold
+rotationally symmetric by construction (`arm_board` is built at c=0;
+c=1..3's geometry is the *same* shape rotated 90c degrees, not an
+independently-derived layout), so a physical copy of the c=0 board, bolted
+into the c=1 slot rotated 90deg, lands exactly on the c=1 mic positions.
+
+The **schematic side is unaffected** — `cluster_00..03.kicad_sch` still
+model 4 electrically distinct clusters with different net names
+(`DATA_00-11` vs `DATA_12-23`, `SPOKE0_*` vs `SPOKE1_*`, etc.); only the
+PCB happens to reuse one physical footprint/outline layout 4 times. All 4
+physical copies will carry the same silkscreen reference designators
+(`U1`-`U24`, `A1`, `J1`, `H1A`, `H1E1`, `H1E2`) — normal for a repeated
+identical module (each board is a standalone electrical + mechanical unit,
+disambiguated by which quadrant it's mounted in, not by a project-wide
+unique reference), not a naming bug.
+
+The hub is still a genuinely single, non-repeated board, and its own file
+still needs all 4 conceptual (rotated) positions internally — one real
+physical connector/standoff per quadrant — even though only the c=0 angle
+gets built out into the arm board file itself.
+
+Because `arm_board.kicad_pcb` and `hub.kicad_pcb` each get their own
+independent page-centring offset, their raw saved coordinates don't match
+each other numerically (e.g. the arm board's standoff position vs. the
+hub's corresponding one for that same quadrant) — that numeric-equality
+convenience is gone, but physical alignment is still guaranteed the same
+way it always was: both sides call the identical position formula (at
+whichever of the 4 angles is relevant) before either file's own
+page-centring shift is applied.
+
 Digilent's standard Pmod pinout already reserves pins 5/11 (VCC) and 6/12
 (GND) on every 2x6 Pmod, previously unmodelled on `CMOD_S7_PMOD_JA`'s
 8-signal-only pin list (`SPOKE_VU`/`SPOKE_GND` in `make_cluster()`, wired to
@@ -109,9 +169,10 @@ rather than assuming independent power per cluster board.
 This connector is the *physical entry point* for the 8 spoke signals onto
 the hub board only — which of the hub's `CMOD_A7_35T_DIP` pins each one
 ultimately reaches is still exactly what's defined in the spoke bus table
-above; routing traces from the socket to those DIP pins is a later,
-not-yet-done pass (this project is still placement-only, see
-`pcb/layout_multi_fpga.py`'s module docstring).
+above; routing traces from the socket to those DIP pins (on both boards —
+cluster board: Cmod S7 Pmod to connector; hub board: connector to
+`CMOD_A7_35T_DIP` pins) is a later, not-yet-done pass (this project is
+still placement-only, see `pcb/layout_multi_fpga.py`'s module docstring).
 
 **Signal integrity flag (not solved, carried forward for the HDL/routing
 pass)**: a plain 2x6 Pmod-style header/socket gives only 1 shared GND pin
