@@ -375,18 +375,21 @@ def center_board_on_page(board, x_offset_mm=0.0):
 #    Freerouting choked on it badly (15+ min, 142/176 still unrouted, vs
 #    ~3 min/~28 unrouted for every axis-aligned board this session).
 #
-# This offset clears the mic's real body (F.Silkscreen outline, +0.2mm
+# This offset clears the mic's real body (F.Silkscreen outline, +0.5mm
 # margin) at rot=0 (no rotation at all -- simplest possible, and pad "1"
 # still lands nearer VDD, pad "2" nearer GND, matching the existing
 # pad-to-net convention below) -- found by a directed search minimising
 # the worse of the 2 resulting stub lengths subject to that real-body
-# clearance. ~1.7mm from VDD, ~2.3mm from GND: not as tight as either
+# clearance. ~1.7mm from VDD, ~2.6mm from GND: not as tight as either
 # earlier (invalid) attempt, but a real, buildable placement that's still
 # smaller than and consistently on the correct side of the mic, unlike the
 # old radial scheme (whose distance to VDD/GND varied arbitrarily per mic
-# depending on that mic's angular position in the array).
+# depending on that mic's angular position in the array). The margin was
+# widened from 0.2mm to 0.5mm on request for more breathing room between
+# cap and mic bodies -- verified via direct body-to-body AABB check (0
+# collisions against own mic, all neighboring mics, and all other caps).
 CAP_TO_MIC_DX_MM = -0.49
-CAP_TO_MIC_DY_MM = -2.3
+CAP_TO_MIC_DY_MM = -2.6
 CAP_ROT_DEG = 0.0
 
 
