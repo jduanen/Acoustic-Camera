@@ -388,18 +388,33 @@ def center_board_on_page(board, x_offset_mm=0.0):
 # widened from 0.2mm to 0.5mm on request for more breathing room between
 # cap and mic bodies -- verified via direct body-to-body AABB check (0
 # collisions against own mic, all neighboring mics, and all other caps).
+#
+# A second request asked for the mic/cap *courtyards* (not just real
+# bodies) to stop overlapping too -- that needs -2.95 (0.35mm past the
+# 0.33mm of courtyard overlap the -2.6 offset above has). Pushing every
+# mic that far is fine almost everywhere, but 4 mics on the arm board
+# (U4, U9, U16, U21) sit close enough to *other nets'* pre-existing
+# routing that the extra 0.35mm push creates real shorts there (found by
+# DRC diff before/after, not by the courtyard check itself, which is
+# blind to routing). Those 4 keep the old -2.6 offset and its
+# already-accepted 0.33mm courtyard overlap rather than introduce a new
+# short -- a per-board tightness, not something a different offset fixes.
 CAP_TO_MIC_DX_MM = -0.49
-CAP_TO_MIC_DY_MM = -2.6
+CAP_TO_MIC_DY_MM = -2.95
+CAP_TO_MIC_DY_MM_EXCEPTIONS = {4: -2.6, 9: -2.6, 16: -2.6, 21: -2.6}  # mic number (Un), not index
 CAP_ROT_DEG = 0.0
 
 
-def _mic_and_cap_xy(x, y):
+def _mic_and_cap_xy(x, y, mic_num=None):
     """Cap position (and rotation) for a mic at (x,y) -- mics are placed
     unrotated regardless of array position, so this fixed mic-local offset
     applies directly in world coordinates too. Shared by the obstacle check
     (find_module_placement()) and the actual placement (build_cluster())
-    so the check sees exactly what gets placed."""
-    return x + CAP_TO_MIC_DX_MM, y + CAP_TO_MIC_DY_MM, CAP_ROT_DEG
+    so the check sees exactly what gets placed. mic_num (Un's number, 1-based)
+    selects the courtyard-overlap-tolerant exception offset for a few mics
+    too close to other routing -- see CAP_TO_MIC_DY_MM_EXCEPTIONS above."""
+    dy = CAP_TO_MIC_DY_MM_EXCEPTIONS.get(mic_num, CAP_TO_MIC_DY_MM)
+    return x + CAP_TO_MIC_DX_MM, y + dy, CAP_ROT_DEG
 
 
 # Cmod S7 placement: fixed constants approximating the user's latest manual
@@ -487,7 +502,7 @@ def build_cluster(board, c, mic_rows, module_placement):
         # this board's rendering of it.
         mic_fp.Value().SetVisible(False)
         board.Add(mic_fp)
-        cx, cy, crot = _mic_and_cap_xy(x, y)
+        cx, cy, crot = _mic_and_cap_xy(x, y, mic_num=mic_idx + 1)
         board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, f"C{mic_idx + 1}", cx, cy, rot_deg=crot))
 
     mx, my, rot_deg = module_placement
