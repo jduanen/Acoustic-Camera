@@ -114,6 +114,23 @@ SPOKE_SOCKET_NAME   = "PinSocket_2x06_P2.54mm_Vertical"
 SPOKE_HEADER_LIB    = "/usr/share/kicad/footprints/Connector_PinHeader_2.54mm.pretty"
 SPOKE_HEADER_NAME   = "PinHeader_2x06_P2.54mm_Vertical"
 
+# Power connector (+5V/GND from hub to each arm board) -- separate from the
+# spoke connector above: that one mates directly into the Cmod S7's own
+# Pmod JA, whose power-position pins turn out to be that module's OWN
+# onboard regulator output (see SCHEMATIC_NOTES.md's power section), not a
+# usable 5V input. So +5V has to reach the arm board some other way -- a
+# small dedicated 2-pin header/socket, same connector family/pitch as the
+# spoke connector for consistency.
+PWR_HEADER_LIB  = SPOKE_HEADER_LIB
+PWR_HEADER_NAME = "PinHeader_1x02_P2.54mm_Vertical"
+PWR_SOCKET_LIB  = SPOKE_SOCKET_LIB
+PWR_SOCKET_NAME = "PinSocket_1x02_P2.54mm_Vertical"
+
+# LDO regulators (MCP1700 family, SOT-23-3 -- see SCHEMATIC_NOTES.md for the
+# pin-to-function mapping, flagged to confirm against the datasheet).
+LDO_FP_LIB  = "/usr/share/kicad/footprints/Package_TO_SOT_SMD.pretty"
+LDO_FP_NAME = "SOT-23"
+
 # Cmod S7 module: mounted RADIALLY (long axis running outward along the
 # gap between two arms, not across it -- see find_module_placement() for
 # why), tucked into the natural gap between this cluster's 2nd and 3rd
@@ -331,15 +348,42 @@ def center_board_on_page(board, x_offset_mm=0.0):
 
 # ── cluster board ────────────────────────────────────────────────────────
 
+# Mic-local offset/rotation for its own decoupling cap, chosen so the cap's
+# 2 pads land as close as possible to the mic's real VDD (pin 2) and GND
+# (pin 5) pads specifically -- not just "somewhere near the mic" (the old
+# radial-3mm-offset scheme, which didn't target any particular pin and
+# could leave VDD/GND on the far side from the cap). Found by a directed
+# search minimising the worse of the 2 stub lengths, subject to staying
+# clear (>=0.2mm) of the mic's DATA/CLOCK pads and its own NPTH mounting
+# hole -- see the real IM72D128V01 pin positions this is based on in
+# CAP_TO_MIC_DX_MM/DY_MM's derivation (pin 2/VDD at (-0.39,-0.85), pin
+# 5/GND at (0.285,0), mic-local, unrotated, per the corrected pinout --
+# see route_arm_board.py's module docstring for the pin-numbering fix this
+# depends on).
+#
+# Rotation is constrained to 0/90/180/270deg (axis-aligned), not the
+# mathematically tightest-fit angle -- an earlier attempt used a precise
+# 290deg rotation on all 24 caps, and Freerouting choked on it badly (15+
+# minutes, ended with 142 of 176 connections still unrouted, vs ~3 minutes
+# and ~28 unrouted for every other board this session -- autorouters are
+# dramatically slower/worse with off-axis footprints scattered everywhere).
+# 270deg keeps pad "1" (VDD) and pad "2" (GND) matching the existing
+# pad-to-net convention below, each ~0.49mm from its target pin -- notably
+# looser than the 290deg attempt's ~0.28mm best case, but still a large
+# improvement over the old 3mm radial-offset scheme, and this one actually
+# routes.
+CAP_TO_MIC_DX_MM = -0.06
+CAP_TO_MIC_DY_MM = -0.43
+CAP_ROT_DEG = 270.0
+
+
 def _mic_and_cap_xy(x, y):
-    """Cap position for a mic at (x,y): offset 3mm further out along the
-    mic's own radial direction from the array centre. Shared by the
-    obstacle check (find_module_placement()) and the actual placement
-    (build_cluster()) so the check sees exactly what gets placed."""
-    r = math.hypot(x, y)
-    if r > 0:
-        return x + 3.0 * x / r, y + 3.0 * y / r
-    return x + 3.0, y
+    """Cap position (and rotation) for a mic at (x,y) -- mics are placed
+    unrotated regardless of array position, so this fixed mic-local offset
+    applies directly in world coordinates too. Shared by the obstacle check
+    (find_module_placement()) and the actual placement (build_cluster())
+    so the check sees exactly what gets placed."""
+    return x + CAP_TO_MIC_DX_MM, y + CAP_TO_MIC_DY_MM, CAP_ROT_DEG
 
 
 # Cmod S7 placement: fixed constants approximating the user's latest manual
@@ -427,8 +471,8 @@ def build_cluster(board, c, mic_rows, module_placement):
         # this board's rendering of it.
         mic_fp.Value().SetVisible(False)
         board.Add(mic_fp)
-        cx, cy = _mic_and_cap_xy(x, y)
-        board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, f"C{mic_idx + 1}", cx, cy))
+        cx, cy, crot = _mic_and_cap_xy(x, y)
+        board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, f"C{mic_idx + 1}", cx, cy, rot_deg=crot))
 
     mx, my, rot_deg = module_placement
     board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{c + 1}", mx, my, rot_deg=rot_deg))
@@ -442,6 +486,20 @@ def build_cluster(board, c, mic_rows, module_placement):
     # Cluster<->hub mechanical standoff.
     sx, sy = cluster_standoff_xy(c)
     add_mounting_hole(board, STANDOFF_HOLE_NAME, sx, sy, f"H{c + 1}A")
+
+    # Power connector (+5V/GND from hub, see PWR_HEADER_* above) + this
+    # cluster's own +1.8V LDO (VR1) + bypass caps -- placed in the open area
+    # near the spoke connector/standoff (only built once, at c=0, same as
+    # everything else on this board). Only c=0's build call matters (only
+    # arm_board.kicad_pcb is actually saved), but the formula stays
+    # rotation-general the same way cluster_hub_connector_xy() does.
+    if c == 0:
+        px, py = jx + 14.1, jy + 5.13
+        board.Add(load_fp(PWR_HEADER_LIB, PWR_HEADER_NAME, "J2", px, py))
+        vx, vy = px + 14.0, py
+        board.Add(load_fp(LDO_FP_LIB, LDO_FP_NAME, "VR1", vx, vy))
+        board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, "C25", vx - 6.0, vy + 6.0))
+        board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, "C26", vx + 6.0, vy + 6.0))
 
     # Enclosure mounting, 2 per board, near the outer rim. The wedge centre
     # drifts with radius (same spiral-drift reasoning as cluster_outline_
@@ -555,6 +613,17 @@ def place_hub(board):
         hx, hy = cluster_standoff_xy(c)
         add_mounting_hole(board, STANDOFF_HOLE_NAME, hx, hy, f"H{c + 1}B")
 
+        # Power socket (+5V/GND out to that cluster's arm board, see
+        # PWR_HEADER_*/PWR_SOCKET_* above) -- same local offset from the
+        # spoke socket as the arm board's own J2 (build_cluster()), rotated
+        # into this cluster's own orientation the same way every other
+        # per-quadrant item on this board already is.
+        t = math.radians(srot)
+        dx, dy = 14.1, 5.13
+        wx = sx + dx * math.cos(t) + dy * math.sin(t)
+        wy = sy - dx * math.sin(t) + dy * math.cos(t)
+        board.Add(load_fp(PWR_SOCKET_LIB, PWR_SOCKET_NAME, f"J{N_CLUSTERS + 1 + c}", wx, wy, rot_deg=srot))
+
     # Hub's own CMOD_A7_35T + FT232H + TCXO -- see the HUB_CMOD_A7_*/
     # HUB_FT232H_*/HUB_TCXO_* constants above for placement reasoning.
     ax, ay = HUB_CMOD_A7_XY_MM
@@ -565,6 +634,14 @@ def place_hub(board):
 
     tx, ty = HUB_TCXO_XY_MM
     board.Add(load_fp(LOCAL_LIB, "TCXO_Can", "Y1", tx, ty, rot_deg=HUB_TCXO_ROT_DEG))
+
+    # Hub's own +3.3V LDO (VR2, for FT232H + TCXO) + bypass caps -- placed
+    # in the open lower-left quadrant, clear of A5/A6/Y1/the keepout/all 4
+    # spoke sockets+standoffs+power sockets (verified, not just assumed).
+    vr2x, vr2y = -55.0, -20.0
+    board.Add(load_fp(LDO_FP_LIB, LDO_FP_NAME, f"VR{N_CLUSTERS + 1}", vr2x, vr2y))
+    board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, "C1", vr2x - 6.0, vr2y + 6.0))
+    board.Add(load_fp(CAP_FP_LIB, CAP_FP_NAME, "C2", vr2x + 6.0, vr2y + 6.0))
 
     # Camera mount (placeholder mounting holes either side of the cutout).
     cx0, cy0 = CAMERA_MOUNT_HOLE_SPACING_MM / 2.0, 0.0
@@ -621,17 +698,28 @@ def main():
     def _reach(corners):
         return max(max(abs(x), abs(y)) for x, y in corners)
 
+    pwr_socket_corners = _local_courtyard_corners(PWR_SOCKET_LIB, PWR_SOCKET_NAME)
+    ldo_corners = _local_courtyard_corners(LDO_FP_LIB, LDO_FP_NAME)
+    cap_corners = _local_courtyard_corners(CAP_FP_LIB, CAP_FP_NAME)
     for c in range(N_CLUSTERS):
         sx, sy, srot = cluster_hub_connector_xy(c)
         hub_reach = max(hub_reach, _reach(_true_corners(sx, sy, srot, socket_corners)))
         hx, hy = cluster_standoff_xy(c)
         hub_reach = max(hub_reach, _reach(_true_corners(hx, hy, 0.0, _local_courtyard_corners(MOUNTHOLE_LIB, STANDOFF_HOLE_NAME))))
+        t = math.radians(srot)
+        wx = sx + 14.1 * math.cos(t) + 5.13 * math.sin(t)
+        wy = sy - 14.1 * math.sin(t) + 5.13 * math.cos(t)
+        hub_reach = max(hub_reach, _reach(_true_corners(wx, wy, srot, pwr_socket_corners)))
     ax, ay = HUB_CMOD_A7_XY_MM
     hub_reach = max(hub_reach, _reach(_true_corners(ax, ay, HUB_CMOD_A7_ROT_DEG, dip48_corners)))
     fx, fy = HUB_FT232H_XY_MM
     hub_reach = max(hub_reach, _reach(_true_corners(fx, fy, HUB_FT232H_ROT_DEG, ft_corners)))
     tx, ty = HUB_TCXO_XY_MM
     hub_reach = max(hub_reach, _reach(_true_corners(tx, ty, HUB_TCXO_ROT_DEG, tcxo_corners)))
+    vr2x, vr2y = -55.0, -20.0
+    hub_reach = max(hub_reach, _reach(_true_corners(vr2x, vr2y, 0.0, ldo_corners)))
+    hub_reach = max(hub_reach, _reach(_true_corners(vr2x - 6.0, vr2y + 6.0, 0.0, cap_corners)))
+    hub_reach = max(hub_reach, _reach(_true_corners(vr2x + 6.0, vr2y + 6.0, 0.0, cap_corners)))
     HUB_HALF_SIDE_MM = hub_reach + 10.0  # margin past the furthest corner found
 
     # Build pass: now that R_BOARD_MAX_MM is final, draw outlines + place
@@ -642,8 +730,9 @@ def main():
     # sockets/standoffs.
     os.makedirs(OUTDIR, exist_ok=True)
     total_fp = 0
-    # 24 mics + 24 caps + 1 Cmod S7 + 1 spoke connector header + 1 cluster<->hub standoff + 2 enclosure holes
-    expected_per_cluster = 24 + 24 + 1 + 1 + 1 + 2
+    # 24 mics + 24 caps + 1 Cmod S7 + 1 spoke connector header + 1 cluster<->hub
+    # standoff + 2 enclosure holes + 1 power header (J2) + 1 LDO (VR1) + 2 bypass caps
+    expected_per_cluster = 24 + 24 + 1 + 1 + 1 + 2 + 1 + 1 + 2
     arm_board = pcbnew.CreateEmptyBoard()
     build_cluster(arm_board, 0, cluster_mic_rows[0], placements[0])
     center_board_on_page(arm_board, x_offset_mm=-25.0)
@@ -664,8 +753,8 @@ def main():
     n_fp_hub = len(hub_board.GetFootprints())
     total_fp += n_fp_hub
     # CMOD_A7_35T + FT232H + TCXO + 4 spoke sockets + 4 hub-side standoffs
-    # + 2 camera holes + 4 Pi 5 holes
-    expected_hub = 3 + N_CLUSTERS + N_CLUSTERS + 2 + 4
+    # + 2 camera holes + 4 Pi 5 holes + 4 power sockets (J5-J8) + VR2 + 2 bypass caps
+    expected_hub = 3 + N_CLUSTERS + N_CLUSTERS + 2 + 4 + N_CLUSTERS + 1 + 2
     print(f"Saved {hub_path} -- {n_fp_hub} footprints (expected {expected_hub})")
 
     print(f"Total footprints across both files: {total_fp}")

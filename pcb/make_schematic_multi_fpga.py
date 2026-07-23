@@ -35,13 +35,12 @@ Usage (from project root):
 """
 
 import os
-import re
 import sys
 import uuid as _uuid_mod
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import make_schematic as ms  # noqa: E402 — shared #PWR counter, see _pref() below
-from make_schematic import make_arm, GRID  # noqa: E402 — reuse the primary design's per-mic wiring
+from make_schematic import make_arm, GRID, _cap, _lib_cap  # noqa: E402 — reuse the primary design's per-mic wiring / cap symbol
 
 # ── project constants ─────────────────────────────────────────────────────────
 
@@ -234,24 +233,6 @@ def _lib_flag():
           '        (number "1" (effects (font (size 1.27 1.27)))))))\n'
     )
 
-def _inject_pwr_flag_onto_net(content, sch_uuid, lib_id):
-    """Stack a PWR_FLAG onto an existing power-symbol instance already present
-    in a generated arm sheet's content (used for +1V8, the mic-local supply
-    rail — see main()). +1V8 has no natural home at the cluster/hub level, and
-    a fresh isolated flag pair for a net with no other same-named usage in
-    that file isn't reliably recognized as connected by ERC; stacking onto an
-    already-used instance avoids that."""
-    m = re.search(
-        r'\(symbol \(lib_id "' + re.escape(lib_id) + r'"\)\n'
-        r'    \(at ([\d.\-]+) ([\d.\-]+) 0\)',
-        content)
-    if not m:
-        raise ValueError(f"no existing {lib_id} instance found to attach a PWR_FLAG to")
-    x, y = float(m.group(1)), float(m.group(2))
-    content = content.replace('  (lib_symbols\n', '  (lib_symbols\n' + _lib_flag(), 1)
-    content = content.replace('  (sheet_instances\n', _flag(x, y, sch_uuid) + '  (sheet_instances\n', 1)
-    return content
-
 def _lib_gnd():
     return (
         '  (symbol "power:GND" (power)\n'
@@ -318,7 +299,16 @@ FOOTPRINTS = {
     "CMOD_A7_35T":  "Package_DIP:DIP-48_W15.24mm_Socket",
     "FT232H_BRK":   "multi_fpga:FT232H_Breakout",
     "TCXO_OSC":     "multi_fpga:TCXO_Can",
+    "LDO_1V8":      "Package_TO_SOT_SMD:SOT-23",
+    "LDO_3V3":      "Package_TO_SOT_SMD:SOT-23",
 }
+
+# LDO pin order/numbering matches the stock SOT-23 footprint's own pad
+# layout (pad1/pad2 on one side, pad3 alone on the other) and Microchip's
+# MCP1700 pinout (pin1=GND, pin2=VOUT, pin3=VIN) -- confirm against the
+# datasheet before finalizing hardware, same confidence flag this project
+# already uses for other real-part pinouts (e.g. CMOD_A7_35T_DIP pin 16).
+LDO_PINS = [("GND", "1", "power_in"), ("OUT", "2", "power_out"), ("IN", "3", "power_in")]
 
 def _conn_lib(lib_name, ref_prefix, value, pins, desc=""):
     """pins: list of (pin_name, pin_number, elec_type) in top-to-bottom (screen) order."""
@@ -403,14 +393,16 @@ def _all_lib_symbols():
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
         + [(fpga_pin, f"JA{pos}", "passive")
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
-        # Pmod JA's standard power pins (JA5=GND, JA6=VCC per Digilent's Pmod
-        # spec -- confirm against the reference manual before wiring hardware,
-        # same confidence flag as CMOD_A7_35T_DIP pin 16 elsewhere in this
-        # file), previously left off this symbol since only the 8 signal
-        # pins were needed. Now carrying the hub's +5V/GND out to this
-        # cluster board over the same board-to-board connector as the spoke
-        # signals (see PHASE4.md / SCHEMATIC_NOTES.md "Spoke connector").
-        + [("SPOKE_GND", "JA5", "power_in"), ("SPOKE_VU", "JA6", "power_in")]
+        # Pmod JA positions 5/6/11/12 are hard-wired on the real Cmod S7 to
+        # GND/VCC3V3 (that module's own onboard regulator output, generated
+        # locally from ITS OWN VU) -- confirmed from Digilent's public Cmod S7
+        # schematic (datasheets/Cmod+S7_sch-public.pdf). An earlier revision
+        # of this design modeled JA5/JA6 as "SPOKE_GND"/"SPOKE_VU" carrying
+        # the hub's +5V out to this cluster board over the same connector --
+        # not physically possible (would drive straight into another
+        # regulator's output pin), so removed. Power to this cluster board
+        # instead arrives over a separate dedicated connector -- see J2/VR1
+        # in make_cluster().
     )
     # Hub: same Cmod A7-35T module as used physically — all 45 signals (4
     # spokes + FT232H + TCXO) on its DIP header, no Pmod (see CMOD_A7_35T_DIP
@@ -437,6 +429,7 @@ def _all_lib_symbols():
         + _lib_pwr_flag("+5V")
         + _lib_pwr_flag("+3V3")
         + _lib_flag()
+        + _lib_cap()
         + _conn_lib("CMOD_S7", "U", "Digilent Cmod S7 (XC7S25-1CSGA225C)", cmod_pins,
                     "Cluster FPGA module — Pmod JA (8 sig, 200ohm series) + DIP header "
                     "(13 of 32 GPIO used for local PDM capture); every pin series-resistor "
@@ -451,6 +444,12 @@ def _all_lib_symbols():
                     "USB 3.0 port (device is USB2-speed, ~320 Mbps, backward compatible)")
         + _conn_lib("TCXO_OSC", "Y", "12.288 MHz TCXO", tcxo_pins,
                     "Master clock; NDK NZ2520SD or TXC 7M series, +-2.5ppm or better")
+        + _conn_lib("LDO_1V8", "VR", "MCP1700T-1802E/TT", LDO_PINS,
+                    "1.8V linear regulator for this cluster's own 24-mic array "
+                    "(~31mA load, SOT-23, 1uF ceramic in/out per datasheet)")
+        + _conn_lib("LDO_3V3", "VR", "MCP1700T-3302E/TT", LDO_PINS,
+                    "3.3V linear regulator for the hub's FT232H + TCXO "
+                    "(~50mA load, SOT-23, 1uF ceramic in/out per datasheet)")
     )
 
 # ── cluster sheet generator ───────────────────────────────────────────────────
@@ -472,7 +471,7 @@ def make_cluster(idx):
         f'    (comment 2 "Spoke bus: 6 data + strobe + fwd clock, parallel single-ended (not LVDS)")\n'
         f'    (comment 3 "PDM: 12 data lines (2 mics/line) + 1 clock, to this cluster\'s 3 arms")\n'
         f'  )\n'
-        f'  (lib_symbols\n' + _all_lib_symbols() + '  )\n'
+        f'  (lib_symbols\n' + _all_lib_symbols() + _lib_pwr_flag(f"C{idx}_1V8") + '  )\n'
     )
 
     cmod_pins = (
@@ -481,7 +480,6 @@ def make_cluster(idx):
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
         + [(fpga_pin, f"JA{pos}", "passive")
            for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
-        + [("SPOKE_GND", "JA5", "power_in"), ("SPOKE_VU", "JA6", "power_in")]
     )
     n = len(cmod_pins)
 
@@ -527,17 +525,33 @@ def make_cluster(idx):
         shape = "input" if suffix == "CLK" else "output"
         buf.append(_stub_and_label(x, y, STUB, net, shape=shape, label_angle=180))
 
-    # Spoke connector's power pins (JA5/JA6, pins 23/24): the hub sources
-    # +5V/GND out to this cluster board over the same board-to-board
-    # connector as the spoke signals, rather than assuming independent
-    # power per cluster board -- same +5V/GND net (global power symbol) as
-    # this Cmod S7's own DIP-header VU/GND above, so ERC's existing
-    # PWR_FLAG on the hub's +5V/GND (see SCHEMATIC_NOTES.md) covers this
-    # too, no new flag needed.
-    x, y = _conn_pin_xy(CX, CY, 23, n)
+    # VR1: this cluster's own +1.8V LDO for its 24 mics -- fed from this
+    # board's own +5V (arriving over the new dedicated power connector, see
+    # pcb/layout_multi_fpga.py -- not modelled as a schematic symbol, same as
+    # the spoke connector itself: see CMOD_S7_PMOD_JA's comment on why
+    # board-to-board connectors are PCB-layout-only in this project),
+    # output on a per-cluster-scoped net (C{idx}_1V8, not the single-FPGA
+    # design's shared "+1V8") so 4 independent LDOs don't drive one net.
+    vdd_net = f"C{idx}_1V8"
+    VX, VY = CX + 30 * GRID, CY + 60 * GRID
+    vr_n = len(LDO_PINS)
+    buf.append(_conn_instance("LDO_1V8", "VR1", VX, VY, sch_uuid, LDO_PINS))
+    x, y = _conn_pin_xy(VX, VY, 0, vr_n)   # pin 1 = GND
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
-    x, y = _conn_pin_xy(CX, CY, 24, n)
+    x, y = _conn_pin_xy(VX, VY, 1, vr_n)   # pin 2 = OUT
+    buf.append(_stub_and_pwr(f"power:{vdd_net}", vdd_net, x, y, STUB, sch_uuid))
+    x, y = _conn_pin_xy(VX, VY, 2, vr_n)   # pin 3 = IN
     buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
+
+    # Bypass caps, 1uF ceramic in/out per MCP1700's typical application
+    # circuit -- same _cap()/_lib_cap() 2-pin symbol as the mic decoupling
+    # caps, offsets (-3.81/+3.81) matching that symbol's own pin geometry.
+    buf.append(_cap("C25", VX - 15 * GRID, VY, sch_uuid))
+    buf.append(_pwr("power:+5V", "+5V", VX - 15 * GRID, VY - 3.81, sch_uuid))
+    buf.append(_pwr("power:GND", "GND", VX - 15 * GRID, VY + 3.81, sch_uuid))
+    buf.append(_cap("C26", VX + 15 * GRID, VY, sch_uuid))
+    buf.append(_pwr(f"power:{vdd_net}", vdd_net, VX + 15 * GRID, VY - 3.81, sch_uuid))
+    buf.append(_pwr("power:GND", "GND", VX + 15 * GRID, VY + 3.81, sch_uuid))
 
     # 3 arm sub-sheets (this cluster's share of the 96-mic array, reused from
     # pcb/mic_array/'s per-mic wiring via make_arm() — see module docstring).
@@ -665,15 +679,34 @@ def make_hub():
     x, y = _conn_pin_xy(FX, FY, 13, len(ft232h_pins))
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
-    # Power flags: one pair per rail used at this level (GND, +5V, +3V3).
-    # Power-symbol nets are global by name, so placing these once here
-    # satisfies ERC's "power input not driven" rule hierarchy-wide — no
-    # regulator/source symbol is modeled at this dev-board-interconnect scope
-    # (see SCHEMATIC_NOTES.md). +1V8 (mic-local supply) is flagged separately
-    # in arm_00.kicad_sch, where it's already used, rather than as a fresh
-    # isolated island here — see main()/_inject_pwr_flag_onto_net().
+    # VR2: the hub's own +3.3V LDO for FT232H + TCXO, fed from the hub's own
+    # +5V (Cmod A7-35T's own VU, above). Unlike +1V8, +3V3 only ever exists
+    # on this one board, so no per-cluster-scoped net naming is needed here.
+    VX2, VY2 = 108 * GRID, 180 * GRID
+    vr_n = len(LDO_PINS)
+    buf.append(_conn_instance("LDO_3V3", f"VR{N_CLUSTERS + 1}", VX2, VY2, sch_uuid, LDO_PINS))
+    x, y = _conn_pin_xy(VX2, VY2, 0, vr_n)   # pin 1 = GND
+    buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
+    x, y = _conn_pin_xy(VX2, VY2, 1, vr_n)   # pin 2 = OUT
+    buf.append(_stub_and_pwr("power:+3V3", "+3V3", x, y, STUB, sch_uuid))
+    x, y = _conn_pin_xy(VX2, VY2, 2, vr_n)   # pin 3 = IN
+    buf.append(_stub_and_pwr("power:+5V", "+5V", x, y, STUB, sch_uuid))
+
+    buf.append(_cap("C1", VX2 - 15 * GRID, VY2, sch_uuid))
+    buf.append(_pwr("power:+5V", "+5V", VX2 - 15 * GRID, VY2 - 3.81, sch_uuid))
+    buf.append(_pwr("power:GND", "GND", VX2 - 15 * GRID, VY2 + 3.81, sch_uuid))
+    buf.append(_cap("C2", VX2 + 15 * GRID, VY2, sch_uuid))
+    buf.append(_pwr("power:+3V3", "+3V3", VX2 + 15 * GRID, VY2 - 3.81, sch_uuid))
+    buf.append(_pwr("power:GND", "GND", VX2 + 15 * GRID, VY2 + 3.81, sch_uuid))
+
+    # Power flags: GND/+5V only -- these remain genuinely externally supplied
+    # (from the Pi 5, no on-schematic source, see SCHEMATIC_NOTES.md). +3V3
+    # and +1V8 used to be flagged here/on arm_00.kicad_sch too, but both now
+    # have a real driver (VR2's/VR1's OUT pin), so ERC's "power input not
+    # driven" rule is satisfied naturally -- flagging them as well would be
+    # redundant/confusing.
     for i, (lib_id, val) in enumerate(
-            [("power:GND", "GND"), ("power:+5V", "+5V"), ("power:+3V3", "+3V3")]):
+            [("power:GND", "GND"), ("power:+5V", "+5V")]):
         buf.append(_pwr_flag_pair(lib_id, val, 108 * GRID, 84 * GRID + i * 12 * GRID, sch_uuid))
 
     buf.append(
@@ -782,19 +815,18 @@ def main():
 
     # 12 arm sheets: real per-mic wiring, reused from make_schematic.make_arm().
     # clk_label is cluster-specific (each cluster gets its own forwarded-clock
-    # copy) and page_num matches this project's deeper nesting (top -> cluster
-    # -> arm). make_arm() bakes in make_schematic.py's own PROJECT ("mic_array")
+    # copy), vdd_label likewise gives each cluster its own independent +1.8V
+    # rail (fed by that cluster's own local LDO, VR1 -- see make_cluster()),
+    # and page_num matches this project's deeper nesting (top -> cluster ->
+    # arm). make_arm() bakes in make_schematic.py's own PROJECT ("mic_array")
     # in its symbol-instance paths, so patch that to this project's name.
     for arm_idx in range(N_CLUSTERS * 3):
         cluster_idx = arm_idx // 3
-        content, arm_uuid = make_arm(arm_idx, clk_label=f"C{cluster_idx}_PDM_CLK", page_num=arm_idx + 7)
+        content, _arm_uuid = make_arm(arm_idx, clk_label=f"C{cluster_idx}_PDM_CLK",
+                                       page_num=arm_idx + 7, vdd_label=f"C{cluster_idx}_1V8")
         content = content.replace('(project "mic_array"', f'(project "{PROJECT}"')
-        if arm_idx == 0:
-            # +1V8 (mic-local supply) has no natural home at the cluster/hub
-            # level, unlike GND/+5V/+3V3 — flag it here, where it's already
-            # used, instead of as a fresh isolated island (see
-            # _inject_pwr_flag_onto_net()).
-            content = _inject_pwr_flag_onto_net(content, arm_uuid, "power:+1V8")
+        # No PWR_FLAG needed for C{cluster_idx}_1V8: that cluster's own VR1
+        # (make_cluster()) drives it with a real output pin.
         path = os.path.join(OUTDIR, f"arm_{arm_idx:02d}.kicad_sch")
         with open(path, 'w') as fh:
             fh.write(content)

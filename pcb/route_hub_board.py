@@ -19,10 +19,18 @@ Net assignment, pad-for-pad:
     +3V3, 4 (OUT) -> TCXO_CLK.
   J1-J4 (spoke sockets, one per cluster): pin positions 1,2,3,4,7,8,9,10 ->
     that cluster's SPOKE{cidx}_D0-D5/STROBE/CLK (same position convention as
-    the arm board's mating header), position 5 -> GND, 6 -> +5V (matches the
-    arm board's SPOKE_GND/SPOKE_VU, which are themselves just the global
-    GND/+5V nets under a schematic-local pin name -- see
-    route_arm_board.py's KNOWN GAP note), positions 11/12 unused.
+    the arm board's mating header); positions 5/6/11/12 unused -- these are
+    hard-wired on the real Cmod S7 to GND/VCC3V3 (that module's own onboard
+    regulator output), not a usable power input, so this design doesn't
+    wire anything to them (see datasheets/Cmod+S7_sch-public.pdf and
+    SCHEMATIC_NOTES.md's power section for the full story).
+  J5-J8 (power sockets, one per cluster, PinSocket_1x02): pin1 -> +5V,
+    pin2 -> GND -- the actual path +5V/GND take to each arm board, since
+    J1-J4 can't carry them.
+  VR5 (MCP1700-3302 LDO, SOT-23): pad1 (GND) -> GND, pad2 (OUT) -> +3V3,
+    pad3 (IN) -> +5V (same LDO_PINS convention as the arm board's VR1).
+  C1/C2 (VR5's bypass caps): C1 (input side) pad1 -> +5V, pad2 -> GND;
+    C2 (output side) pad1 -> +3V3, pad2 -> GND.
 
 Unlike the arm board, the hub's own modules (A5 DIP-48, A6, spoke sockets)
 are all through-hole (pads span every copper layer) -- only Y1 (TCXO_Can)
@@ -74,6 +82,10 @@ FT232H_PAD_NETS.update({
 
 TCXO_PAD_NETS = {"1": "+3V3", "2": "GND", "3": "+3V3", "4": "TCXO_CLK"}
 
+# VR5 (LDO_3V3, MCP1700-3302): pad1=GND, pad2=OUT, pad3=IN -- see LDO_PINS
+# in make_schematic_multi_fpga.py (same convention as the arm board's VR1).
+VR5_PAD_NETS = {"1": "GND", "2": "+3V3", "3": "+5V"}
+
 # Spoke socket pin position -> index into SPOKE_SIGNAL_SUFFIX (matches the
 # arm board header's CMOD_S7_PMOD_JA position convention: 1,2,3,4,7,8,9,10).
 SOCKET_POS_TO_SUFFIX_IDX = {1: 0, 2: 1, 3: 2, 4: 3, 7: 4, 8: 5, 9: 6, 10: 7}
@@ -106,18 +118,32 @@ def assign_nets(board):
                     continue
                 pad.SetNet(ARM.get_or_create_net(board, netinfo, name))
                 assigned += 1
-        elif ref.startswith("J") and ref[1:].isdigit():
+        elif ref.startswith("J") and ref[1:].isdigit() and fp.GetPadCount() == 12:
+            # Spoke sockets J1-J4: positions 1,2,3,4,7,8,9,10 only -- see
+            # module docstring for why 5/6/11/12 are left unwired.
             cidx = int(ref[1:]) - 1
             for pad in fp.Pads():
                 pos = int(pad.GetPadName())
-                if pos in SOCKET_POS_TO_SUFFIX_IDX:
-                    name = f"SPOKE{cidx}_{SCH.SPOKE_SIGNAL_SUFFIX[SOCKET_POS_TO_SUFFIX_IDX[pos]]}"
-                elif pos == 5:
-                    name = "GND"
-                elif pos == 6:
-                    name = "+5V"
-                else:
-                    continue  # positions 11/12: unused, no net
+                if pos not in SOCKET_POS_TO_SUFFIX_IDX:
+                    continue
+                name = f"SPOKE{cidx}_{SCH.SPOKE_SIGNAL_SUFFIX[SOCKET_POS_TO_SUFFIX_IDX[pos]]}"
+                pad.SetNet(ARM.get_or_create_net(board, netinfo, name))
+                assigned += 1
+        elif ref.startswith("J") and ref[1:].isdigit() and fp.GetPadCount() == 2:
+            # Power sockets J5-J8: pin1 -> +5V, pin2 -> GND.
+            for pad in fp.Pads():
+                name = "+5V" if pad.GetPadName() == "1" else "GND"
+                pad.SetNet(ARM.get_or_create_net(board, netinfo, name))
+                assigned += 1
+        elif ref == "VR5":  # N_CLUSTERS + 1, see make_hub()/place_hub()
+            for pad in fp.Pads():
+                name = VR5_PAD_NETS.get(pad.GetPadName())
+                pad.SetNet(ARM.get_or_create_net(board, netinfo, name))
+                assigned += 1
+        elif ref in ("C1", "C2") and fp.GetPadCount() == 2:
+            in_net = "+5V" if ref == "C1" else "+3V3"
+            for pad in fp.Pads():
+                name = in_net if pad.GetPadName() == "1" else "GND"
                 pad.SetNet(ARM.get_or_create_net(board, netinfo, name))
                 assigned += 1
         # H*B (standoffs), HCAM1/2, HPI1-4: mechanical only, no net.

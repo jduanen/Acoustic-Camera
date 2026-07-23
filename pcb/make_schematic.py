@@ -139,6 +139,34 @@ def _lib_vdd():
           '        (number "1" (effects (font (size 1.27 1.27)))))))\n'
     )
 
+def _lib_pwr_named(name):
+    """Same shape as _lib_vdd(), under an arbitrary rail name -- used when make_arm()
+    is called with a vdd_label override (see its docstring). KiCad power symbols are
+    one global net per distinct name; the multi-FPGA design needs each cluster's own
+    mic array on its own independent +1.8V rail (its own local LDO), not the single
+    shared "+1V8" _lib_vdd()/the default vdd_label=None path provides."""
+    return (
+        f'  (symbol "power:{name}" (power)\n'
+        '    (pin_numbers (hide yes)) (pin_names (offset 0) (hide yes))\n'
+        '    (exclude_from_sim no) (in_bom yes) (on_board yes)\n'
+        + _pp("Reference", "#PWR",  0, -3.81, hide=True)
+        + _pp("Value",     name,    0,  3.556)
+        + _pp("Footprint", "",      0,  0,    hide=True)
+        + _pp("Datasheet", "",      0,  0,    hide=True)
+        + _pp("Description", "",    0,  0,    hide=True)
+        + f'    (symbol "{name}_0_1"\n'
+          '      (polyline (pts (xy -0.762 1.27) (xy 0 2.54))\n'
+          '        (stroke (width 0) (type default)) (fill (type none)))\n'
+          '      (polyline (pts (xy 0 2.54) (xy 0.762 1.27))\n'
+          '        (stroke (width 0) (type default)) (fill (type none)))\n'
+          '      (polyline (pts (xy 0 0) (xy 0 2.54))\n'
+          '        (stroke (width 0) (type default)) (fill (type none))))\n'
+          f'    (symbol "{name}_1_1"\n'
+          '      (pin power_in line (at 0 0 90) (length 0)\n'
+          '        (name "~" (effects (font (size 1.27 1.27))))\n'
+          '        (number "1" (effects (font (size 1.27 1.27)))))))\n'
+    )
+
 def _lib_mic():
     return (
         '  (symbol "IM72D128"\n'
@@ -158,29 +186,40 @@ def _lib_mic():
           '      (rectangle (start -3.81 -3.81) (end 3.81 3.81)\n'
           '        (stroke (width 0) (type default)) (fill (type background))))\n'
           '    (symbol "IM72D128_1_1"\n'
+          # Pin NUMBERS below match the real IM72D128V01 datasheet (Table 9,
+          # "IM72D128V01 pin configuration": 1=DATA, 2=VDD, 3=CLOCK,
+          # 4=SELECT, 5=GND) and the vendor's own KiCad symbol
+          # (pcb/IM72D128/KiCad/IM72D128V.kicad_sym) -- this project's
+          # earlier numbering (1=VDD,2=GND,3=DATA,4=CLK,5=SEL) was simply
+          # wrong, not a real part's pinout, and would have shorted VDD to
+          # GND and driven DC power onto the DATA pin if fabricated. Only
+          # the "number" fields changed here; the geometric pin positions
+          # (which only affect how the symbol is drawn, not the real
+          # electrical connections) are untouched.
+          #
           # VDD: top pin in y-up coords → connection at (0,+6.35), angle 270 = pin points down into body
           '      (pin power_in line (at 0 6.35 270) (length 2.54)\n'
           '        (name "VDD"  (effects (font (size 1.27 1.27))))\n'
-          '        (number "1"  (effects (font (size 1.27 1.27)))))\n'
+          '        (number "2"  (effects (font (size 1.27 1.27)))))\n'
           # GND: bottom pin
           '      (pin power_in line (at 0 -6.35 90) (length 2.54)\n'
           '        (name "GND"  (effects (font (size 1.27 1.27))))\n'
-          '        (number "2"  (effects (font (size 1.27 1.27)))))\n'
+          '        (number "5"  (effects (font (size 1.27 1.27)))))\n'
           # DATA: right-side output, tri-stated on the half-cycle this mic isn't
           # selected (SEL) so its L/R partner can drive the shared line — hence
           # "tri_state" electrical type, not "output", to avoid a false-positive
           # ERC pin-to-pin conflict on the two mics' shared DATA net.
           '      (pin tri_state line (at 6.35 1.27 180) (length 2.54)\n'
           '        (name "DATA" (effects (font (size 1.27 1.27))))\n'
-          '        (number "3"  (effects (font (size 1.27 1.27)))))\n'
+          '        (number "1"  (effects (font (size 1.27 1.27)))))\n'
           # CLK: left-side input, lower
           '      (pin input line (at -6.35 -1.27 0) (length 2.54)\n'
           '        (name "CLK"  (effects (font (size 1.27 1.27))))\n'
-          '        (number "4"  (effects (font (size 1.27 1.27)))))\n'
+          '        (number "3"  (effects (font (size 1.27 1.27)))))\n'
           # SEL: left-side input, upper
           '      (pin input line (at -6.35 1.27 0) (length 2.54)\n'
           '        (name "SEL"  (effects (font (size 1.27 1.27))))\n'
-          '        (number "5"  (effects (font (size 1.27 1.27)))))))\n'
+          '        (number "4"  (effects (font (size 1.27 1.27)))))))\n'
     )
 
 def _lib_cap():
@@ -310,7 +349,7 @@ def _cap(ref, x, y, sch_uuid):
 
 # ── arm sheet generator ───────────────────────────────────────────────────────
 
-def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
+def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None, vdd_label=None):
     """Return (sch_content, sch_uuid) for arm_NN.kicad_sch.
 
     clk_label: override the PDM clock global label (default "PDM_CLK", matching
@@ -319,9 +358,15 @@ def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
     each cluster there receives its own forwarded-clock copy, not one shared net.
     page_num: override this sheet's own page number (default arm_idx + 2, matching
     this project's page layout; the multi_fpga project nests arms one level deeper).
+    vdd_label: override the mic/cap VDD rail's net name (default "+1V8", the single
+    shared power symbol every arm in this project used originally). Used by
+    make_schematic_multi_fpga.py to give each cluster's 24 mics their own
+    independent +1.8V rail (fed by that cluster's own local LDO) instead of one
+    project-wide "+1V8" net, which would short 4 separate LDO outputs together.
     """
     if page_num is None:
         page_num = arm_idx + 2
+    vdd_net = vdd_label or "+1V8"
     sch_uuid = _uid()
     buf = []
 
@@ -345,7 +390,7 @@ def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
         + _lib_mic()
         + _lib_cap()
         + _lib_gnd()
-        + _lib_vdd()
+        + (_lib_vdd() if vdd_label is None else _lib_pwr_named(vdd_net))
         + '  )\n'
     )
 
@@ -364,23 +409,23 @@ def make_arm(arm_idx, clk_label="PDM_CLK", page_num=None):
 
         # ── L mic (SEL = GND) ────────────────────────────────────────────────
         buf.append(_mic(f"U{gL+1}", x, yL, sch_uuid))
-        buf.append(_pwr("power:+1V8", "+1V8", x,          yL + VDD_DY,     sch_uuid))
+        buf.append(_pwr(f"power:{vdd_net}", vdd_net, x, yL + VDD_DY,     sch_uuid))
         buf.append(_pwr("power:GND",  "GND",  x,          yL + GND_DY,     sch_uuid))
         buf.append(_pwr("power:GND",  "GND",  x + SEL_DX, yL + SEL_DY,     sch_uuid))  # SEL=GND
         # decoupling cap for L mic: placed so pin 1 aligns with VDD pin
         cap_yL = yL - 2.54   # cap centre → pin 1 at cap_yL + CP1_DY = yL - 6.35 = VDD pin y
         buf.append(_cap(f"C{gL+1}", x + CAP_DX, cap_yL, sch_uuid))
-        buf.append(_pwr("power:+1V8", "+1V8", x + CAP_DX, cap_yL + CP1_DY, sch_uuid))  # cap pin 1
+        buf.append(_pwr(f"power:{vdd_net}", vdd_net, x + CAP_DX, cap_yL + CP1_DY, sch_uuid))  # cap pin 1
         buf.append(_pwr("power:GND",  "GND",  x + CAP_DX, cap_yL + CP2_DY, sch_uuid))  # cap pin 2
 
         # ── R mic (SEL = +1V8) ───────────────────────────────────────────────
         buf.append(_mic(f"U{gR+1}", x, yR, sch_uuid))
-        buf.append(_pwr("power:+1V8", "+1V8", x,          yR + VDD_DY,     sch_uuid))
+        buf.append(_pwr(f"power:{vdd_net}", vdd_net, x, yR + VDD_DY,     sch_uuid))
         buf.append(_pwr("power:GND",  "GND",  x,          yR + GND_DY,     sch_uuid))
-        buf.append(_pwr("power:+1V8", "+1V8", x + SEL_DX, yR + SEL_DY,     sch_uuid))  # SEL=+1V8
+        buf.append(_pwr(f"power:{vdd_net}", vdd_net, x + SEL_DX, yR + SEL_DY,     sch_uuid))  # SEL=+1V8
         cap_yR = yR - 2.54
         buf.append(_cap(f"C{gR+1}", x + CAP_DX, cap_yR, sch_uuid))
-        buf.append(_pwr("power:+1V8", "+1V8", x + CAP_DX, cap_yR + CP1_DY, sch_uuid))
+        buf.append(_pwr(f"power:{vdd_net}", vdd_net, x + CAP_DX, cap_yR + CP1_DY, sch_uuid))
         buf.append(_pwr("power:GND",  "GND",  x + CAP_DX, cap_yR + CP2_DY, sch_uuid))
 
         # ── CLK: jog left clear of the SEL pin column, then vertical + label ──

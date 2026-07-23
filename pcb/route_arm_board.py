@@ -9,17 +9,39 @@ Freerouting (Specctra DSN export -> external autorouter -> Specctra SES
 import).
 
 Net assignment mirrors pcb/make_schematic.py's make_arm() (per-mic wiring)
-and pcb/make_schematic_multi_fpga.py's make_cluster() (Cmod S7 DIP header)
-pad-for-pad:
-  mic (IFX-PG-LLGA-5-4) pad 1=VDD->+1V8, 2=GND, 3=DATA->DATA_NN, 4=CLK->
-    C0_PDM_CLK, 5=SEL->GND(L)/+1V8(R); unnamed pad = NPTH mechanical, no net.
-  cap (C_0603_1608Metric) pad 1->+1V8, 2->GND.
+and pcb/make_schematic_multi_fpga.py's make_cluster() (Cmod S7 DIP header,
+power connector, LDO) pad-for-pad:
+  mic (IFX-PG-LLGA-5-4) pad numbers match the REAL IM72D128V01 datasheet
+    (Table 9: 1=DATA, 2=VDD, 3=CLOCK, 4=SELECT, 5=GND -- confirmed against
+    both the datasheet and the vendor's own KiCad symbol,
+    pcb/IM72D128/KiCad/IM72D128V.kicad_sym; an earlier revision of this
+    project used a fabricated, wrong numbering (1=VDD,2=GND,3=DATA,4=CLK,
+    5=SEL) that would have shorted VDD to GND and driven DC power onto the
+    DATA pin if built -- see make_schematic.py's _lib_mic() for the fix):
+    pad1->DATA_NN, pad2->C0_1V8, pad3->C0_PDM_CLK, pad4->GND(L)/C0_1V8(R),
+    pad5->GND; unnamed pad = NPTH mechanical, no net.
+  cap C1-C24 (mic decoupling, C_0603_1608Metric): placed close to that
+    mic's own VDD (pad2)/GND (pad5) specifically (see
+    layout_multi_fpga.py's _mic_and_cap_xy()) -- pad1->C0_1V8 (near VDD),
+    pad2->GND (near GND, ~0.28mm away -- see fix_gnd_stub() for why this
+    matters).
   Cmod S7 (DIP-48, A1): pad N == Digilent's own "D{N}" pin numbering
     (confirmed: pad1 at one end of the left column, pad25 starts the right
     column, standard IC DIP numbering) -- pad1->C0_PDM_CLK, pads2-13->
     DATA_00..DATA_11, pad24 (VU)->+5V, pad25 (GND)->GND. Pads 14-23/26-48
     are real DIP pins with no net in this design (unused GPIO), left
     without a net -- not a routing gap, just unused hardware pins.
+  J2 (power connector from hub, PinHeader_1x02): pad1->+5V, pad2->GND.
+  VR1 (MCP1700-1802 LDO, SOT-23): pad1 (GND)->GND, pad2 (OUT)->C0_1V8,
+    pad3 (IN)->+5V (see LDO_PINS in make_schematic_multi_fpga.py).
+  C25/C26 (VR1's bypass caps): C25 (input side) pad1->+5V, pad2->GND;
+    C26 (output side) pad1->C0_1V8, pad2->GND.
+
+  C0_1V8 (not the single-FPGA design's shared "+1V8"): this cluster's own
+  independent +1.8V rail, fed by its own local VR1 -- see
+  pcb/make_schematic.py's make_arm() vdd_label parameter and
+  SCHEMATIC_NOTES.md's power section for why (4 arm boards, 4 independent
+  LDOs, can't share one global net).
 
 KNOWN GAP (not solved here, flagged instead): the schematic's spoke bus
 (SPOKE0_D0-D5/STROBE/CLK/GND/VU) is wired to Cmod S7's Pmod JA header, but
@@ -49,6 +71,7 @@ PCB_PATH = os.path.join(OUTDIR, "arm_board.kicad_pcb")
 N_PER_ARM = 8
 N_PAIRS = N_PER_ARM // 2  # 4
 CLK_NET = "C0_PDM_CLK"    # cluster 0's forwarded PDM clock (see make_cluster(0))
+VDD_NET = "C0_1V8"        # cluster 0's own independent +1.8V rail (see module docstring)
 
 # Track width / clearance -- reasonable defaults for this board's signals
 # (slow decimated PDM-ish digital I/O, not high-speed/impedance-controlled):
@@ -79,11 +102,11 @@ def mic_nets(g):
     is_l = (g % 2 == 0)
     data = arm_idx * N_PAIRS + pair
     return {
-        "1": "+1V8",
-        "2": "GND",
-        "3": f"DATA_{data:02d}",
-        "4": CLK_NET,
-        "5": "GND" if is_l else "+1V8",
+        "1": f"DATA_{data:02d}",
+        "2": VDD_NET,
+        "3": CLK_NET,
+        "4": "GND" if is_l else VDD_NET,
+        "5": "GND",
     }
 
 
@@ -91,6 +114,10 @@ CMOD_S7_PAD_NETS = {1: CLK_NET}
 CMOD_S7_PAD_NETS.update({2 + i: f"DATA_{i:02d}" for i in range(12)})
 CMOD_S7_PAD_NETS[24] = "+5V"
 CMOD_S7_PAD_NETS[25] = "GND"
+
+# VR1 (LDO_1V8, MCP1700-1802): pad1=GND, pad2=OUT, pad3=IN -- see LDO_PINS
+# in make_schematic_multi_fpga.py.
+VR1_PAD_NETS = {"1": "GND", "2": VDD_NET, "3": "+5V"}
 
 
 def assign_nets(board):
@@ -108,9 +135,18 @@ def assign_nets(board):
                     continue  # unnamed/NPTH mechanical pad
                 pad.SetNet(get_or_create_net(board, netinfo_list, name))
                 assigned += 1
-        elif ref.startswith("C") and fp.GetPadCount() == 2:
+        elif ref in ("C25", "C26") and fp.GetPadCount() == 2:
+            # VR1's bypass caps -- C25 (input side, +5V/GND), C26 (output
+            # side, C0_1V8/GND). Not a mic decoupling cap (see below).
+            in_net = "+5V" if ref == "C25" else VDD_NET
             for pad in fp.Pads():
-                name = "+1V8" if pad.GetPadName() == "1" else "GND"
+                name = in_net if pad.GetPadName() == "1" else "GND"
+                pad.SetNet(get_or_create_net(board, netinfo_list, name))
+                assigned += 1
+        elif ref.startswith("C") and fp.GetPadCount() == 2:
+            # Mic decoupling caps, C1-C24.
+            for pad in fp.Pads():
+                name = VDD_NET if pad.GetPadName() == "1" else "GND"
                 pad.SetNet(get_or_create_net(board, netinfo_list, name))
                 assigned += 1
         elif ref == "A1":
@@ -119,6 +155,17 @@ def assign_nets(board):
                 name = CMOD_S7_PAD_NETS.get(pad_num)
                 if name is None:
                     continue  # real DIP pin, unused in this design
+                pad.SetNet(get_or_create_net(board, netinfo_list, name))
+                assigned += 1
+        elif ref == "VR1":
+            for pad in fp.Pads():
+                name = VR1_PAD_NETS.get(pad.GetPadName())
+                pad.SetNet(get_or_create_net(board, netinfo_list, name))
+                assigned += 1
+        elif ref == "J2":
+            # Power connector from the hub: pin1->+5V, pin2->GND.
+            for pad in fp.Pads():
+                name = "+5V" if pad.GetPadName() == "1" else "GND"
                 pad.SetNet(get_or_create_net(board, netinfo_list, name))
                 assigned += 1
         elif ref == "J1":
@@ -161,10 +208,17 @@ def add_power_zones(board):
     (confirmed via each pad's GetLayerSet()), so a B.Cu pour would only
     reach A1's through-hole DIP48 pins and any pad a via happens to already
     land under, missing virtually every mic/cap GND pad. Only GND gets a
-    pour: +1V8 needs the same F.Cu real estate (same single-sided SMD
+    pour: C0_1V8 needs the same F.Cu real estate (same single-sided SMD
     pads), and two full-board pours can't both occupy one layer without via
-    stitching -- +1V8 is left to Freerouting's traces (see module docstring
-    KNOWN GAP note in the routing summary)."""
+    stitching -- C0_1V8 is left to Freerouting's traces.
+
+    Removes any existing GND_POUR zone(s) first -- calling this on a board
+    that already has one (e.g. re-running --zones) used to silently add a
+    second, overlapping zone (DRC's "zones_intersect"), since ZONE objects
+    aren't tracked/deduplicated by KiCad automatically."""
+    for z in list(board.Zones()):
+        if z.GetZoneName() == "GND_POUR":
+            board.Remove(z)
     netinfo = board.GetNetInfo()
     outline_pts = _board_outline_polygon(board)
     zones = []
@@ -195,43 +249,77 @@ def add_power_zones(board):
     return zones
 
 
-SEL_STUB_WIDTH_MM = 0.2  # thinner than the board's normal 0.25mm track (this
-                         # jumper stays entirely inside the mic footprint's
-                         # own ~2.5mm envelope, right next to pads 3/4
-                         # (DATA/CLK, different nets) and the NPTH hole) but
-                         # not below the board's own 0.2mm minimum track
-                         # width rule (m_TrackMinWidth).
+GND_STUB_WIDTH_MM = 0.2  # thinner than the board's normal 0.25mm track (this
+                         # jumper stays entirely inside the mic/cap pair's
+                         # own tiny footprint envelope) but not below the
+                         # board's own 0.2mm minimum track width rule
+                         # (m_TrackMinWidth).
 
 
-def fix_sel_stubs(board):
-    """Pad 5 (SEL) on every one of the 24 mics sits too close to that same
+def fix_gnd_stub(board):
+    """Pad 5 (GND) on every one of the 24 mics sits too close to that same
     mic's own NPTH mounting hole for the GND pour or Freerouting's traces to
-    legally approach it (see the routing summary -- confirmed as a footprint-
-    geometry constraint hitting all 24 mics identically, not a fluke).
-    Fixed by hand here rather than via more autorouting: pad 5 connects to
-    pad 2 (GND, for the 12 odd-ref/L mics where SEL=GND) or pad 1 (+1V8, for
-    the 12 even-ref/R mics where SEL=+1V8) directly, with a short track
-    entirely inside the mic's own footprint -- both target pads already sit
-    further from the NPTH hole than pad 5 does (the hole is on the +X side
-    of the footprint; pads 1/2 are on the -X side), so this path never has
-    to get any closer to the hole than pad 5's own position already is."""
+    legally approach it (confirmed as a footprint-geometry constraint
+    hitting all 24 mics identically, not a fluke -- pad 5's position is
+    fixed regardless of which pin function we assign it, so this is the
+    same physical-clearance problem regardless of the pinout fix above).
+    Fixed by hand here rather than via more autorouting: pad 5 connects
+    directly to that same mic's own decoupling cap's pad 2 (also GND) --
+    thanks to the cap now being placed right next to VDD/GND specifically
+    (see layout_multi_fpga.py's _mic_and_cap_xy()), that pad sits only
+    ~0.28mm away, and this path never has to get any closer to the NPTH
+    hole than pad 5's own position already is."""
+    fixed = 0
+    fps_by_ref = {fp.GetReference(): fp for fp in board.GetFootprints()}
+    for ref, fp in fps_by_ref.items():
+        if not (ref.startswith("U") and ref[1:].isdigit()):
+            continue
+        cap_fp = fps_by_ref.get(f"C{ref[1:]}")
+        if cap_fp is None:
+            continue
+        pad5 = fp.FindPadByNumber("5")
+        target = cap_fp.FindPadByNumber("2")
+        if pad5 is None or target is None:
+            continue
+        track = pcbnew.PCB_TRACK(board)
+        track.SetStart(pad5.GetPosition())
+        track.SetEnd(target.GetPosition())
+        track.SetWidth(pcbnew.FromMM(GND_STUB_WIDTH_MM))
+        track.SetLayer(pcbnew.F_Cu)
+        track.SetNetCode(pad5.GetNetCode())
+        board.Add(track)
+        fixed += 1
+    return fixed
+
+
+def fix_select_stub(board):
+    """Pad 4 (SELECT) is left unrouted by Freerouting on every one of the 12
+    R-mics (SELECT=C0_1V8 for R, GND for L -- see mic_nets()), consistently
+    across repeated autoroute attempts (not a fluke): with the corrected
+    pinout, SELECT sits on the opposite side of the mic body (top, y=+0.85)
+    from where the cap now lives (bottom, near VDD/GND), so there's no
+    nearby same-net copper for it to reach, unlike pad 5 above. Fixed by
+    hand: pad 2 (VDD, also C0_1V8 on R-mics) sits at the same local x
+    (-0.39) as pad 4, directly above/below it with nothing else on that
+    line -- a short straight stitch between them needs no detour."""
     fixed = 0
     for fp in board.GetFootprints():
         ref = fp.GetReference()
         if not (ref.startswith("U") and ref[1:].isdigit()):
             continue
         g = int(ref[1:]) - 1
-        is_l = (g % 2 == 0)
-        pad5 = fp.FindPadByNumber("5")
-        target = fp.FindPadByNumber("2" if is_l else "1")
-        if pad5 is None or target is None:
+        if g % 2 == 0:
+            continue  # L-mic: pad4=GND, pad2=VDD -- different nets, don't stitch
+        pad2 = fp.FindPadByNumber("2")
+        pad4 = fp.FindPadByNumber("4")
+        if pad2 is None or pad4 is None:
             continue
         track = pcbnew.PCB_TRACK(board)
-        track.SetStart(pad5.GetPosition())
-        track.SetEnd(target.GetPosition())
-        track.SetWidth(pcbnew.FromMM(SEL_STUB_WIDTH_MM))
+        track.SetStart(pad2.GetPosition())
+        track.SetEnd(pad4.GetPosition())
+        track.SetWidth(pcbnew.FromMM(GND_STUB_WIDTH_MM))
         track.SetLayer(pcbnew.F_Cu)
-        track.SetNetCode(pad5.GetNetCode())
+        track.SetNetCode(pad2.GetNetCode())
         board.Add(track)
         fixed += 1
     return fixed
@@ -241,21 +329,25 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--dsn", help="export a Specctra DSN file for Freerouting after net assignment")
     ap.add_argument("--ses", help="import a routed Specctra SES file back onto the board")
-    ap.add_argument("--zones", action="store_true", help="add GND (B.Cu) / +1V8 (F.Cu) pour zones and fill them")
-    ap.add_argument("--fix-sel", action="store_true",
-                     help="manually stitch each mic's SEL pad (pad 5) to its rail pad (1 or 2); "
-                          "see fix_sel_stubs() docstring for why this can't be left to the autorouter/zone")
+    ap.add_argument("--zones", action="store_true", help="add + fill a GND pour zone (F.Cu)")
+    ap.add_argument("--fix-gnd", action="store_true",
+                     help="manually stitch each mic's GND pad (pad 5) to its own cap's GND pad, "
+                          "and each R-mic's SELECT pad (pad 4) to its own VDD pad (pad 2); "
+                          "see fix_gnd_stub()/fix_select_stub() docstrings for why this can't be "
+                          "left to the autorouter/zone")
     args = ap.parse_args()
 
     board = pcbnew.LoadBoard(PCB_PATH)
 
-    if args.fix_sel:
-        fixed = fix_sel_stubs(board)
+    if args.fix_gnd:
+        gnd_fixed = fix_gnd_stub(board)
+        sel_fixed = fix_select_stub(board)
         zones = [z for z in board.Zones() if z.GetZoneName() == "GND_POUR"]
         for zone in zones:
             pcbnew.ZONE_FILLER(board).Fill([zone])
         board.Save(PCB_PATH)
-        print(f"Stitched {fixed} SEL pads directly to their rail pad, refilled {len(zones)} zone(s).")
+        print(f"Stitched {gnd_fixed} mic GND pads to their own cap's GND pad, "
+              f"{sel_fixed} R-mic SELECT pads to their own VDD pad, refilled {len(zones)} zone(s).")
         return
 
     if args.ses:

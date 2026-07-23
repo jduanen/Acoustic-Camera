@@ -152,7 +152,14 @@ the Pi 5. Rejected for the first board because:
 
 ### Power Supply
 
-**TBD**
+External 5V/4A+ supply → Raspberry Pi 5's USB-C input. The Pi 5's own +5V
+rail is tapped to power the hub board directly and each of the 4 arm
+boards over a dedicated 2-pin connector (separate from the spoke data
+bus — see `pcb/multi_fpga/SCHEMATIC_NOTES.md`'s "Power architecture" for
+why). Each arm board has its own local +1.8V LDO for its 24 mics
+(independent per board, not shared); the hub has its own +3.3V LDO for
+the FT232H USB bridge and TCXO. Full rail-by-rail detail, part numbers,
+and confidence flags: `pcb/multi_fpga/SCHEMATIC_NOTES.md`.
 
 ---
 
