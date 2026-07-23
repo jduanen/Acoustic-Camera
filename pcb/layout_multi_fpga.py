@@ -352,29 +352,42 @@ def center_board_on_page(board, x_offset_mm=0.0):
 # 2 pads land as close as possible to the mic's real VDD (pin 2) and GND
 # (pin 5) pads specifically -- not just "somewhere near the mic" (the old
 # radial-3mm-offset scheme, which didn't target any particular pin and
-# could leave VDD/GND on the far side from the cap). Found by a directed
-# search minimising the worse of the 2 stub lengths, subject to staying
-# clear (>=0.2mm) of the mic's DATA/CLOCK pads and its own NPTH mounting
-# hole -- see the real IM72D128V01 pin positions this is based on in
-# CAP_TO_MIC_DX_MM/DY_MM's derivation (pin 2/VDD at (-0.39,-0.85), pin
-# 5/GND at (0.285,0), mic-local, unrotated, per the corrected pinout --
+# could leave VDD/GND on the far side from the cap). See the real
+# IM72D128V01 pin positions this is based on (pin 2/VDD at (-0.39,-0.85),
+# pin 5/GND at (0.285,0), mic-local, unrotated, per the corrected pinout --
 # see route_arm_board.py's module docstring for the pin-numbering fix this
 # depends on).
 #
-# Rotation is constrained to 0/90/180/270deg (axis-aligned), not the
-# mathematically tightest-fit angle -- an earlier attempt used a precise
-# 290deg rotation on all 24 caps, and Freerouting choked on it badly (15+
-# minutes, ended with 142 of 176 connections still unrouted, vs ~3 minutes
-# and ~28 unrouted for every other board this session -- autorouters are
-# dramatically slower/worse with off-axis footprints scattered everywhere).
-# 270deg keeps pad "1" (VDD) and pad "2" (GND) matching the existing
-# pad-to-net convention below, each ~0.49mm from its target pin -- notably
-# looser than the 290deg attempt's ~0.28mm best case, but still a large
-# improvement over the old 3mm radial-offset scheme, and this one actually
-# routes.
-CAP_TO_MIC_DX_MM = -0.06
-CAP_TO_MIC_DY_MM = -0.43
-CAP_ROT_DEG = 270.0
+# Two earlier attempts at this offset were both wrong:
+# 1. A tight-fit search (~0.28-0.49mm stubs) only checked clearance against
+#    the mic's *other pads* and NPTH hole -- not its real physical body.
+#    The mic's actual silkscreen/F.Fab outline (its real ~4.4x3.4mm
+#    package, not just the courtyard keepout) turned out to extend well
+#    past the pads themselves (x: -1.8 to 2.6, y: -1.7 to 1.7, mic-local),
+#    so that "tight" placement had the cap's own body sitting *inside*
+#    where the mic package physically is -- not buildable, two solid parts
+#    can't occupy the same space (found by the user visually spotting the
+#    overlap, not by this project's own courtyard-based collision checks,
+#    which treat mic+own-cap courtyard overlap as expected/skipped and so
+#    never flagged this).
+# 2. The first fix used a precise 290deg rotation to claw back some of
+#    that closeness once real-body clearance was enforced -- but
+#    Freerouting choked on it badly (15+ min, 142/176 still unrouted, vs
+#    ~3 min/~28 unrouted for every axis-aligned board this session).
+#
+# This offset clears the mic's real body (F.Silkscreen outline, +0.2mm
+# margin) at rot=0 (no rotation at all -- simplest possible, and pad "1"
+# still lands nearer VDD, pad "2" nearer GND, matching the existing
+# pad-to-net convention below) -- found by a directed search minimising
+# the worse of the 2 resulting stub lengths subject to that real-body
+# clearance. ~1.7mm from VDD, ~2.3mm from GND: not as tight as either
+# earlier (invalid) attempt, but a real, buildable placement that's still
+# smaller than and consistently on the correct side of the mic, unlike the
+# old radial scheme (whose distance to VDD/GND varied arbitrarily per mic
+# depending on that mic's angular position in the array).
+CAP_TO_MIC_DX_MM = -0.49
+CAP_TO_MIC_DY_MM = -2.3
+CAP_ROT_DEG = 0.0
 
 
 def _mic_and_cap_xy(x, y):
