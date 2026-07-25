@@ -152,6 +152,25 @@ still needs all 4 conceptual (rotated) positions internally — one real
 physical connector/standoff per quadrant — even though only the c=0 angle
 gets built out into the arm board file itself.
 
+**Schematic correspondence for each fabricated copy**: `arm_board.kicad_pcb`
+is electrically generic (its net names are board-local, not
+quadrant-specific), so which schematic sheet a given physical copy
+"belongs to" is purely a matter of which spoke/quadrant slot it's mounted
+in on final assembly, not something baked into the PCB file:
+
+| Physical copy (quadrant, rotation) | Schematic sheet          |
+|-------------------------------------|---------------------------|
+| c=0, 0deg (as laid out)            | `cluster_00.kicad_sch`   |
+| c=1, 90deg                         | `cluster_01.kicad_sch`   |
+| c=2, 180deg                        | `cluster_02.kicad_sch`   |
+| c=3, 270deg                        | `cluster_03.kicad_sch`   |
+
+There is intentionally no `cluster_00..03.kicad_pcb` per-instance PCB file
+and no per-instance project pairing — `arm_board.kicad_pcb`/`.kicad_pro` is
+the one master board file, reused as-is for all 4 assemblies. This table
+is bookkeeping only, so an assembler/reader knows which schematic to
+consult for a given physical board's expected netlist.
+
 Because `arm_board.kicad_pcb` and `hub.kicad_pcb` each get their own
 independent page-centring offset, their raw saved coordinates don't match
 each other numerically (e.g. the arm board's standoff position vs. the
