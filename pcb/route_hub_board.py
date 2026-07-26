@@ -13,8 +13,14 @@ Net assignment, pad-for-pad:
     out of sync with the schematic generator): entries 0-31 are the 4 spokes'
     8 signals each (SPOKE{cidx}_{suffix}), entries 32-44 are the FT232H/TCXO
     signals (USB_TCXO_NETS), pad 24 (VU) -> +5V, pad 25 (GND) -> GND.
-  A6 (FT232H_Breakout): pads 1-8 -> USB_D0-7, 9-12 -> USB_RXF_N/TXE_N/RD_N/
-    WR_N, 13 (VCCIO) -> +3V3, 14 (GND) -> GND.
+  A6 (FT232H_Breakout, USB-C rev, 2x11=22 real pads): pads 4-11 -> USB_D0-7,
+    19-22 -> WR_N/RD_N/TXE_N/RXF_N, 3 -> GND. The other 9 pads (1=3V out,
+    2=5V in, 12=2nd GND, 13-18=C9-C4) are real pads on the new board but
+    intentionally unconnected -- it's USB-cable-powered from the RPi5, not
+    hub-powered (see SCHEMATIC_NOTES.md for the VCCIO/+3V3 bug this
+    replaced: the old 14-pad approximate footprint modeled a "VCCIO" pin
+    fed from the hub's +3V3 that doesn't correspond to any real pin on
+    either board revision).
   Y1 (TCXO_Can): pad 1 (VDD) -> +3V3, 2 (GND) -> GND, 3 (OE, tied high) ->
     +3V3, 4 (OUT) -> TCXO_CLK.
   J1-J4 (spoke sockets, one per cluster): pin positions 1,2,3,4,7,8,9,10 ->
@@ -74,10 +80,10 @@ def _dip_pin_nets():
     return nets
 
 
-FT232H_PAD_NETS = {str(i + 1): f"USB_D{i}" for i in range(8)}
+FT232H_PAD_NETS = {str(i + 4): f"USB_D{i}" for i in range(8)}
 FT232H_PAD_NETS.update({
-    "9": "USB_RXF_N", "10": "USB_TXE_N", "11": "USB_RD_N", "12": "USB_WR_N",
-    "13": "+3V3", "14": "GND",
+    "22": "USB_RXF_N", "21": "USB_TXE_N", "20": "USB_RD_N", "19": "USB_WR_N",
+    "3": "GND",
 })
 
 TCXO_PAD_NETS = {"1": "+3V3", "2": "GND", "3": "+3V3", "4": "TCXO_CLK"}

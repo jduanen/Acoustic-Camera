@@ -199,6 +199,63 @@ cluster board: Cmod S7 Pmod to connector; hub board: connector to
 `CMOD_A7_35T_DIP` pins) is a later, not-yet-done pass (this project is
 still placement-only, see `pcb/layout_multi_fpga.py`'s module docstring).
 
+### FT232H breakout: USB-C revision swap (A6, hub only)
+
+`A6` was updated from the original micro-USB Adafruit FT232H breakout
+(2x7=14 approximate pads) to the current USB-C revision (Adafruit PID
+2264, "unique 2264 board size/mounting-holes/pinout back-compatible"
+per Adafruit — but the *pin layout itself* changed: the new board is
+2x11=22 real pads, `3V,5V,GND,D0-D7` on one row and `GND,C9-C0` on the
+other, vs. the old 2x10). New symbol pinout in `hub.kicad_sch`, new
+footprint `multi_fpga:FT232H_Breakout` (dimensions/pin pitch sourced
+from Adafruit's own fabrication print, `cdn-learn.adafruit.com/downloads/
+pdf/adafruit-ft232h-breakout.pdf` p.48 — read off a scanned diagram, so
+treat as best-effort, confirm against a physical board before fab). Only
+the 13 pins this design actually uses (`D0-D7`, and `C0-C3` as
+`RXF#/TXE#/RD#/WR#` in FT245 sync FIFO mode, plus one `GND`) are wired;
+the other 9 real pads (`3V` out, `5V` in, the 2nd `GND`, `C4-C9`) are
+present in the footprint/symbol but intentionally left unconnected
+(marked with `no_connect` flags in the schematic to keep ERC clean).
+
+**Bug fixed in the same pass**: the old symbol had a 14th pin called
+`VCCIO`, wired to the hub's `+3V3` rail. That doesn't correspond to any
+real pin on either board revision — the FT232H breakout is entirely
+self-powered over its own USB-C cable from the Raspberry Pi 5 (see "Host
+interface" below), not powered from the hub. Removed that pin and its
+`+3V3` branch on both the schematic and PCB sides.
+
+Swapping the footprint required rotating `A6` 180° (still "horizontal",
+just flipped top/bottom + mirrored left/right) rather than the naive 0°
+placement, because the pre-existing routing's local stub ends (from
+`A5`) land much closer to the new pad positions that way — this alone
+cut the total local reconnection distance roughly in half.
+
+**PCB routing status (as of this pass): 6 of 13 signals fully
+reconnected and DRC-clean** (`USB_D2`, `USB_D3`, `USB_D4`, `USB_RXF_N`,
+`USB_TXE_N`, `USB_WR_N`). The other 7 gaps are left as clean,
+unambiguous single breaks — a real `A6` pad on one end, the existing
+pre-routed stub (already reaching most of the way to `A5`) on the
+other — **not yet manually completed**: `USB_D0`, `USB_D1`, `USB_D5`,
+`USB_D6` (2 breaks: A6 side *and* a separate pre-existing gap near `A5`
+pad 43 that surfaced during this work, unrelated to the footprint swap),
+`USB_D7`, `USB_RD_N`. This is the same class of hyper-congested
+short-hop routing this project has repeatedly needed manual (KiCad
+interactive router) completion for elsewhere (see the arm board's
+U20/U4 notes) — the blocker is genuine: `A5`'s existing escape routes
+for several *other* signals (`USB_D1`'s own stub, `D4_full`/`D5_full`/
+`D6_full`'s nearly-parallel diagonal bundle, `SPOKE3_D0`) already occupy
+this same small area with only ~0.57mm gaps between adjacent traces —
+right at the design rule minimum, too tight for a few more hand-routed
+detours or vias (via clearance needs ~0.75mm+) to reliably fit without
+tripping something else.
+
+Two pre-existing minor DRC clearance warnings (not new, not electrical
+shorts — both are real signal traces passing slightly too close to
+*unused* pads on the new `A6` footprint, `pad 15`/`pad 17` = `C7`/`C5`):
+`SPOKE1_STROBE` vs. `A6` pad 15, and part of `USB_D2`'s own pre-existing
+route vs. `A6` pad 17. Left as-is rather than force a fix, same
+reasoning as above.
+
 ### Hub board: square outline, axis-aligned modules, camera keepout
 
 The hub board (`place_hub()`) was reworked from a circular outline with
