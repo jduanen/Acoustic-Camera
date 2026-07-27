@@ -54,6 +54,7 @@ See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8
     * Live Script
       - Touch UI: Frequency Sliders & Spectrum Pan
       - Touch UI: Energy Threshold Tab & Auto/Manual Range
+      - Touch UI: Zoom Mode
       - Power/Throttle Indicator
       - Settings Persistence
     * Algorithm Benchmark Script
@@ -501,6 +502,30 @@ preserving the gap between them, instead of resizing the range.
 The algorithms that are implemented in this application are `ds`, `mvdr`, `clean` (CLEAN-SC), and `music`. The microphone array has a Spatial Nyquist frequency of ~4.1 kHz. This device should be operated at between 2000-3700 Hz for it to provide meaningful 2D directionality.
 
 With *N*=16 mics, the MVDR/MUSIC algorithms provide measurable super-resolution benefit over D&S.
+
+##### Touch UI: Zoom Mode
+
+A **ZOOM** / **RECENTER** control pair in the settings popup (below Pause/Resume) switches
+the display from the normal wide realtime view into a locked-on close-up of the loudest
+detected source:
+
+- **ZOOM**: captures the current beamformer peak (az, el), reconfigures the camera to its
+  full native sensor resolution, and crops a ~3x digital-zoom window around that direction —
+  held fixed ("frozen") even as the live video and heatmap keep updating inside it. The
+  button relabels to **REALTIME**.
+- **RECENTER** (only shown while zoomed): re-reads the current beamformer peak and
+  re-freezes the crop there, without leaving Zoom mode.
+- **REALTIME** (the same button, now relabeled): exits Zoom, reconfigures the camera back
+  to its normal display resolution, and returns to the full wide-angle view.
+
+Audio/CSM beamforming keeps running continuously while zoomed, so RECENTER always has a
+fresh peak to jump to, and the green cross-hair keeps tracking the live peak position
+inside the frozen crop. The JET heatmap overlay is cropped and resized in lock-step with
+the video so the two stay aligned. `[ZOOM]` appears in the status line while active. For
+the CSI camera, `Picamera2.sensor_resolution` (falling back to
+`camera_properties['PixelArraySize']`) supplies the native resolution; for a plain USB
+webcam, the native resolution is queried by requesting an oversized
+`CAP_PROP_FRAME_WIDTH`/`HEIGHT` and reading back whatever the driver actually clamped it to.
 
 #### Algorithm Benchmark Script
 
