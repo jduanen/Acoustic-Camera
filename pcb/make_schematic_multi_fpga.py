@@ -51,10 +51,18 @@ PROJECT = "multi_fpga"
 KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 
 # ── real pinout data, from Digilent reference manuals ─────────────────────────
-# Cmod S7: one "standard" Pmod (JA), 200 ohm series resistors on every pin,
-# no differential-capable pins anywhere on the module (see PHASE4.md "Spoke
-# link: parallel single-ended bus, not LVDS").
-CMOD_S7_PMOD_JA = ["J2", "H2", "H4", "F3", "H3", "H1", "G1", "F4"]  # positions 1,2,3,4,7,8,9,10
+# Cmod S7: spoke bus lands on DIP pins 16-23 (Digilent's PIO16-23) -- real,
+# DIP-header-connected GPIO, confirmed against
+# datasheets/Cmod+S7_sch-public.pdf. NOT the module's Pmod JA header: an
+# earlier revision wired the spoke bus there instead (FPGA balls J2, H2, H4,
+# F3, H3, H1, G1, F4), but those balls are electrically distinct from every
+# ball already broken out to the DIP header -- unreachable on a board (like
+# this one) that only exposes Cmod S7's 48-pin DIP header in copper, not a
+# separate Pmod JA footprint. 200 ohm series resistors on every pin, no
+# differential-capable pins anywhere on the module (see PHASE4.md "Spoke
+# link: parallel single-ended bus, not LVDS"). See also
+# route_arm_board.py's module docstring.
+CMOD_S7_SPOKE_DIP_PINS = [16, 17, 18, 19, 20, 21, 22, 23]  # PIO16-23
 
 # Cmod A7-35T (hub): 48-pin DIP form factor, same as Cmod S7 — see PHASE4.md
 # "Why Cmod A7-35T for the hub, not Arty A7-35T". Real pin names from
@@ -391,8 +399,7 @@ def _all_lib_symbols():
         [("PDM_CLK", "D1", "passive")]
         + [(f"PDM_D{i:02d}", f"D{i+2}", "passive") for i in range(12)]
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
-        + [(fpga_pin, f"JA{pos}", "passive")
-           for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
+        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CMOD_S7_SPOKE_DIP_PINS]
         # Pmod JA positions 5/6/11/12 are hard-wired on the real Cmod S7 to
         # GND/VCC3V3 (that module's own onboard regulator output, generated
         # locally from ITS OWN VU) -- confirmed from Digilent's public Cmod S7
@@ -478,8 +485,7 @@ def make_cluster(idx):
         [("PDM_CLK", "D1", "passive")]
         + [(f"PDM_D{i:02d}", f"D{i+2}", "passive") for i in range(12)]
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
-        + [(fpga_pin, f"JA{pos}", "passive")
-           for fpga_pin, pos in zip(CMOD_S7_PMOD_JA, [1, 2, 3, 4, 7, 8, 9, 10])]
+        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CMOD_S7_SPOKE_DIP_PINS]
     )
     n = len(cmod_pins)
 
@@ -518,7 +524,7 @@ def make_cluster(idx):
     x, y = _conn_pin_xy(CX, CY, i_gnd, n)
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
-    # Spoke bus: pins 15..22 = JA positions 1..10 (skipping 5,6) = D0..D5, STROBE, CLK
+    # Spoke bus: pins 15..22 = DIP 16..23 (CMOD_S7_SPOKE_DIP_PINS) = D0..D5, STROBE, CLK
     for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX):
         net = f"SPOKE{idx}_{suffix}"
         x, y = _conn_pin_xy(CX, CY, 15 + j, n)
@@ -528,7 +534,7 @@ def make_cluster(idx):
     # VR1: this cluster's own +1.8V LDO for its 24 mics -- fed from this
     # board's own +5V (arriving over the new dedicated power connector, see
     # pcb/layout_multi_fpga.py -- not modelled as a schematic symbol, same as
-    # the spoke connector itself: see CMOD_S7_PMOD_JA's comment on why
+    # the spoke connector itself: see CMOD_S7_SPOKE_DIP_PINS's comment on why
     # board-to-board connectors are PCB-layout-only in this project),
     # output on a per-cluster-scoped net (C{idx}_1V8, not the single-FPGA
     # design's shared "+1V8") so 4 independent LDOs don't drive one net.
