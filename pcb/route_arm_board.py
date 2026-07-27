@@ -275,6 +275,12 @@ def add_power_zones(board):
         zone.SetLayer(layer)
         zone.SetNetCode(net.GetNetCode())
         zone.SetZoneName(f"{net_name}_POUR")
+        # Default 0.5mm thermal gap starves some mic GND pads (e.g. U17 pad
+        # 4) of their 2nd required spoke -- the IM72D128 footprint packs a
+        # different-net pad only ~0.25mm from GND on one side, less than
+        # the gap KiCad needs to route a spoke through. 0.2mm clears that.
+        zone.SetThermalReliefGap(pcbnew.FromMM(0.2))
+        zone.SetThermalReliefSpokeWidth(pcbnew.FromMM(0.25))
         zone.SetIsFilled(False)
         board.Add(zone)
         zones.append(zone)
