@@ -283,6 +283,9 @@ Real-time two-thread pipeline identical in structure to Phase 2, but with:
 - Full-frame acoustic heatmap overlay with JET colormap (vs bottom-strip only)
 - Cross-hair peak marker (az, el)
 - Real-time frequency spectrum strip with interactive frequency range sliders
+- Zoom mode: lock onto the loudest detected source at native camera resolution,
+  with a Recenter button, until returned to the realtime view (see README.md's
+  "Touch UI: Zoom Mode")
 
 ```bash
 python src/acoustic_camera_p3.py                              # D&S, default range 500–4000 Hz

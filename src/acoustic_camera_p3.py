@@ -45,7 +45,7 @@ _REF_POWER_FLOOR = 1e-10  # shared 0 dB reference: auto-mode's initial ref_power
 
 
 def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
-                      auto=True, thresh_db=30.0):
+                      auto=True, thresh_db=30.0, crop_frac=None):
     """Blend 2D power map onto video frame as full-frame overlay.
 
     auto=True (default): percentile-stretch, ref-normalized against the caller's
@@ -54,6 +54,11 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
     db_range-wide span starting at thresh_db instead of an auto-tracked percentile —
     cells below thresh_db fade toward the colormap's coolest color (not hidden);
     cells at/above thresh_db + db_range saturate at the hottest color.
+
+    crop_frac=(fx0, fx1, fy0, fy1): optional az/el sub-range, as fractions of the
+    full az_fov/el_fov extent, to render instead of the whole grid — used by Zoom
+    mode so the heatmap lines up with a cropped/zoomed-in video frame that only
+    shows that same az/el sub-range.
     """
     h, w = frame.shape[:2]
     P_db = 10 * np.log10(np.maximum(P_flat.reshape(N_az, N_el) / max(ref, 1e-30), 1e-10))
@@ -68,6 +73,14 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
 
     # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
     img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
+    if crop_frac is not None:
+        fx0, fx1, fy0, fy1 = crop_frac
+        n_el, n_az = img8.shape
+        c0 = max(0, min(n_az - 1, int(fx0 * n_az)))
+        c1 = max(c0 + 1, min(n_az, int(np.ceil(fx1 * n_az))))
+        r0 = max(0, min(n_el - 1, int(fy0 * n_el)))
+        r1 = max(r0 + 1, min(n_el, int(np.ceil(fy1 * n_el))))
+        img8 = img8[r0:r1, c0:c1]
     colored = cv2.applyColorMap(
         cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
         cv2.COLORMAP_JET,
@@ -186,12 +199,17 @@ _ALGO_ROW_H = 26        # height of each option row in the expanded algorithm li
 _NSRC_MAX = N_MICS - 1  # beamform_music's own constraint: N_MICS - n_src >= 1
 _SNAP_FLASH_S = 0.15    # duration of the on-screen "camera flash" after a screenshot
 _SNAP_TEXT_S = 1.5      # duration of the "Saved ..." confirmation text
+_ZOOM_FRAC = 0.35       # zoom crop width as a fraction of the native camera width
+                        # (~3x digital zoom); crop height is derived to match the
+                        # display's own aspect ratio so the crop resizes back up
+                        # without distortion
 
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
              'auto_range': True, 'thresh_db': 30, 'popup_open': False,
              'algo': 'ds', 'algo_open': False, 'nsrc': 1, 'paused': False,
-             'exit_requested': False, 'screenshot_requested': False}
+             'exit_requested': False, 'screenshot_requested': False,
+             'zoom_mode': False, 'recenter_requested': False}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -235,11 +253,11 @@ def _slider_strip(w, sub, val, vmax, color):
     return strip
 
 
-def _popup_layout(w, algo_open, algo):
+def _popup_layout(w, algo_open, algo, zoom_mode):
     """Settings tab + popup rects, in video-frame (x, y) coordinates, derived purely
     from frame width w (and algo_open/algo, for the expandable algorithm list and the
-    MUSIC-only Nsrc row) — mirrors _track_geom's style so drawing and _on_mouse
-    hit-testing can't disagree."""
+    MUSIC-only Nsrc row; and zoom_mode, for the Zoom-only Recenter row) — mirrors
+    _track_geom's style so drawing and _on_mouse hit-testing can't disagree."""
     tab_x1 = w - _TAB_MARGIN
     tab_x0 = tab_x1 - _TAB_SIZE
     tab = (tab_x0, _TAB_MARGIN, tab_x1, _TAB_MARGIN + _TAB_SIZE)
@@ -251,8 +269,18 @@ def _popup_layout(w, algo_open, algo):
     pause_btn = (popup_x0 + _POPUP_PAD, popup_y0 + _POPUP_PAD,
                  popup_x1 - _POPUP_PAD, popup_y0 + _POPUP_PAD + _POPUP_BTN_H)
 
-    toggle = (pause_btn[0], pause_btn[3] + _POPUP_ROW_GAP,
-              pause_btn[2], pause_btn[3] + _POPUP_ROW_GAP + _POPUP_BTN_H)
+    zoom_btn = (pause_btn[0], pause_btn[3] + _POPUP_ROW_GAP,
+                pause_btn[2], pause_btn[3] + _POPUP_ROW_GAP + _POPUP_BTN_H)
+
+    recenter_btn = None
+    zoom_bottom = zoom_btn[3]
+    if zoom_mode:
+        recenter_btn = (zoom_btn[0], zoom_bottom + _POPUP_ROW_GAP,
+                         zoom_btn[2], zoom_bottom + _POPUP_ROW_GAP + _POPUP_BTN_H)
+        zoom_bottom = recenter_btn[3]
+
+    toggle = (zoom_btn[0], zoom_bottom + _POPUP_ROW_GAP,
+              zoom_btn[2], zoom_bottom + _POPUP_ROW_GAP + _POPUP_BTN_H)
 
     label_y = toggle[3] + _POPUP_ROW_GAP + 10
 
@@ -293,7 +321,8 @@ def _popup_layout(w, algo_open, algo):
     popup_bottom = content_bottom + _POPUP_PAD
     popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
 
-    return {'tab': tab, 'popup': popup, 'pause_btn': pause_btn, 'toggle': toggle,
+    return {'tab': tab, 'popup': popup, 'pause_btn': pause_btn,
+            'zoom_btn': zoom_btn, 'recenter_btn': recenter_btn, 'toggle': toggle,
             'label_y': label_y, 'track_x0': track_x0, 'track_w': track_w,
             'track_y': track_y, 'algo_btn': algo_btn, 'algo_opts': algo_opts,
             'nsrc_label_y': nsrc_label_y, 'nsrc_track_x0': nsrc_track_x0,
@@ -350,10 +379,11 @@ def _draw_battery(frame, x1, percent):
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, (220, 220, 220), 1)
 
 
-def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused):
-    """Pause/Resume button + AUTO/MANUAL toggle + energy threshold slider + algorithm
-    dropdown (+ MUSIC-only Nsrc slider) + Snap (screenshot) + Exit buttons, drawn on
-    top of the video frame."""
+def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused,
+                 zoom_mode):
+    """Pause/Resume button + Zoom/Realtime toggle (+ Recenter, while zoomed) +
+    AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown (+ MUSIC-only
+    Nsrc slider) + Snap (screenshot) + Exit buttons, drawn on top of the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
@@ -365,6 +395,21 @@ def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, pau
     (pw, ph), _ = cv2.getTextSize(pause_label, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
     cv2.putText(frame, pause_label, (px0 + (px1 - px0 - pw) // 2, py0 + (py1 - py0 + ph) // 2),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
+
+    zx0, zy0, zx1, zy1 = layout['zoom_btn']
+    zoom_color = (60, 60, 200) if zoom_mode else (70, 70, 70)  # matches Pause's red-while-active convention
+    cv2.rectangle(frame, (zx0, zy0), (zx1, zy1), zoom_color, -1)
+    zoom_label = 'REALTIME' if zoom_mode else 'ZOOM'
+    (zw, zh), _ = cv2.getTextSize(zoom_label, cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+    cv2.putText(frame, zoom_label, (zx0 + (zx1 - zx0 - zw) // 2, zy0 + (zy1 - zy0 + zh) // 2),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
+
+    if layout['recenter_btn'] is not None:
+        rx0, ry0, rx1, ry1 = layout['recenter_btn']
+        cv2.rectangle(frame, (rx0, ry0), (rx1, ry1), (70, 70, 70), -1)
+        (rw, rh), _ = cv2.getTextSize('RECENTER', cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
+        cv2.putText(frame, 'RECENTER', (rx0 + (rx1 - rx0 - rw) // 2, ry0 + (ry1 - ry0 + rh) // 2),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
 
     bx0, by0, bx1, by1 = layout['toggle']
     btn_color = (80, 160, 220) if auto_range else (80, 200, 80)  # echoes Fhi-blue / Flo-green
@@ -433,7 +478,8 @@ def _on_mouse(event, x, y, flags, _param):
         if rel_y < 0:
             # Inside the video frame: hit-test the settings tab/popup in raw (x, y)
             # video-frame coordinates (not rel_y strip space).
-            layout = _popup_layout(_sliders['frame_w'], _sliders['algo_open'], _sliders['algo'])
+            layout = _popup_layout(_sliders['frame_w'], _sliders['algo_open'], _sliders['algo'],
+                                    _sliders['zoom_mode'])
             if event == cv2.EVENT_LBUTTONDOWN:
                 tx0, ty0, tx1, ty1 = layout['tab']
                 if tx0 <= x <= tx1 and ty0 <= y <= ty1:
@@ -447,6 +493,15 @@ def _on_mouse(event, x, y, flags, _param):
                 if pbx0 <= x <= pbx1 and pby0 <= y <= pby1:
                     _sliders['paused'] = not _sliders['paused']
                     return
+                zx0, zy0, zx1, zy1 = layout['zoom_btn']
+                if zx0 <= x <= zx1 and zy0 <= y <= zy1:
+                    _sliders['zoom_mode'] = not _sliders['zoom_mode']
+                    return
+                if layout['recenter_btn'] is not None:
+                    rx0, ry0, rx1, ry1 = layout['recenter_btn']
+                    if rx0 <= x <= rx1 and ry0 <= y <= ry1:
+                        _sliders['recenter_requested'] = True
+                        return
                 bx0, by0, bx1, by1 = layout['toggle']
                 if bx0 <= x <= bx1 and by0 <= y <= by1:
                     _sliders['auto_range'] = not _sliders['auto_range']
@@ -521,7 +576,8 @@ def _on_mouse(event, x, y, flags, _param):
 
 class Picam2Capture:
     """Wraps picamera2 to match the cv2.VideoCapture .read()/.release() interface
-    used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam."""
+    used by the main loop, so a MIPI-CSI camera is a drop-in swap for a USB webcam.
+    Also supports switching to a native-sensor-resolution capture mode for Zoom."""
 
     def __init__(self, size=(1280, 542)):
         # 542 = 720 - (2 * _SLIDER_H + _SPECTRUM_H) = 720 - (2*44 + 90): leaves exactly
@@ -535,17 +591,108 @@ class Picam2Capture:
                 '(and create the venv with --system-site-packages, same as for cv2)'
             ) from e
         self._picam2 = Picamera2()
+        self._realtime_size = size
+        self._zoom_size = self._native_size()
+        self._zoomed = False
         # NB: picamera2's "RGB888" format is actually packed BGR in memory, which
         # happens to be exactly what cv2 wants — no cvtColor needed.
         config = self._picam2.create_video_configuration(main={'size': size, 'format': 'RGB888'})
         self._picam2.configure(config)
         self._picam2.start()
 
+    def _native_size(self):
+        """Best-effort lookup of the sensor's full native resolution, for Zoom mode.
+        Falls back to the realtime display size (i.e. no extra zoom detail, just a
+        digital crop) if picamera2's introspection APIs are unavailable."""
+        try:
+            return tuple(self._picam2.sensor_resolution)
+        except Exception:
+            try:
+                return tuple(self._picam2.camera_properties['PixelArraySize'])
+            except Exception:
+                return self._realtime_size
+
+    def set_zoom(self, enabled):
+        """Reconfigure the sensor between the realtime display resolution and the
+        full native resolution used for Zoom's crop. A no-op if already in the
+        requested state — safe to call every frame. Reconfiguration briefly stops
+        and restarts the stream, which is fine since Zoom transitions are rare
+        (user-triggered button presses), not a per-frame cost."""
+        if enabled == self._zoomed:
+            return
+        size = self._zoom_size if enabled else self._realtime_size
+        self._picam2.stop()
+        config = self._picam2.create_video_configuration(main={'size': size, 'format': 'RGB888'})
+        self._picam2.configure(config)
+        self._picam2.start()
+        self._zoomed = enabled
+
     def read(self):
         return True, self._picam2.capture_array()
 
     def release(self):
         self._picam2.stop()
+
+
+class WebcamCapture:
+    """Wraps cv2.VideoCapture to add the same set_zoom() interface as Picam2Capture:
+    the driver's default-opened resolution is the realtime display size, and the
+    zoom resolution is queried via the "request huge, read back the clamped value"
+    trick (a standard cv2 idiom — CAP_PROP_FRAME_WIDTH/HEIGHT setters clamp to the
+    device's actual max instead of erroring)."""
+
+    def __init__(self, index):
+        self._cap = cv2.VideoCapture(index)
+        self._realtime_size = (int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                                int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT)))
+        self._zoom_size = self._query_native_size() if self._cap.isOpened() else self._realtime_size
+        self._zoomed = False
+
+    def _query_native_size(self):
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 10000)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 10000)
+        w = int(self._cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(self._cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        # Restore the realtime resolution immediately — don't leave the driver
+        # opened at max-res until Zoom is actually requested.
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, self._realtime_size[0])
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self._realtime_size[1])
+        return (w, h) if w > 0 and h > 0 else self._realtime_size
+
+    def set_zoom(self, enabled):
+        if enabled == self._zoomed:
+            return
+        size = self._zoom_size if enabled else self._realtime_size
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, size[0])
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, size[1])
+        self._zoomed = enabled
+
+    def isOpened(self):
+        return self._cap.isOpened()
+
+    def read(self):
+        return self._cap.read()
+
+    def release(self):
+        self._cap.release()
+
+
+def _compute_zoom_crop(native_w, native_h, out_w, out_h, az_peak, el_peak, az_fov, el_fov):
+    """Crop rectangle (x0, y0, w, h), in native-frame pixels, centered on the given
+    az/el peak and sized to _ZOOM_FRAC of the native width — matching (out_w, out_h)'s
+    aspect ratio so resizing the crop back up to that size doesn't distort it. Uses
+    the same linear degrees-per-pixel mapping as the crosshair, just against the
+    native frame's own dimensions instead of the (lower-res) display frame's."""
+    crop_w = max(1, int(native_w * _ZOOM_FRAC))
+    crop_h = max(1, int(crop_w * out_h / out_w))
+    if crop_h > native_h:
+        crop_h = native_h
+        crop_w = max(1, int(crop_h * out_w / out_h))
+    px = int((az_peak + az_fov / 2) / az_fov * native_w)
+    py = int((el_fov / 2 - el_peak) / el_fov * native_h)
+    x0 = max(0, min(native_w - crop_w, px - crop_w // 2))
+    y0 = max(0, min(native_h - crop_h, py - crop_h // 2))
+    return x0, y0, crop_w, crop_h
 
 
 def find_device():
@@ -744,7 +891,7 @@ def main():
     if args.csi:
         cam = Picam2Capture()
     else:
-        cam = cv2.VideoCapture(args.video)
+        cam = WebcamCapture(args.video)
         if not cam.isOpened():
             print('No webcam — showing audio-only overlay on black frame')
             cam = None
@@ -763,6 +910,12 @@ def main():
     snap_filename = ''
     ref_power = _REF_POWER_FLOOR
     az_peak = el_peak = 0.0
+    # Zoom mode state: base_w/h is the realtime display size (captured whenever not
+    # zoomed, so it's known before Zoom can ever be engaged); zoom_crop is the frozen
+    # (x0, y0, w, h, native_w, native_h) crop rect, recomputed only on entry/Recenter.
+    base_w = base_h = None
+    zoom_crop = None
+    zoom_mode_prev = False
     label = 'Filling buffer...'
     t_last = time.monotonic()
     fps = 0.0
@@ -781,6 +934,8 @@ def main():
     _sliders['paused'] = False
     _sliders['exit_requested'] = False
     _sliders['screenshot_requested'] = False
+    _sliders['zoom_mode'] = False
+    _sliders['recenter_requested'] = False
     mouse_registered = False
     threading.Thread(target=_poll_throttled, daemon=True).start()
     threading.Thread(target=_poll_battery, daemon=True).start()
@@ -796,6 +951,12 @@ def main():
                 t0 = time.monotonic()
                 with _sliders_lock:
                     paused = _sliders['paused']
+                    zoom_mode = _sliders['zoom_mode']
+                    recenter_requested = _sliders['recenter_requested']
+                    if recenter_requested:
+                        _sliders['recenter_requested'] = False
+                if cam is not None:
+                    cam.set_zoom(zoom_mode)  # no-op unless the mode actually changed
                 if not paused:
                     if cam is not None:
                         ret, frame = cam.read()
@@ -803,6 +964,24 @@ def main():
                             frame = np.zeros((480, 640, 3), dtype=np.uint8)
                     else:
                         frame = np.zeros((480, 640, 3), dtype=np.uint8)
+
+                    if zoom_mode and base_w and base_h:
+                        native_h, native_w = frame.shape[:2]
+                        # Freeze the crop on entry or Recenter only — "stay there"
+                        # until the user asks to move it, even though the camera
+                        # feed inside that crop keeps updating live every frame.
+                        if not zoom_mode_prev or recenter_requested:
+                            zx0, zy0, zcw, zch = _compute_zoom_crop(
+                                native_w, native_h, base_w, base_h, az_peak, el_peak,
+                                args.az_fov, args.el_fov)
+                            zoom_crop = (zx0, zy0, zcw, zch, native_w, native_h)
+                        zx0, zy0, zcw, zch, _, _ = zoom_crop
+                        frame = cv2.resize(frame[zy0:zy0 + zch, zx0:zx0 + zcw],
+                                            (base_w, base_h), interpolation=cv2.INTER_LINEAR)
+                    elif not zoom_mode:
+                        base_w, base_h = frame.shape[1], frame.shape[0]
+                    zoom_mode_prev = zoom_mode
+
                     # Copy (not alias): later drawing (overlay/crosshair/tab/popup)
                     # mutates `frame` in place when P_smooth is still None, and must
                     # not also mutate the cached copy this pause freezes on.
@@ -870,15 +1049,31 @@ def main():
                     if screenshot_requested:
                         _sliders['screenshot_requested'] = False
 
+                crop_frac = None
+                if zoom_mode and zoom_crop is not None:
+                    zx0, zy0, zcw, zch, znw, znh = zoom_crop
+                    crop_frac = (zx0 / znw, (zx0 + zcw) / znw, zy0 / znh, (zy0 + zch) / znh)
+
                 if P_smooth is not None:
                     ref = ref_power if auto_range else _REF_POWER_FLOOR
                     frame = acoustic_overlay(P_smooth, frame, N_az, N_el, ref, alpha=args.alpha,
-                                              auto=auto_range, thresh_db=thresh_db)
+                                              auto=auto_range, thresh_db=thresh_db,
+                                              crop_frac=crop_frac)
 
-                    # Cross-hair at peak direction
+                    # Cross-hair at peak direction — mapped into the frozen zoom crop's
+                    # pixel space (relative to the native frame) while zoomed, so it
+                    # still shows the *current* live peak even though the crop itself
+                    # is held fixed until Recenter/Realtime.
                     h, w = frame.shape[:2]
-                    px = int((az_peak + args.az_fov / 2) / args.az_fov * w)
-                    py = int((args.el_fov / 2 - el_peak) / args.el_fov * h)
+                    if crop_frac is not None:
+                        zx0, zy0, zcw, zch, znw, znh = zoom_crop
+                        px_native = (az_peak + args.az_fov / 2) / args.az_fov * znw
+                        py_native = (args.el_fov / 2 - el_peak) / args.el_fov * znh
+                        px = int((px_native - zx0) / zcw * w)
+                        py = int((py_native - zy0) / zch * h)
+                    else:
+                        px = int((az_peak + args.az_fov / 2) / args.az_fov * w)
+                        py = int((args.el_fov / 2 - el_peak) / args.el_fov * h)
                     px = max(1, min(w - 2, px))
                     py = max(1, min(h - 2, py))
                     cv2.line(frame, (px, 0), (px, h), (0, 255, 0), 1)
@@ -887,7 +1082,7 @@ def main():
                 # Settings tab/popup live inside the video frame itself (not a new
                 # strip), drawn every frame regardless of P_smooth so the tab is
                 # visible even while the audio buffer is still filling.
-                popup_layout = _popup_layout(frame.shape[1], algo_open, algo)
+                popup_layout = _popup_layout(frame.shape[1], algo_open, algo, zoom_mode)
                 _draw_tab(frame, popup_layout)
                 with _battery_lock:
                     batt_percent = _battery_status['percent']
@@ -895,14 +1090,14 @@ def main():
                     _draw_battery(frame, popup_layout['tab'][0] - _BATT_TAB_GAP, batt_percent)
                 if popup_open:
                     _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open,
-                                nsrc, paused)
+                                nsrc, paused, zoom_mode)
                 t4 = time.monotonic()
 
                 now = time.monotonic()
                 fps = 0.9 * fps + 0.1 * (1.0 / max(now - t_last, 1e-6))
                 t_last = now
 
-                status = f'{"[PAUSED] " if paused else ""}{label}  {fps:.1f}fps'
+                status = f'{"[PAUSED] " if paused else ""}{"[ZOOM] " if zoom_mode else ""}{label}  {fps:.1f}fps'
                 cv2.putText(frame, status, (10, 28),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 255, 255), 2)
 
