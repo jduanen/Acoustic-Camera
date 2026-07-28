@@ -2304,7 +2304,7 @@
 					)
 				)
 			)
-			(property "Value" "12.288 MHz TCXO"
+			(property "Value" "ECS-TXO-5032-122.8-TR"
 				(at 0 -8.89 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2314,7 +2314,7 @@
 					)
 				)
 			)
-			(property "Footprint" "multi_fpga:TCXO_Can"
+			(property "Footprint" "multi_fpga:ECS-TXO-5032-122.8-TR"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2325,7 +2325,7 @@
 					)
 				)
 			)
-			(property "Datasheet" ""
+			(property "Datasheet" "https://ecsxtal.com/store/pdf/ECS-TXO-5032.pdf"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2336,7 +2336,7 @@
 					)
 				)
 			)
-			(property "Description" "Master clock; NDK NZ2520SD or TXC 7M series, +-2.5ppm or better"
+			(property "Description" "Master clock; ECS-TXO-5032-122.8-TR, 12.288 MHz HCMOS TCXO, +-2.5ppm, 3.3V. Pin 1 is N/C on this plain-TXO variant (VCONT is only active on the ECS-VTXO-5032 VC-TCXO option)."
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -2371,7 +2371,7 @@
 							)
 						)
 					)
-					(number "1"
+					(number "4"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2397,17 +2397,17 @@
 						)
 					)
 				)
-				(pin input line
+				(pin no_connect line
 					(at -17.78 -1.27 0)
 					(length 5.08)
-					(name "OE"
+					(name "VCONT"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "3"
+					(number "1"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -2418,14 +2418,14 @@
 				(pin output line
 					(at -17.78 -3.81 0)
 					(length 5.08)
-					(name "OUT"
+					(name "OUTPUT"
 						(effects
 							(font
 								(size 1.27 1.27)
 							)
 						)
 					)
-					(number "4"
+					(number "3"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3047,16 +3047,6 @@
 			(type default)
 		)
 		(uuid "17a98be3-8a7c-447d-8ea6-fd7747303427")
-	)
-	(wire
-		(pts
-			(xy 332.74 185.42) (xy 322.58 185.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "1c3490bf-52f4-4aaa-b1d0-276e3816885c")
 	)
 	(wire
 		(pts
@@ -5019,90 +5009,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:+3V3")
-		(at 322.58 185.42 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "0862bfcc-4476-4b22-95ee-918912001520")
-		(property "Reference" "#PWR0521"
-			(at 322.58 185.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "+3V3"
-			(at 322.58 185.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 322.58 185.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 322.58 185.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" ""
-			(at 322.58 185.42 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "f1a75c86-adb9-4986-9cca-a004526dc93b")
-		)
-		(instances
-			(project "hub"
-				(path "/47ab59f9-efc4-4196-ab70-a13d317b89f4"
-					(reference "#PWR0521")
-					(unit 1)
-				)
-			)
-			(project "top"
-				(path "/80f109c4-96c5-4385-bfb6-0f7a96b014ab/a20cffda-dc30-4756-aadc-e7b7a5015c1f"
-					(reference "#PWR0521")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "C")
 		(at 369.57 233.68 0)
 		(unit 1)
@@ -6197,7 +6103,7 @@
 				)
 			)
 		)
-		(property "Footprint" "multi_fpga:TCXO_Can"
+		(property "Footprint" "multi_fpga:ECS-TXO-5032-122.8-TR"
 			(at 350.52 184.15 0)
 			(hide yes)
 			(show_name no)
