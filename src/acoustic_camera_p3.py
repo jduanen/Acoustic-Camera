@@ -50,10 +50,10 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
 
     auto=True (default): percentile-stretch, ref-normalized against the caller's
     running-max `ref_power` — original behavior.
-    auto=False: caller passes ref=_REF_POWER_FLOOR. Rescales against a fixed
-    db_range-wide span starting at thresh_db instead of an auto-tracked percentile —
-    cells below thresh_db fade toward the colormap's coolest color (not hidden);
-    cells at/above thresh_db + db_range saturate at the hottest color.
+    auto=False: caller passes ref=_REF_POWER_FLOOR. Hard-gates on thresh_db: cells
+    below thresh_db show the plain camera frame, untouched (no tint); cells at/above
+    it are colored, rescaled over a fixed db_range-wide span starting at thresh_db
+    (thresh_db + db_range saturates at the hottest color).
 
     crop_frac=(fx0, fx1, fy0, fy1): optional az/el sub-range, as fractions of the
     full az_fov/el_fov extent, to render instead of the whole grid — used by Zoom
@@ -73,6 +73,10 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
 
     # Remap axes: (N_az, N_el) → (N_el, N_az) with +el at top (screen y=0)
     img8 = (norm.T[::-1, :] * 255).astype(np.uint8)
+    # Gate mask (manual mode only): kept as its own uint8 grid, resized with nearest-
+    # neighbor separately from img8's linear resize, so the gate stays a hard edge at
+    # cell boundaries instead of picking up interpolation blur at the mask's edges.
+    mask8 = None if auto else ((P_db >= thresh_db).T[::-1, :] * 255).astype(np.uint8)
     if crop_frac is not None:
         fx0, fx1, fy0, fy1 = crop_frac
         n_el, n_az = img8.shape
@@ -81,11 +85,17 @@ def acoustic_overlay(P_flat, frame, N_az, N_el, ref, alpha=0.5, db_range=30,
         r0 = max(0, min(n_el - 1, int(fy0 * n_el)))
         r1 = max(r0 + 1, min(n_el, int(np.ceil(fy1 * n_el))))
         img8 = img8[r0:r1, c0:c1]
+        if mask8 is not None:
+            mask8 = mask8[r0:r1, c0:c1]
     colored = cv2.applyColorMap(
         cv2.resize(img8, (w, h), interpolation=cv2.INTER_LINEAR),
         cv2.COLORMAP_JET,
     )
-    return cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+    blended = cv2.addWeighted(frame, 1 - alpha, colored, alpha, 0)
+    if mask8 is None:
+        return blended
+    mask_full = cv2.resize(mask8, (w, h), interpolation=cv2.INTER_NEAREST) > 0
+    return np.where(mask_full[..., None], blended, frame)
 
 
 def spectrum_panel(audio_arr, w, freq_mark, n_bars=64, height=90, fmin=0, fmax=6000):
