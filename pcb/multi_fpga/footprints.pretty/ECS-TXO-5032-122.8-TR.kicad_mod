@@ -3,7 +3,7 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "ECS-TXO-5032-122.8-TR, 12.288 MHz HCMOS TCXO, 3.3V, 5.0x3.2mm 4-pad SMD -- real vendor footprint/pinout, converted from lib/ECS-TXO-5032-122.8-TR/OSC_ECS-TXO-5032-122.8-TR.kicad_mod (SnapEDA, sourced from ECS's own mechanical drawing). Pin 1 = N/C (VCONT on the VC-TCXO variant only -- this part is the plain TXO, so pin 1 is genuinely unused), pin 2 = GND, pin 3 = Output, pin 4 = VDD, per ecsxtal.com/store/pdf/ECS-TXO-5032.pdf p.2. 3D model Y offset (-0.85mm) was reverse-engineered empirically by rendering and visually centering the body over all 4 pads -- the vendor STEP's own origin isn't at its geometric center/pad-plane, and no alignment dimension was given in the datasheet; re-check visually if the STEP file is ever replaced.")
+	(descr "ECS-TXO-5032-122.8-TR, 12.288 MHz HCMOS TCXO, 3.3V, 5.0x3.2mm 4-pad SMD -- real vendor footprint/pinout, converted from lib/ECS-TXO-5032-122.8-TR/OSC_ECS-TXO-5032-122.8-TR.kicad_mod (SnapEDA, sourced from ECS's own mechanical drawing). Pin 1 = N/C (VCONT on the VC-TCXO variant only -- this part is the plain TXO, so pin 1 is genuinely unused), pin 2 = GND, pin 3 = Output, pin 4 = VDD, per ecsxtal.com/store/pdf/ECS-TXO-5032.pdf p.2. The vendor STEP's native orientation has the part lying on its long-axis side rather than flat -- needs a -90deg X rotation (no offset) to sit right-side-up, centered on the pads; verified visually (top/front/iso renders) since no alignment info was given in the datasheet. Re-check if the STEP file is ever replaced.")
 	(tags "TCXO oscillator SMD 5032 ECS")
 	(property "Reference" "REF**"
 		(at 0 -2.55 0)
@@ -38,13 +38,13 @@
 	(pad "4" smd rect (at -1.975 -1.275) (size 1.35 0.95) (layers "F.Cu" "F.Mask" "F.Paste") (solder_mask_margin 0.102))
 	(model "/home/jdn/Code/Acoustic-Camera/lib/ECS-TXO-5032-122.8-TR/ECS-TXO-5032-122.8-TR.step"
 		(offset
-			(xyz 0 -0.85 0)
+			(xyz 0 0 0)
 		)
 		(scale
 			(xyz 1 1 1)
 		)
 		(rotate
-			(xyz 0 0 0)
+			(xyz -90 0 0)
 		)
 	)
 )
