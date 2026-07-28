@@ -204,12 +204,33 @@ _ZOOM_FRAC = 0.35       # zoom crop width as a fraction of the native camera wid
                         # display's own aspect ratio so the crop resizes back up
                         # without distortion
 
+# Dwell slider: how long Zoom mode holds its frozen crop before auto-recentering on
+# the current peak. Discrete detents (not a continuous range) since the useful steps
+# are non-uniform — fine-grained near 0 (fractions of a minute), coarser toward a few
+# minutes — and the last entry is a sentinel (None) for "hold" (today's default
+# behavior: never auto-recenter, stay until the user taps Recenter or exits Zoom).
+_DWELL_LEVELS = (0, 2, 5, 10, 15, 20, 30, 45, 60, 90, 120, 150, 180, None)
+_DWELL_MAX = len(_DWELL_LEVELS) - 1
+_DWELL_HOLD_IDX = _DWELL_MAX  # last slot is the "HOLD" sentinel
+
+
+def _dwell_label(seconds):
+    """Human label for a dwell setting: None -> 'HOLD', 0 -> 'Follow', else Ns/Nm."""
+    if seconds is None:
+        return 'HOLD'
+    if seconds == 0:
+        return 'Follow'
+    if seconds < 60:
+        return f'{seconds:g}s'
+    return f'{seconds / 60:g}m'
+
+
 _sliders  = {'flo': 500, 'fhi': 4000, 'drag': None, 'frame_h': 480, 'frame_w': 640,
              'pan_x0': 0, 'pan_flo0': 500, 'pan_fhi0': 4000,
              'auto_range': True, 'thresh_db': 30, 'popup_open': False,
              'algo': 'ds', 'algo_open': False, 'nsrc': 1, 'paused': False,
              'exit_requested': False, 'screenshot_requested': False,
-             'zoom_mode': False, 'recenter_requested': False}
+             'zoom_mode': False, 'recenter_requested': False, 'dwell_idx': _DWELL_HOLD_IDX}
 # Guards _sliders: written by _on_mouse (OpenCV's Qt backend may dispatch input
 # callbacks off the main loop's thread) and read/corrected by the main loop each frame.
 _sliders_lock = threading.Lock()
@@ -256,8 +277,9 @@ def _slider_strip(w, sub, val, vmax, color):
 def _popup_layout(w, algo_open, algo, zoom_mode):
     """Settings tab + popup rects, in video-frame (x, y) coordinates, derived purely
     from frame width w (and algo_open/algo, for the expandable algorithm list and the
-    MUSIC-only Nsrc row; and zoom_mode, for the Zoom-only Recenter row) — mirrors
-    _track_geom's style so drawing and _on_mouse hit-testing can't disagree."""
+    MUSIC-only Nsrc row; and zoom_mode, for the Zoom-only Recenter button and Dwell
+    slider rows) — mirrors _track_geom's style so drawing and _on_mouse hit-testing
+    can't disagree."""
     tab_x1 = w - _TAB_MARGIN
     tab_x0 = tab_x1 - _TAB_SIZE
     tab = (tab_x0, _TAB_MARGIN, tab_x1, _TAB_MARGIN + _TAB_SIZE)
@@ -273,11 +295,16 @@ def _popup_layout(w, algo_open, algo, zoom_mode):
                 pause_btn[2], pause_btn[3] + _POPUP_ROW_GAP + _POPUP_BTN_H)
 
     recenter_btn = None
+    dwell_label_y = dwell_track_x0 = dwell_track_w = dwell_track_y = None
     zoom_bottom = zoom_btn[3]
     if zoom_mode:
         recenter_btn = (zoom_btn[0], zoom_bottom + _POPUP_ROW_GAP,
                          zoom_btn[2], zoom_bottom + _POPUP_ROW_GAP + _POPUP_BTN_H)
-        zoom_bottom = recenter_btn[3]
+        dwell_label_y = recenter_btn[3] + _POPUP_ROW_GAP + 10
+        dwell_track_x0 = recenter_btn[0] + 4
+        dwell_track_w = max((recenter_btn[2] - 4) - dwell_track_x0, 1)
+        dwell_track_y = dwell_label_y + _POPUP_ROW_GAP + 10
+        zoom_bottom = dwell_track_y + 7  # handle half-height, mirrors nsrc's content_bottom pattern
 
     toggle = (zoom_btn[0], zoom_bottom + _POPUP_ROW_GAP,
               zoom_btn[2], zoom_bottom + _POPUP_ROW_GAP + _POPUP_BTN_H)
@@ -322,7 +349,10 @@ def _popup_layout(w, algo_open, algo, zoom_mode):
     popup = (popup_x0, popup_y0, popup_x1, popup_bottom)
 
     return {'tab': tab, 'popup': popup, 'pause_btn': pause_btn,
-            'zoom_btn': zoom_btn, 'recenter_btn': recenter_btn, 'toggle': toggle,
+            'zoom_btn': zoom_btn, 'recenter_btn': recenter_btn,
+            'dwell_label_y': dwell_label_y, 'dwell_track_x0': dwell_track_x0,
+            'dwell_track_w': dwell_track_w, 'dwell_track_y': dwell_track_y,
+            'toggle': toggle,
             'label_y': label_y, 'track_x0': track_x0, 'track_w': track_w,
             'track_y': track_y, 'algo_btn': algo_btn, 'algo_opts': algo_opts,
             'nsrc_label_y': nsrc_label_y, 'nsrc_track_x0': nsrc_track_x0,
@@ -380,10 +410,11 @@ def _draw_battery(frame, x1, percent):
 
 
 def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, paused,
-                 zoom_mode):
-    """Pause/Resume button + Zoom/Realtime toggle (+ Recenter, while zoomed) +
-    AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown (+ MUSIC-only
-    Nsrc slider) + Snap (screenshot) + Exit buttons, drawn on top of the video frame."""
+                 zoom_mode, dwell_idx):
+    """Pause/Resume button + Zoom/Realtime toggle (+ Recenter and Dwell slider, while
+    zoomed) + AUTO/MANUAL toggle + energy threshold slider + algorithm dropdown
+    (+ MUSIC-only Nsrc slider) + Snap (screenshot) + Exit buttons, drawn on top of
+    the video frame."""
     x0, y0, x1, y1 = layout['popup']
     fill = np.full((y1 - y0, x1 - x0, 3), 28, dtype=np.uint8)
     frame[y0:y1, x0:x1] = cv2.addWeighted(frame[y0:y1, x0:x1], 0.25, fill, 0.75, 0)
@@ -410,6 +441,15 @@ def _draw_popup(frame, layout, auto_range, thresh_db, algo, algo_open, nsrc, pau
         (rw, rh), _ = cv2.getTextSize('RECENTER', cv2.FONT_HERSHEY_SIMPLEX, 0.38, 1)
         cv2.putText(frame, 'RECENTER', (rx0 + (rx1 - rx0 - rw) // 2, ry0 + (ry1 - ry0 + rh) // 2),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.38, (230, 230, 230), 1)
+
+    if layout['dwell_track_y'] is not None:
+        cv2.putText(frame, f'Dwell: {_dwell_label(_DWELL_LEVELS[dwell_idx])}',
+                    (x0 + _POPUP_PAD, layout['dwell_label_y']),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.38, (180, 180, 180), 1)
+        dx0, dw, dy = layout['dwell_track_x0'], layout['dwell_track_w'], layout['dwell_track_y']
+        cv2.rectangle(frame, (dx0, dy - 3), (dx0 + dw, dy + 3), (80, 80, 80), -1)
+        dh = dx0 + int(dwell_idx / _DWELL_MAX * dw)
+        cv2.rectangle(frame, (dh - 5, dy - 7), (dh + 5, dy + 7), (220, 200, 80), -1)
 
     bx0, by0, bx1, by1 = layout['toggle']
     btn_color = (80, 160, 220) if auto_range else (80, 200, 80)  # echoes Fhi-blue / Flo-green
@@ -530,6 +570,9 @@ def _on_mouse(event, x, y, flags, _param):
                 elif (layout['nsrc_track_y'] is not None and px0 <= x <= px1
                       and abs(y - layout['nsrc_track_y']) <= 12):
                     _sliders['drag'] = 'nsrc'
+                elif (layout['dwell_track_y'] is not None and px0 <= x <= px1
+                      and abs(y - layout['dwell_track_y']) <= 12):
+                    _sliders['drag'] = 'dwell'
                 else:
                     return
             if _sliders['drag'] == 'thresh':
@@ -538,6 +581,9 @@ def _on_mouse(event, x, y, flags, _param):
             elif _sliders['drag'] == 'nsrc' and layout['nsrc_track_y'] is not None:
                 frac = max(0.0, min(1.0, (x - layout['nsrc_track_x0']) / layout['nsrc_track_w']))
                 _sliders['nsrc'] = max(1, min(_NSRC_MAX, int(round(frac * _NSRC_MAX))))
+            elif _sliders['drag'] == 'dwell' and layout['dwell_track_y'] is not None:
+                frac = max(0.0, min(1.0, (x - layout['dwell_track_x0']) / layout['dwell_track_w']))
+                _sliders['dwell_idx'] = max(0, min(_DWELL_MAX, int(round(frac * _DWELL_MAX))))
             return
         if event == cv2.EVENT_LBUTTONDOWN:
             if rel_y < _SLIDER_H:
@@ -764,10 +810,10 @@ def _poll_battery():
 
 # --- Settings persistence ---
 # Only the touch-adjustable settings (frequency band, algorithm, source count,
-# auto-range, threshold) round-trip through the config file — everything else
-# (camera/display/hardware setup) stays CLI-only, same split as the settings popup.
+# auto-range, threshold, zoom dwell) round-trip through the config file — everything
+# else (camera/display/hardware setup) stays CLI-only, same split as the settings popup.
 
-_CONFIG_KEYS = ('flo', 'fhi', 'algo', 'nsrc', 'auto_range', 'thresh_db')
+_CONFIG_KEYS = ('flo', 'fhi', 'algo', 'nsrc', 'auto_range', 'thresh_db', 'dwell_idx')
 
 
 def _load_config(path):
@@ -912,10 +958,13 @@ def main():
     az_peak = el_peak = 0.0
     # Zoom mode state: base_w/h is the realtime display size (captured whenever not
     # zoomed, so it's known before Zoom can ever be engaged); zoom_crop is the frozen
-    # (x0, y0, w, h, native_w, native_h) crop rect, recomputed only on entry/Recenter.
+    # (x0, y0, w, h, native_w, native_h) crop rect, recomputed on entry, Recenter, or
+    # when the Dwell slider's hold time elapses; zoom_last_recenter_t is when it was
+    # last (re)computed, for measuring that elapsed time.
     base_w = base_h = None
     zoom_crop = None
     zoom_mode_prev = False
+    zoom_last_recenter_t = 0.0
     label = 'Filling buffer...'
     t_last = time.monotonic()
     fps = 0.0
@@ -928,6 +977,7 @@ def main():
     _sliders['fhi'] = _cfg_int(config, 'fhi', 4000, 100, _FREQ_MAX)
     _sliders['auto_range'] = bool(config.get('auto_range', True))
     _sliders['thresh_db'] = _cfg_int(config, 'thresh_db', 30, 0, _THRESH_MAX)
+    _sliders['dwell_idx'] = _cfg_int(config, 'dwell_idx', _DWELL_HOLD_IDX, 0, _DWELL_MAX)
     _sliders['popup_open'] = False
     _sliders['algo'], _sliders['algo_open'] = args.algo, False
     _sliders['nsrc'] = max(1, min(_NSRC_MAX, args.nsrc))
@@ -953,6 +1003,7 @@ def main():
                     paused = _sliders['paused']
                     zoom_mode = _sliders['zoom_mode']
                     recenter_requested = _sliders['recenter_requested']
+                    dwell_s = _DWELL_LEVELS[_sliders['dwell_idx']]
                     if recenter_requested:
                         _sliders['recenter_requested'] = False
                 if cam is not None:
@@ -967,14 +1018,20 @@ def main():
 
                     if zoom_mode and base_w and base_h:
                         native_h, native_w = frame.shape[:2]
-                        # Freeze the crop on entry or Recenter only — "stay there"
-                        # until the user asks to move it, even though the camera
-                        # feed inside that crop keeps updating live every frame.
-                        if not zoom_mode_prev or recenter_requested:
+                        now = time.monotonic()
+                        # Freeze the crop on entry, Recenter, or (if the Dwell slider
+                        # isn't set to HOLD) once dwell_s has elapsed since the last
+                        # freeze — dwell_s == 0 makes this true every frame, i.e.
+                        # continuously follow the peak; dwell_s == None (HOLD) never
+                        # fires, i.e. "stay there" until the user acts, same as before.
+                        dwell_elapsed = (dwell_s is not None and zoom_mode_prev
+                                          and now - zoom_last_recenter_t >= dwell_s)
+                        if not zoom_mode_prev or recenter_requested or dwell_elapsed:
                             zx0, zy0, zcw, zch = _compute_zoom_crop(
                                 native_w, native_h, base_w, base_h, az_peak, el_peak,
                                 args.az_fov, args.el_fov)
                             zoom_crop = (zx0, zy0, zcw, zch, native_w, native_h)
+                            zoom_last_recenter_t = now
                         zx0, zy0, zcw, zch, _, _ = zoom_crop
                         frame = cv2.resize(frame[zy0:zy0 + zch, zx0:zx0 + zcw],
                                             (base_w, base_h), interpolation=cv2.INTER_LINEAR)
@@ -1042,6 +1099,7 @@ def main():
                 with _sliders_lock:
                     auto_range = _sliders['auto_range']
                     thresh_db = _sliders['thresh_db']
+                    dwell_idx = _sliders['dwell_idx']
                     popup_open = _sliders['popup_open']
                     algo_open = _sliders['algo_open']
                     exit_requested = _sliders['exit_requested']
@@ -1090,7 +1148,7 @@ def main():
                     _draw_battery(frame, popup_layout['tab'][0] - _BATT_TAB_GAP, batt_percent)
                 if popup_open:
                     _draw_popup(frame, popup_layout, auto_range, thresh_db, algo, algo_open,
-                                nsrc, paused, zoom_mode)
+                                nsrc, paused, zoom_mode, dwell_idx)
                 t4 = time.monotonic()
 
                 now = time.monotonic()

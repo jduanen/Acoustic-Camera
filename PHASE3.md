@@ -284,7 +284,8 @@ Real-time two-thread pipeline identical in structure to Phase 2, but with:
 - Cross-hair peak marker (az, el)
 - Real-time frequency spectrum strip with interactive frequency range sliders
 - Zoom mode: lock onto the loudest detected source at native camera resolution,
-  with a Recenter button, until returned to the realtime view (see README.md's
+  with a Recenter button and a Dwell slider (from continuous auto-recenter to
+  holding indefinitely), until returned to the realtime view (see README.md's
   "Touch UI: Zoom Mode")
 
 ```bash

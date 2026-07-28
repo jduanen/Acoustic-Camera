@@ -527,6 +527,16 @@ the CSI camera, `Picamera2.sensor_resolution` (falling back to
 webcam, the native resolution is queried by requesting an oversized
 `CAP_PROP_FRAME_WIDTH`/`HEIGHT` and reading back whatever the driver actually clamped it to.
 
+A **Dwell** slider (shown only while zoomed, below Recenter) controls how long the crop
+holds still before automatically re-centering on its own, without waiting for a manual
+Recenter tap. It has discrete detents rather than a continuous range: `Follow` (0s) at
+one end re-centers on every frame, tracking the loudest source continuously; `HOLD` at
+the other end is today's original behavior — stay frozen until Recenter or Exit Zoom is
+tapped. In between are fixed steps from a couple of seconds up to a few minutes
+(2s, 5s, 10s, 15s, 20s, 30s, 45s, 1m, 1.5m, 2m, 2.5m, 3m), so both fine adjustments near
+"follow" and longer holds are easy to dial in. Like the frequency band and energy
+threshold, the Dwell setting is saved to `config.json` and restored on the next run.
+
 #### Algorithm Benchmark Script
 
 ```bash
