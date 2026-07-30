@@ -299,14 +299,14 @@
 		)
 		(embedded_fonts no)
 	)
-	(footprint "Adafruit_FT232H"
+	(footprint "multi_fpga:Adafruit_FT232H"
 		(layer "F.Cu")
 		(uuid "245d8bf4-6cee-411e-9314-afb60730d6cc")
 		(at 156.6 143.6 180)
-		(descr "Adafruit FT232H USB-C breakout (PID 2264), mounted via 2x11 0.1in header strips -- pad grid/board outline adapted from the community footprint at github.com/jgait/adafruit-ft232h-kicad-footprint (cross-checked against Adafruit's own pin descriptions at learn.adafruit.com/adafruit-ft232h-breakout/pinouts and the user-supplied schematic docs/components_FT232H_sch.png), renumbered 1-22 to match this project's existing FT232H_BRK schematic symbol pin numbering exactly: pin1=3V, pin2=5V, pin3=GND, pins4-11=D0-D7, pin12=GND, pins13-22=C9,C8,C7,C6,C5,C4,C3,C2,C1,C0. Only D0-D7 and C0-C3 (as RXF#/TXE#/RD#/WR# in FT245 sync FIFO mode) are wired in this design; the rest (3V, 5V, 2nd GND, C4-C9) are real pad positions intentionally left unconnected, matching Adafruit's own guidance that the 3V/GND pins can be left disconnected. 3D model is the user-supplied lib/Adafruit_FT232H/Adafruit_FT232H_Original_1.STEP -- the raw STEP has the board modeled lying on its long-edge side with a slight (~7deg) in-plane skew, not flat/right-side-up; the (rotate -90deg Z) and (offset 38.40 -43.74 0) were both reverse-engineered empirically (measuring rendered pin-hole pitch/position and mounting-hole alignment against the pad grid above) since no CAD alignment reference was provided with the model; an earlier calibration attempt (-97.055deg) left an uncorrected ~7deg residual skew visible on close inspection, fixed by re-measuring against the two mounting-hole centers directly. Re-verify visually if the STEP file is ever replaced or the footprint rotation changes.")
+		(descr "Adafruit FT232H USB-C breakout (PID 2264), mounted via 2x11 0.1in header strips -- pad grid/board outline adapted from the community footprint at github.com/jgait/adafruit-ft232h-kicad-footprint (cross-checked against Adafruit's own pin descriptions at learn.adafruit.com/adafruit-ft232h-breakout/pinouts and the user-supplied schematic docs/components_FT232H_sch.png), renumbered 1-22 to match this project's existing FT232H_BRK schematic symbol pin numbering exactly: pin1=3V, pin2=5V, pin3=GND, pins4-11=D0-D7, pin12=GND, pins13-22=C9,C8,C7,C6,C5,C4,C3,C2,C1,C0. Only D0-D7 and C0-C3 (as RXF#/TXE#/RD#/WR# in FT245 sync FIFO mode) are wired in this design; the rest (3V, 5V, 2nd GND, C4-C9) are real pad positions intentionally left unconnected, matching Adafruit's own guidance that the 3V/GND pins can be left disconnected. 3D model is the user-supplied lib/Adafruit_FT232H/Adafruit_FT232H_Original_1.STEP -- the raw STEP has the board modeled lying on its long-edge side with a slight (~7deg) in-plane skew, not flat/right-side-up; the (rotate -90deg Z) and (offset 33.32 -48.82 0) were both reverse-engineered empirically (measuring rendered pin-hole pitch/position and mounting-hole alignment against the pad grid above) since no CAD alignment reference was provided with the model; an earlier calibration attempt (-97.055deg) left an uncorrected ~7deg residual skew visible on close inspection, fixed by re-measuring against the two mounting-hole centers directly. Re-verify visually if the STEP file is ever replaced or the footprint rotation changes.")
 		(tags "FT232H breakout USB-C Adafruit 2264")
 		(property "Reference" "A6"
-			(at 0.1 21.6 0)
+			(at 0 -22 180)
 			(layer "F.SilkS")
 			(uuid "398a586c-bcc7-4ff6-8295-1e72ef270a6e")
 			(effects
@@ -317,7 +317,7 @@
 			)
 		)
 		(property "Value" "Adafruit_FT232H"
-			(at 0 22 0)
+			(at 0 22 180)
 			(layer "F.Fab")
 			(uuid "fc22356a-f2c1-4e6b-b8d2-1d40525be195")
 			(effects
@@ -328,7 +328,7 @@
 			)
 		)
 		(property "Datasheet" ""
-			(at 0 0 0)
+			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "3a44b787-123a-426e-9ca5-49564a4952bf")
@@ -339,7 +339,7 @@
 			)
 		)
 		(property "Description" ""
-			(at 0 0 0)
+			(at 0 0 180)
 			(layer "F.Fab")
 			(hide yes)
 			(uuid "46a284a9-a1e0-4407-bbbb-c87f5bd382ad")
@@ -565,13 +565,13 @@
 		(embedded_fonts no)
 		(model "/home/jdn/Code/Acoustic-Camera/lib/Adafruit_FT232H/Adafruit_FT232H_Original_1.STEP"
 			(offset
-				(xyz 38.4 -43.74 0)
+				(xyz -36.85 44.05 4)
 			)
 			(scale
 				(xyz 1 1 1)
 			)
 			(rotate
-				(xyz 0 0 -90)
+				(xyz 0 0 90)
 			)
 		)
 	)
