@@ -13,7 +13,7 @@ Net assignment, pad-for-pad:
     out of sync with the schematic generator): entries 0-31 are the 4 spokes'
     8 signals each (SPOKE{cidx}_{suffix}), entries 32-44 are the FT232H/TCXO
     signals (USB_TCXO_NETS), pad 24 (VU) -> +5V, pad 25 (GND) -> GND.
-  A6 (FT232H_Breakout, USB-C rev, 2x11=22 real pads): pads 4-11 -> USB_D0-7,
+  A6 (Adafruit_FT232H, USB-C rev, 2x11=22 real pads): pads 4-11 -> USB_D0-7,
     19-22 -> WR_N/RD_N/TXE_N/RXF_N, 3 -> GND. The other 9 pads (1=3V out,
     2=5V in, 12=2nd GND, 13-18=C9-C4) are real pads on the new board but
     intentionally unconnected -- it's USB-cable-powered from the RPi5, not

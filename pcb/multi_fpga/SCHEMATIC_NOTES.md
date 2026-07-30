@@ -207,7 +207,7 @@ still placement-only, see `pcb/layout_multi_fpga.py`'s module docstring).
 per Adafruit — but the *pin layout itself* changed: the new board is
 2x11=22 real pads, `3V,5V,GND,D0-D7` on one row and `GND,C9-C0` on the
 other, vs. the old 2x10). New symbol pinout in `hub.kicad_sch`, new
-footprint `multi_fpga:FT232H_Breakout` (dimensions/pin pitch sourced
+footprint `multi_fpga:Adafruit_FT232H` (dimensions/pin pitch sourced
 from Adafruit's own fabrication print, `cdn-learn.adafruit.com/downloads/
 pdf/adafruit-ft232h-breakout.pdf` p.48 — read off a scanned diagram, so
 treat as best-effort, confirm against a physical board before fab). Only
@@ -259,7 +259,7 @@ reasoning as above.
 ### Hub board: square outline, axis-aligned modules, camera keepout
 
 The hub board (`place_hub()`) was reworked from a circular outline with
-`CMOD_A7_35T`/`FT232H_Breakout`/`TCXO_Can` mounted tangentially at angled
+`CMOD_A7_35T`/`Adafruit_FT232H`/`TCXO_Can` mounted tangentially at angled
 positions, to a **square outline with all 3 modules mounted axis-aligned**
 (rotation ∈ {0, 90, 180, 270}deg only — "horizontal and vertical", no
 angled/tangential placement). `HUB_HALF_SIDE_MM` replaces the old
