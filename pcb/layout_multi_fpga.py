@@ -661,7 +661,7 @@ def place_hub(board):
     board.Add(load_fp(DIP48_LIB, DIP48_NAME, f"A{N_CLUSTERS + 1}", ax, ay, rot_deg=HUB_CMOD_A7_ROT_DEG))
 
     fx, fy = HUB_FT232H_XY_MM
-    board.Add(load_fp(LOCAL_LIB, "FT232H_Breakout", f"A{N_CLUSTERS + 2}", fx, fy, rot_deg=HUB_FT232H_ROT_DEG))
+    board.Add(load_fp(LOCAL_LIB, "Adafruit_FT232H", f"A{N_CLUSTERS + 2}", fx, fy, rot_deg=HUB_FT232H_ROT_DEG))
 
     tx, ty = HUB_TCXO_XY_MM
     board.Add(load_fp(LOCAL_LIB, "TCXO_Can", "Y1", tx, ty, rot_deg=HUB_TCXO_ROT_DEG))
@@ -723,7 +723,7 @@ def main():
     hub_reach = 0.0
     dip48_corners = _local_courtyard_corners(DIP48_LIB, DIP48_NAME)
     socket_corners = _local_courtyard_corners(SPOKE_SOCKET_LIB, SPOKE_SOCKET_NAME)
-    ft_corners = _local_courtyard_corners(LOCAL_LIB, "FT232H_Breakout")
+    ft_corners = _local_courtyard_corners(LOCAL_LIB, "Adafruit_FT232H")
     tcxo_corners = _local_courtyard_corners(LOCAL_LIB, "TCXO_Can")
 
     def _reach(corners):

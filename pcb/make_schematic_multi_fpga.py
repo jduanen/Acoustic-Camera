@@ -305,7 +305,7 @@ STUB      = 8 * GRID   # stub-and-label/pwr wire length (≈10)
 FOOTPRINTS = {
     "CMOD_S7":      "Package_DIP:DIP-48_W15.24mm_Socket",
     "CMOD_A7_35T":  "Package_DIP:DIP-48_W15.24mm_Socket",
-    "FT232H_BRK":   "multi_fpga:FT232H_Breakout",
+    "FT232H_BRK":   "multi_fpga:Adafruit_FT232H",
     "TCXO_OSC":     "multi_fpga:TCXO_Can",
     "LDO_1V8":      "Package_TO_SOT_SMD:SOT-23",
     "LDO_3V3":      "Package_TO_SOT_SMD:SOT-23",
@@ -865,7 +865,7 @@ def main():
     print(f"Open {pro_path} in KiCad 10.")
     print("Next steps:")
     print("  1. Run ERC — expected clean; see SCHEMATIC_NOTES.md for accepted warning classes")
-    print("  2. Module footprints assigned (DIP-48 socket / FT232H_Breakout / TCXO_Can) -- see pcb/layout_multi_fpga.py")
+    print("  2. Module footprints assigned (DIP-48 socket / Adafruit_FT232H / TCXO_Can) -- see pcb/layout_multi_fpga.py")
     print("  3. Cross-check FPGA pin names here against a synthesized .xdc before wiring hardware")
 
 if __name__ == "__main__":
