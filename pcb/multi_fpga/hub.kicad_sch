@@ -11,7 +11,7 @@
 		(comment 3 "USB FIFO bridge (FT232H) to Raspberry Pi 5, also on DIP -- no GbE on hub")
 	)
 	(lib_symbols
-		(symbol "C"
+		(symbol "multi_fpga:C"
 			(pin_numbers
 				(hide yes)
 			)
@@ -144,7 +144,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "CMOD_A7_35T"
+		(symbol "multi_fpga:CMOD_A7_35T"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2162,7 +2162,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "FT232H_BRK"
+		(symbol "multi_fpga:FT232H_BRK"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -2764,134 +2764,160 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "LDO_3V3"
+		(symbol "Regulator_Linear:MCP1700x-330xxTT"
+			(pin_names
+				(offset 0.254)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "VR"
-				(at 0 7.62 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
+		(property "Reference" "U"
+			(at -3.81 3.175 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(property "Value" "MCP1700T-3302E/TT"
-				(at 0 -7.62 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
+		)
+		(property "Value" "MCP1700x-330xxTT"
+			(at 0 3.175 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
+			(at 0 5.715 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-23"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
+		)
+		(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/20001826D.pdf"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(property "Datasheet" ""
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
+		)
+		(property "Description" "250mA Low Quiscent Current LDO, 3.3V output, SOT-23"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(property "Description" "3.3V linear regulator for the hub's FT232H + TCXO (~50mA load, SOT-23, 1uF ceramic in/out per datasheet)"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
+		)
+		(property "ki_keywords" "regulator linear ldo"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(symbol "LDO_3V3_0_1"
-				(rectangle
-					(start -12.7 -5.08)
-					(end 12.7 5.08)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type background)
-					)
+		)
+		(property "ki_fp_filters" "SOT?23*"
+			(at 0 0 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(hide yes)
+			(effects
+				(font
+					(size 1.27 1.27)
 				)
 			)
-			(symbol "LDO_3V3_1_1"
-				(pin power_in line
-					(at -17.78 2.54 0)
-					(length 5.08)
-					(name "GND"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
+		)
+		(symbol "MCP1700x-330xxTT_0_1"
+			(rectangle
+				(start -5.08 1.905)
+				(end 5.08 -5.08)
+				(stroke
+					(width 0.254)
+					(type default)
 				)
-				(pin power_out line
-					(at -17.78 0 0)
-					(length 5.08)
-					(name "OUT"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
+				(fill
+					(type background)
+				)
+			)
+		)
+		(symbol "MCP1700x-330xxTT_1_1"
+			(pin power_in line
+				(at 0 -7.62 90)
+				(length 2.54)
+				(name "GND"
+					(effects
+						(font
+							(size 1.27 1.27)
 						)
 					)
 				)
-				(pin power_in line
-					(at -17.78 -2.54 0)
-					(length 5.08)
-					(name "IN"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "3"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
+				(number "1"
+					(effects
+						(font
+							(size 1.27 1.27)
 						)
 					)
 				)
 			)
+			(pin power_out line
+				(at 7.62 0 180)
+				(length 2.54)
+				(name "VO"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "2"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+			(pin power_in line
+				(at -7.62 0 0)
+				(length 2.54)
+				(name "VI"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(number "3"
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+			)
+		)
 			(embedded_fonts no)
 		)
 		(symbol "SparkFun-Capacitor:100uF_6.6x6.6_25V_20%"
@@ -3502,7 +3528,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "TCXO_OSC"
+		(symbol "multi_fpga:TCXO_OSC"
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
@@ -8162,7 +8188,7 @@
 		)
 	)
 	(symbol
-		(lib_id "C")
+		(lib_id "multi_fpga:C")
 		(at 482.6 146.05 0)
 		(unit 1)
 		(body_style 1)
@@ -8835,7 +8861,7 @@
 		)
 	)
 	(symbol
-		(lib_id "CMOD_A7_35T")
+		(lib_id "multi_fpga:CMOD_A7_35T")
 		(at 400.05 171.45 0)
 		(unit 1)
 		(body_style 1)
@@ -10550,7 +10576,7 @@
 		)
 	)
 	(symbol
-		(lib_id "C")
+		(lib_id "multi_fpga:C")
 		(at 497.84 156.21 0)
 		(unit 1)
 		(body_style 1)
@@ -10725,7 +10751,7 @@
 		)
 	)
 	(symbol
-		(lib_id "TCXO_OSC")
+		(lib_id "multi_fpga:TCXO_OSC")
 		(at 525.78 204.47 0)
 		(unit 1)
 		(body_style 1)
@@ -11470,7 +11496,7 @@
 		)
 	)
 	(symbol
-		(lib_id "FT232H_BRK")
+		(lib_id "multi_fpga:FT232H_BRK")
 		(at 334.01 345.44 0)
 		(unit 1)
 		(body_style 1)
@@ -13069,7 +13095,7 @@
 		)
 	)
 	(symbol
-		(lib_id "LDO_3V3")
+		(lib_id "Regulator_Linear:MCP1700x-330xxTT")
 		(at 524.51 139.7 0)
 		(unit 1)
 		(body_style 1)
@@ -13333,5 +13359,4 @@
 			(page "6")
 		)
 	)
-	(embedded_fonts no)
 )
