@@ -27,20 +27,29 @@ module tb_cluster_top;
     reg SPOKE_CLK = 0;
     always #5 SPOKE_CLK = ~SPOKE_CLK;
 
+    // Tied high (never asserted) for this test -- FPGA_RESET_N/SPOKE_ALIVE's
+    // own handshake behavior is covered by tb_clk_reset.v; this integration
+    // test only needs to confirm the existing data path is unaffected by the
+    // new pass-through ports.
+    reg FPGA_RESET_N = 1'b1;
+
     reg [N_LINES-1:0] line_d;
     wire PDM_CLK;
     wire [5:0] spoke_d_bus;
     wire SPOKE_STROBE;
+    wire SPOKE_ALIVE;
 
     cluster_top dut (
         .SPOKE_CLK(SPOKE_CLK),
+        .FPGA_RESET_N(FPGA_RESET_N),
         .PDM_CLK(PDM_CLK),
         .PDM_D00(line_d[0]),  .PDM_D01(line_d[1]),  .PDM_D02(line_d[2]),  .PDM_D03(line_d[3]),
         .PDM_D04(line_d[4]),  .PDM_D05(line_d[5]),  .PDM_D06(line_d[6]),  .PDM_D07(line_d[7]),
         .PDM_D08(line_d[8]),  .PDM_D09(line_d[9]),  .PDM_D10(line_d[10]), .PDM_D11(line_d[11]),
         .SPOKE_D0(spoke_d_bus[0]), .SPOKE_D1(spoke_d_bus[1]), .SPOKE_D2(spoke_d_bus[2]),
         .SPOKE_D3(spoke_d_bus[3]), .SPOKE_D4(spoke_d_bus[4]), .SPOKE_D5(spoke_d_bus[5]),
-        .SPOKE_STROBE(SPOKE_STROBE)
+        .SPOKE_STROBE(SPOKE_STROBE),
+        .SPOKE_ALIVE(SPOKE_ALIVE)
     );
 
     // channel c's PDM bits: pdm_mem[c*N_SAMPLES + sample_idx]

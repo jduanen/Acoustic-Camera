@@ -15,6 +15,8 @@ SHELL := /bin/bash
 
 RTL := fpga/cluster/rtl
 SIM := fpga/cluster/sim
+HUB_RTL := fpga/hub/rtl
+HUB_SIM := fpga/hub/sim
 
 # $(1) = space-separated source files (relative to $(SIM)), $(2) = top testbench module name
 #
@@ -48,7 +50,21 @@ define XSIM_RUN_UNISIM
 	fi
 endef
 
-.PHONY: sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top sim-all clean-sim golden-test
+# Same as XSIM_RUN, but for fpga/hub's own rtl/sim tree ($(1)'s paths are
+# relative to $(HUB_SIM)). reset_seq.v has no unisim primitives, so no glbl.
+define XSIM_RUN_HUB
+	source $(VIVADO_SETTINGS) >/dev/null
+	cd $(HUB_SIM)
+	xvlog --work work $(1)
+	xelab work.$(2) -s $(2)_sim
+	xsim $(2)_sim -R | tee $(2).run.log
+	if ! grep -q '^PASS:' $(2).run.log; then
+		echo "*** $(2) did not report PASS -- treating as failed ***"
+		exit 1
+	fi
+endef
+
+.PHONY: sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -68,13 +84,17 @@ sim-clk:
 sim-top:
 	$(call XSIM_RUN_UNISIM,../rtl/pdm_line_demux.v ../rtl/cic_decimator.v ../rtl/fir_compensator.v ../rtl/spoke_framer.v ../rtl/clk_reset.v ../rtl/cluster_top.v tb_cluster_top.v,tb_cluster_top)
 
+sim-reset-seq:
+	$(call XSIM_RUN_HUB,../rtl/reset_seq.v tb_reset_seq.v,tb_reset_seq)
+
 golden-test:
 	python3 -m pytest fpga/cluster/golden -q
 
-sim-all: golden-test sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top
+sim-all: golden-test sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top sim-reset-seq
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="
 
 clean-sim:
 	rm -rf $(SIM)/xsim.dir $(SIM)/work $(SIM)/*.jou $(SIM)/*.log $(SIM)/*.pb $(SIM)/*.wdb $(SIM)/.Xil $(SIM)/*.run.log
+	rm -rf $(HUB_SIM)/xsim.dir $(HUB_SIM)/work $(HUB_SIM)/*.jou $(HUB_SIM)/*.log $(HUB_SIM)/*.pb $(HUB_SIM)/*.wdb $(HUB_SIM)/.Xil $(HUB_SIM)/*.run.log

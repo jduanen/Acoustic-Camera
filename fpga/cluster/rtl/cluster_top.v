@@ -21,13 +21,15 @@
 // bit 5 (MSB).
 module cluster_top (
     input  wire SPOKE_CLK,
+    input  wire FPGA_RESET_N,
     output wire PDM_CLK,
     input  wire PDM_D00, PDM_D01, PDM_D02, PDM_D03,
     input  wire PDM_D04, PDM_D05, PDM_D06, PDM_D07,
     input  wire PDM_D08, PDM_D09, PDM_D10, PDM_D11,
     output wire SPOKE_D0, SPOKE_D1, SPOKE_D2,
     output wire SPOKE_D3, SPOKE_D4, SPOKE_D5,
-    output wire SPOKE_STROBE
+    output wire SPOKE_STROBE,
+    output wire SPOKE_ALIVE
 );
     localparam integer N_LINES   = 12;
     localparam integer N_CH      = 24;
@@ -37,9 +39,11 @@ module cluster_top (
     wire clk, rst;
     clk_reset clk_reset_inst (
         .spoke_clk(SPOKE_CLK),
+        .fpga_reset_n(FPGA_RESET_N),
         .clk(clk),
         .pdm_clk(PDM_CLK),
-        .rst(rst)
+        .rst(rst),
+        .spoke_alive(SPOKE_ALIVE)
     );
 
     wire [N_LINES-1:0] pdm_d;
