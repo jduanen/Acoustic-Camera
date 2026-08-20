@@ -64,13 +64,19 @@ define XSIM_RUN_HUB
 	fi
 endef
 
-.PHONY: sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-all clean-sim golden-test
+.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
 
+sim-pdm-sync:
+	$(call XSIM_RUN,../rtl/pdm_line_sync.v tb_pdm_line_sync.v,tb_pdm_line_sync)
+
 sim-cic:
 	$(call XSIM_RUN,../rtl/cic_decimator.v tb_cic_decimator.v,tb_cic_decimator)
+
+sim-cic-shared:
+	$(call XSIM_RUN,../rtl/cic_decimator_shared.v tb_cic_decimator_shared.v,tb_cic_decimator_shared)
 
 sim-fir:
 	$(call XSIM_RUN,../rtl/fir_compensator.v tb_fir_compensator.v,tb_fir_compensator)
@@ -82,7 +88,7 @@ sim-clk:
 	$(call XSIM_RUN_UNISIM,../rtl/clk_reset.v tb_clk_reset.v,tb_clk_reset)
 
 sim-top:
-	$(call XSIM_RUN_UNISIM,../rtl/pdm_line_demux.v ../rtl/cic_decimator.v ../rtl/fir_compensator.v ../rtl/spoke_framer.v ../rtl/clk_reset.v ../rtl/cluster_top.v tb_cluster_top.v,tb_cluster_top)
+	$(call XSIM_RUN_UNISIM,../rtl/pdm_line_sync.v ../rtl/cic_decimator_shared.v ../rtl/fir_compensator.v ../rtl/spoke_framer.v ../rtl/clk_reset.v ../rtl/cluster_top.v tb_cluster_top.v,tb_cluster_top)
 
 sim-reset-seq:
 	$(call XSIM_RUN_HUB,../rtl/reset_seq.v tb_reset_seq.v,tb_reset_seq)
@@ -90,7 +96,7 @@ sim-reset-seq:
 golden-test:
 	python3 -m pytest fpga/cluster/golden -q
 
-sim-all: golden-test sim-pdm sim-cic sim-fir sim-framer sim-clk sim-top sim-reset-seq
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

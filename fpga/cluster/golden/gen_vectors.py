@@ -84,6 +84,25 @@ def gen_cic_vectors():
               f"-> {len(bits)} input bits, {len(out)} expected output samples")
 
 
+def gen_cic_shared_vectors():
+    """Two independent bit streams (L, R) for tb_cic_decimator_shared.v --
+    the shared engine's math is unchanged from cic_bitexact() (see
+    cic_decimator_shared.v's header comment), so this reuses the same golden
+    model per channel; only the RTL scheduling (one shared arithmetic path,
+    time-multiplexed) differs from gen_cic_vectors()'s single-channel case."""
+    os.makedirs(VEC_DIR, exist_ok=True)
+    stages, r, n_frames = 5, 64, 500
+    for ch, seed in [("l", 20260819), ("r", 20260820)]:
+        rng = random.Random(seed)
+        bits = _mixed_bitstream(rng, r, n_frames)
+        out, width = cic_bitexact(bits, stages, r)
+        assert width == hogenauer_width(stages, r)
+        _write_bits_mem(os.path.join(VEC_DIR, f"cic_shared_{ch}_input.mem"), bits)
+        _write_hex_mem(os.path.join(VEC_DIR, f"cic_shared_{ch}_expected.mem"), out, width)
+        print(f"cic_shared_{ch}: stages={stages} R={r} width={width} "
+              f"-> {len(bits)} input bits, {len(out)} expected output samples")
+
+
 def gen_fir_test_vectors():
     """FIR data-path stimulus + expected output, separate from fir_coeffs.mem
     (written by fir_design.gen_fir_vectors()). Used by tb_fir_compensator.v."""
@@ -159,7 +178,13 @@ def gen_cluster_top_vectors():
             for b in ch_bits:
                 f.write(f"{int(b)}\n")
 
-    per_channel_out = [golden_channel_pipeline(b, coeffs, is_r_channel=bool(c % 2))
+    # extra_reg_shift (not is_r_channel -- that's the old, no-longer-used
+    # pdm_line_demux/cic_decimator pipeline's own asymmetric L/R quirk):
+    # cluster_top.v's current pdm_line_sync/cic_decimator_shared pipeline has
+    # one more registered hop (cic_decimator_shared reading pdm_line_sync's
+    # output), whose effect is only present on L (even) channels -- see
+    # golden_channel_pipeline()'s docstring.
+    per_channel_out = [golden_channel_pipeline(b, coeffs, extra_reg_shift=(c % 2 == 0))
                        for c, b in enumerate(pdm_bits)]
     hex_digits = (FIR_DATA_WIDTH + 3) // 4
     with open(os.path.join(VEC_DIR, "top_expected.mem"), "w") as f:
@@ -173,6 +198,7 @@ def gen_cluster_top_vectors():
 
 if __name__ == "__main__":
     gen_cic_vectors()
+    gen_cic_shared_vectors()
     gen_fir_vectors()
     gen_fir_test_vectors()
     gen_framer_vectors()

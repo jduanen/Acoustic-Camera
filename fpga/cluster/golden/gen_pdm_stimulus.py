@@ -58,30 +58,45 @@ def gen_multitone_pdm(n_ch=N_CH, n_frames=20, r=R, fs=FS_IN):
     return pdm_bits, n_samples
 
 
-def golden_channel_pipeline(pdm_bits_1ch, coeffs_int, stages=STAGES, r=R, is_r_channel=False):
+def golden_channel_pipeline(pdm_bits_1ch, coeffs_int, stages=STAGES, r=R, is_r_channel=False,
+                             extra_reg_shift=False):
     """One channel's PDM bits -> bit-exact CIC -> bit-exact FIR -> final
     24-bit PCM samples, mirroring cluster_top.v's CIC->FIR wiring exactly
     (top FIR_DATA_WIDTH bits of the CIC's output, see fir_design.py's module
     docstring for why).
 
-    is_r_channel: True for odd (R, SEL=+1.8V) channels. pdm_line_demux
-    captures L on the negedge and R on the posedge; cic_decimator's own
-    accumulation is posedge-triggered. A negedge-captured signal (L) is
-    already stable a half cycle before cic_decimator's posedge reads it, but
-    a posedge-captured signal (R) updates on the *same* edge cic_decimator
-    samples it on -- and per standard nonblocking-assignment semantics, a
-    downstream posedge-triggered register can never observe an upstream
-    posedge-triggered register's new value on that same edge (this is
-    ordinary, correct flip-flop-to-flip-flop timing, not a simulation
-    artifact -- real hardware behaves identically). So cic_decimator's R
-    channel actually accumulates bit[i-1] where its L channel accumulates
-    bit[i]. Shifting the golden R-channel bitstream right by one (dropping
-    the last bit, prepending a 0 to match pdm_line_demux's reset value)
-    reproduces exactly what the RTL correctly computes, so this golden
-    model matches real hardware rather than an idealized zero-latency one.
+    is_r_channel: historical option for the OLD pdm_line_demux.v +
+    cic_decimator.v pipeline (still present as standalone-tested modules,
+    but no longer instantiated by cluster_top.v -- see its header comment).
+    That pipeline captured L on the negedge and R on the posedge of the
+    single shared clock, while cic_decimator's own accumulation was
+    posedge-triggered -- a posedge-captured signal (R) updates on the *same*
+    edge cic_decimator samples it on, and per standard nonblocking-
+    assignment semantics a downstream posedge register can never observe an
+    upstream posedge register's new value on that same edge (ordinary,
+    correct flip-flop-to-flip-flop timing, not a simulation artifact). So
+    that pipeline's R channel actually accumulated bit[i-1] where its L
+    channel accumulated bit[i]; is_r_channel=True reproduces that by
+    shifting the golden R-channel bitstream right by one.
+
+    extra_reg_shift: cluster_top.v's CURRENT pipeline (pdm_line_sync.v +
+    cic_decimator_shared.v). cic_decimator_shared reads pdm_line_sync's
+    bit_r/phase_r outputs as a plain wire, and both modules' always blocks
+    trigger on the same clk edge -- same same-edge-invisibility reasoning as
+    above, giving one more registered hop of latency than
+    pdm_line_sync's own capture alone. Empirically (verified against RTL
+    simulation, not derived by inspection -- see the tb_cluster_top.v
+    debugging session that found this), this extra hop's effect is *not*
+    symmetric between L and R: L (even channels, phase=0) needs this shift
+    (extra_reg_shift=True), R (odd, phase=1) does not
+    (extra_reg_shift=False) -- use is_r_channel-style parity
+    (extra_reg_shift = channel index even) when generating vectors for this
+    pipeline. Ordinary, unavoidable reg-to-reg pipeline latency, not a bug,
+    so corrected here rather than in the RTL -- see gen_vectors.py's
+    gen_cluster_top_vectors().
     """
     bits = [int(b) for b in pdm_bits_1ch]
-    if is_r_channel:
+    if is_r_channel or extra_reg_shift:
         bits = [0] + bits[:-1]
     cic_out, width = cic_bitexact(bits, stages, r)
     shift = width - FIR_DATA_WIDTH
@@ -95,7 +110,7 @@ if __name__ == "__main__":
 
     pdm_bits, n_samples = gen_multitone_pdm(n_frames=20)
     coeffs = quantize_coeffs(design_compensation_fir())
-    outs = [golden_channel_pipeline(b, coeffs, is_r_channel=bool(c % 2))
+    outs = [golden_channel_pipeline(b, coeffs, extra_reg_shift=(c % 2 == 0))
             for c, b in enumerate(pdm_bits)]
     print(f"Generated {len(pdm_bits)} channels x {n_samples} PDM bits -> "
           f"{len(outs[0])} PCM samples/channel each")
