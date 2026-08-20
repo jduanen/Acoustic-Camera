@@ -45,3 +45,29 @@ set_property -dict { PACKAGE_PIN P1    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_
 set_property -dict { PACKAGE_PIN R3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_D4 }]; #IO_L2P_T0_34 Sch=pio[26], schematic net SPOKE0_D4
 set_property -dict { PACKAGE_PIN T3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_D5 }]; #IO_L2N_T0_34 Sch=pio[27], schematic net SPOKE0_D5
 set_property -dict { PACKAGE_PIN R2    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_STROBE }]; #IO_L1P_T0_34 Sch=pio[28], schematic net SPOKE0_STROBE
+
+# False paths (not just waived TIMING-18 warnings -- these are genuinely
+# untimed by design, not "checked and found fine" or "ignored for now"):
+#
+# FPGA_RESET_N: asynchronous reset from the hub FPGA, run through
+# clk_reset.v's own 2-FF synchronizer specifically because it's untimed
+# relative to SPOKE_CLK -- there is no meaningful setup/hold relationship to
+# constrain here.
+set_false_path -from [get_ports { FPGA_RESET_N }]
+
+# PDM_D00-11: pdm_line_sync.v was deliberately designed with a full extra
+# clk cycle of capture margin (see that module's header comment) precisely
+# so it doesn't depend on tight datasheet/trace-delay-driven timing closure
+# -- a false path states that design intent accurately; a fabricated
+# set_input_delay number (without real trace-length/mic-datasheet data to
+# back it) would just be guessing.
+set_false_path -from [get_ports { PDM_D00 PDM_D01 PDM_D02 PDM_D03 PDM_D04 PDM_D05 PDM_D06 PDM_D07 PDM_D08 PDM_D09 PDM_D10 PDM_D11 }]
+
+# PDM_CLK, SPOKE_D0-5, SPOKE_STROBE, SPOKE_ALIVE: outputs to the local mics
+# / hub board. Nothing on this FPGA depends on their timing being STA-
+# verified, and the hub-side logic that would eventually care (spoke
+# deframer) doesn't exist yet -- explicitly out of scope so far (see
+# fpga/README.md). Revisit with real set_output_delay numbers once the hub
+# side is designed and a real cross-board timing budget exists to constrain
+# against.
+set_false_path -to [get_ports { PDM_CLK SPOKE_D0 SPOKE_D1 SPOKE_D2 SPOKE_D3 SPOKE_D4 SPOKE_D5 SPOKE_STROBE SPOKE_ALIVE }]
