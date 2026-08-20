@@ -17,6 +17,11 @@
 #
 # All 23 ports are populated.
 
+# Bank 0 (config) voltage: the Cmod A7-35T's configuration bank runs off the
+# module's own 3.3V rail, matching every IOSTANDARD LVCMOS33 used below.
+set_property CFGBVS VCCO [current_design]
+set_property CONFIG_VOLTAGE 3.3 [current_design]
+
 set_property -dict { PACKAGE_PIN N3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_CLK }]; #IO_L12P_T1_MRCC_35 Sch=pio[18], schematic net SPOKE0_CLK -- clock-capable, P-side (MRCC)
 create_clock -period 325.521 -name SPOKE_CLK [get_ports { SPOKE_CLK }]
 
