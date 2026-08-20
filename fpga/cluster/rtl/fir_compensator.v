@@ -31,12 +31,27 @@ module fir_compensator #(
             $readmemh(COEFF_MEM_FILE, coeff_rom);
     end
 
-    reg [DATA_WIDTH-1:0] shift_reg [0:NTAPS-1];
+    // (* srl_style = "srl" *) hints Vivado to map this to SRLC32E (LUT-as-
+    // shift-register) primitives instead of 32*DATA_WIDTH discrete flip-
+    // flops -- the dynamic tap_idx read below is exactly the "variable tap"
+    // pattern SRLC32E's 5-bit dynamic address port supports. Initialized via
+    // `initial` (bitstream-config value), NOT synchronous reset: a real
+    // SRLC32E has no per-bit reset input, only a serial shift-in, so
+    // clearing it via `if (rst)` (as this used to do) forces Vivado back to
+    // discrete FFs. rst still clears every other register in this module;
+    // only this array relies on configuration-time initialization instead.
+    // tb_fir_compensator.v and fir_design.py's fir_bitexact() both only
+    // assume a zero start once, at time 0 / the single reset at test start
+    // -- never mid-run -- so this is unobservable to either.
+    (* srl_style = "srl" *) reg [DATA_WIDTH-1:0] shift_reg [0:NTAPS-1];
     reg signed [ACC_WIDTH-1:0] acc;
     reg [5:0] tap_idx;
     reg       running;
 
     integer i;
+    initial
+        for (i = 0; i < NTAPS; i = i + 1)
+            shift_reg[i] = {DATA_WIDTH{1'b0}};
 
     wire signed [ACC_WIDTH-1:0] product = $signed({1'b0, shift_reg[tap_idx]}) * coeff_rom[tap_idx];
     wire signed [ACC_WIDTH-1:0] next_acc = acc + product;
@@ -48,8 +63,6 @@ module fir_compensator #(
             running   <= 1'b0;
             tap_idx   <= 6'd0;
             acc       <= {ACC_WIDTH{1'b0}};
-            for (i = 0; i < NTAPS; i = i + 1)
-                shift_reg[i] <= {DATA_WIDTH{1'b0}};
         end else begin
             valid_out <= 1'b0; // default; pulses exactly 1 cycle on MAC completion
 

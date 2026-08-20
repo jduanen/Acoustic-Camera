@@ -54,8 +54,19 @@ module spoke_framer (
             armed        <= 1'b1;
             cyc_r        <= 6'd0;
             latched_flat <= ch_data_flat;
-        end else if (armed) begin
+        end else if (armed && cyc_r < BUSY_CYCLES) begin
             cyc_r <= cyc_r + 6'd1;
+            // else: hold at BUSY_CYCLES (idle) until the next frame_start
+            // resets it -- NOT a free-running counter, deliberately: this
+            // module doesn't assume any particular caller period beyond
+            // "frame_start arrives at least BUSY_CYCLES apart" (previously
+            // it free-ran and relied on frame_start always beating cyc_r's
+            // own 6-bit wraparound back to 0, i.e. arriving within 64
+            // cycles -- true for the original fully-parallel cluster_top.v,
+            // but not for the current shared-CIC one, whose ~128-cycle gap
+            // between frame_start pulses let cyc_r wrap and refire
+            // spoke_strobe on stale latched_flat mid-frame, corrupting
+            // every frame after the first).
         end
     end
 

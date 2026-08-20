@@ -1,12 +1,13 @@
 `timescale 1ns / 1ps
 
-// Checks clk_reset.v's clock passthrough (IBUF/BUFG/OBUF chain, needs
-// Xilinx's unisim simulation models + glbl -- see the Makefile's sim-clk
-// target), its power-on-reset timing, and the fpga_reset_n/spoke_alive
-// handshake with the hub (see fpga/hub/rtl/reset_seq.v). Reset-hold length
-// only needs to be "about POR_CYCLES", not bit-exact against a golden model
-// like the other modules -- so this checks a safe lower/upper bound rather
-// than an exact edge count.
+// Checks clk_reset.v's clock chain (IBUF/BUFG/OBUF + the PDM_CLK = clk/2
+// divider, needs Xilinx's unisim simulation models + glbl -- see the
+// Makefile's sim-clk target), its power-on-reset timing, and the
+// fpga_reset_n/spoke_alive handshake with the hub (see
+// fpga/hub/rtl/reset_seq.v). Reset-hold length only needs to be "about
+// POR_CYCLES", not bit-exact against a golden model like the other modules
+// -- so this checks a safe lower/upper bound rather than an exact edge
+// count.
 module tb_clk_reset;
     localparam integer POR_CYCLES = 16;
 
@@ -14,16 +15,25 @@ module tb_clk_reset;
     reg fpga_reset_n = 1'b0; // hub holds cluster in reset at power-up
     always #5 spoke_clk = ~spoke_clk;
 
-    wire clk, pdm_clk, rst, spoke_alive;
+    wire clk, pdm_clk, pdm_phase, rst, spoke_alive;
 
     clk_reset #(.POR_CYCLES(POR_CYCLES)) dut (
         .spoke_clk(spoke_clk),
         .fpga_reset_n(fpga_reset_n),
         .clk(clk),
         .pdm_clk(pdm_clk),
+        .pdm_phase(pdm_phase),
         .rst(rst),
         .spoke_alive(spoke_alive)
     );
+
+    // Independent model of the expected PDM_CLK = clk/2 divider (free-running
+    // from a fixed phase, NOT gated by rst -- see clk_reset.v's header
+    // comment on why), so the checks below aren't just re-checking the DUT's
+    // own formula against itself.
+    reg expected_pdm_clk = 1'b0;
+    always @(posedge clk)
+        expected_pdm_clk <= ~expected_pdm_clk;
 
     integer errors = 0;
     integer i;
@@ -44,9 +54,11 @@ module tb_clk_reset;
             errors = errors + 1;
         end
 
-        // clock passthrough on the first few edges: pdm_clk must track clk,
-        // clk must track spoke_clk. Kept short (well under POR_CYCLES) so it
-        // doesn't itself consume the POR window before the checks below run.
+        // clk must track spoke_clk (IBUF/BUFG passthrough); pdm_clk keeps
+        // free-running through reset too (see clk_reset.v), checked against
+        // the independent expected_pdm_clk model. Kept short (well under
+        // POR_CYCLES) so it doesn't itself consume the POR window before the
+        // checks below run.
         for (i = 0; i < 3; i = i + 1) begin
             @(posedge spoke_clk);
             #1;
@@ -54,8 +66,9 @@ module tb_clk_reset;
                 $display("FAIL: clk did not rise with spoke_clk (iter %0d)", i);
                 errors = errors + 1;
             end
-            if (pdm_clk !== clk) begin
-                $display("FAIL: pdm_clk (%b) != clk (%b) (iter %0d)", pdm_clk, clk, i);
+            if (pdm_clk !== expected_pdm_clk) begin
+                $display("FAIL: pdm_clk (%b) != expected clk/2 divider (%b) during reset (iter %0d)",
+                          pdm_clk, expected_pdm_clk, i);
                 errors = errors + 1;
             end
         end
@@ -102,7 +115,10 @@ module tb_clk_reset;
             errors = errors + 1;
         end
 
-        // and stay deasserted, with clock passthrough still holding
+        // and stay deasserted, with pdm_clk now toggling at clk/2 (checked
+        // against the independent expected_pdm_clk model above, not the
+        // DUT's own formula) and pdm_phase tracking pdm_clk (same signal,
+        // pre-OBUF)
         for (i = 0; i < 20; i = i + 1) begin
             @(posedge clk);
             #1;
@@ -114,8 +130,13 @@ module tb_clk_reset;
                 $display("FAIL: spoke_alive reasserted spuriously while running (iter %0d)", i);
                 errors = errors + 1;
             end
-            if (pdm_clk !== clk) begin
-                $display("FAIL: pdm_clk (%b) != clk (%b) post-POR (iter %0d)", pdm_clk, clk, i);
+            if (pdm_clk !== expected_pdm_clk) begin
+                $display("FAIL: pdm_clk (%b) != expected clk/2 divider (%b) post-POR (iter %0d)",
+                          pdm_clk, expected_pdm_clk, i);
+                errors = errors + 1;
+            end
+            if (pdm_phase !== pdm_clk) begin
+                $display("FAIL: pdm_phase (%b) != pdm_clk (%b) post-POR (iter %0d)", pdm_phase, pdm_clk, i);
                 errors = errors + 1;
             end
         end
@@ -137,7 +158,7 @@ module tb_clk_reset;
         end
 
         if (errors == 0) begin
-            $display("PASS: tb_clk_reset, clock passthrough + POR timing + fpga_reset_n/spoke_alive handshake verified");
+            $display("PASS: tb_clk_reset, clk passthrough + PDM_CLK/2 divider + POR timing + fpga_reset_n/spoke_alive handshake verified");
             $finish;
         end else begin
             $display("FAIL: tb_clk_reset, %0d errors", errors);

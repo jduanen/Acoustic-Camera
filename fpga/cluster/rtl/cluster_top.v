@@ -4,11 +4,23 @@
 // pcb/make_schematic_multi_fpga.py's schematic net names exactly -- do not
 // rename without updating the schematic generator too.
 //
-// Pipeline: SPOKE_CLK -> clk_reset (buffering + POR) -> 12x pdm_line_demux
-// (24 channels) -> 24x cic_decimator -> 24x fir_compensator -> spoke_framer
-// -> SPOKE_D0-5/SPOKE_STROBE. See fpga/cluster/SPOKE_FRAMING.md for the
-// output protocol and fpga/cluster/golden/fir_design.py for the CIC->FIR
+// Pipeline: SPOKE_CLK (now 6.144 MHz, 2x the mics' own PDM rate -- see
+// clk_reset.v) -> clk_reset (buffering, POR, PDM_CLK=clk/2 divider) ->
+// 12x pdm_line_sync -> 12x cic_decimator_shared (each one line's L+R
+// channels, time-multiplexed on one shared arithmetic path -- see that
+// module's header comment) -> 24x fir_compensator -> spoke_framer ->
+// SPOKE_D0-5/SPOKE_STROBE. See fpga/cluster/SPOKE_FRAMING.md for the output
+// protocol and fpga/cluster/golden/fir_design.py for the CIC->FIR
 // fixed-point convention (top 24 of the CIC's 31 output bits feed the FIR).
+//
+// This replaces the original 24x fully-parallel pdm_line_demux/cic_decimator
+// instantiation (still present as standalone, individually-tested modules --
+// pdm_line_demux.v/cic_decimator.v/tb_*.v -- but no longer used here) after
+// synthesis showed the parallel design needed 19,233 LUTs against the
+// XC7S25's 14,600 available; sharing the CIC's adder/subtractor logic
+// between each line's L/R pair (which already arrive time-interleaved on
+// the same physical PDM_Dxx wire) cuts that back to fit without adding a
+// PLL or changing any decimation math -- see cic_decimator_shared.v.
 //
 // Channel numbering: physical line `li` (0..11) -> channels 2*li (L, SEL=GND,
 // falling-edge capture) and 2*li+1 (R, SEL=+1.8V, rising-edge capture) --
@@ -36,12 +48,13 @@ module cluster_top (
     localparam integer CIC_WIDTH = 31; // Hogenauer bound: STAGES=5, R=64, IN_WIDTH=1
     localparam integer FIR_WIDTH = 24;
 
-    wire clk, rst;
+    wire clk, rst, pdm_phase;
     clk_reset clk_reset_inst (
         .spoke_clk(SPOKE_CLK),
         .fpga_reset_n(FPGA_RESET_N),
         .clk(clk),
         .pdm_clk(PDM_CLK),
+        .pdm_phase(pdm_phase),
         .rst(rst),
         .spoke_alive(SPOKE_ALIVE)
     );
@@ -60,28 +73,28 @@ module cluster_top (
     assign pdm_d[10] = PDM_D10;
     assign pdm_d[11] = PDM_D11;
 
-    wire [N_CH-1:0] pdm_ch; // channel c = 2*line + {0=L,1=R}
+    wire [N_LINES-1:0] pdm_bit, pdm_line_phase;
 
-    genvar li, c;
+    wire [N_CH*CIC_WIDTH-1:0] cic_out_flat;
+    wire [N_CH-1:0] cic_valid; // channel c = 2*line + {0=L,1=R}
+
+    genvar li;
 
     generate
         for (li = 0; li < N_LINES; li = li + 1) begin : g_pdm
-            pdm_line_demux u_pdm (
-                .clk(clk), .rst(rst), .pdm_d(pdm_d[li]),
-                .ch_l(pdm_ch[2*li]), .ch_r(pdm_ch[2*li+1])
+            pdm_line_sync u_pdm (
+                .clk(clk), .rst(rst),
+                .pdm_phase(pdm_phase), .pdm_d(pdm_d[li]),
+                .bit_r(pdm_bit[li]), .phase_r(pdm_line_phase[li])
             );
-        end
-    endgenerate
 
-    wire [N_CH*CIC_WIDTH-1:0] cic_out_flat;
-    wire [N_CH-1:0] cic_valid;
-
-    generate
-        for (c = 0; c < N_CH; c = c + 1) begin : g_cic
-            cic_decimator #(.STAGES(5), .R(64), .IN_WIDTH(1)) u_cic (
-                .clk(clk), .rst(rst), .data_in(pdm_ch[c]),
-                .data_out(cic_out_flat[CIC_WIDTH*c +: CIC_WIDTH]),
-                .valid(cic_valid[c])
+            cic_decimator_shared #(.STAGES(5), .R(64), .IN_WIDTH(1)) u_cic (
+                .clk(clk), .rst(rst),
+                .bit_in(pdm_bit[li]), .phase(pdm_line_phase[li]),
+                .data_out_l(cic_out_flat[CIC_WIDTH*(2*li)   +: CIC_WIDTH]),
+                .valid_l   (cic_valid[2*li]),
+                .data_out_r(cic_out_flat[CIC_WIDTH*(2*li+1) +: CIC_WIDTH]),
+                .valid_r   (cic_valid[2*li+1])
             );
         end
     endgenerate
@@ -89,6 +102,7 @@ module cluster_top (
     wire [N_CH*FIR_WIDTH-1:0] fir_out_flat;
     wire [N_CH-1:0] fir_valid;
 
+    genvar c;
     generate
         for (c = 0; c < N_CH; c = c + 1) begin : g_fir
             fir_compensator #(.COEFF_MEM_FILE("../vectors/fir_coeffs.mem")) u_fir (
@@ -103,13 +117,23 @@ module cluster_top (
         end
     endgenerate
 
-    // All 24 FIR engines are identical state machines triggered by the same
-    // simultaneous cic_valid pulses (one shared clk, no per-channel skew), so
-    // any single channel's valid_out can drive the framer's frame_start.
+    // Unlike the old fully-parallel design, cic_valid pulses are NOT all
+    // simultaneous any more: every line's L channel (even index) completes
+    // its window together on one clk cycle, and every line's R channel (odd
+    // index) completes together on the *next* clk cycle (they're
+    // time-multiplexed on cic_decimator_shared's one shared arithmetic path,
+    // driven by the same global `phase` toggle -- see that module). Each
+    // fir_compensator is an independent fixed-latency state machine, so that
+    // 1-cycle stagger carries straight through to fir_valid: all even
+    // (L) channels' valid_out pulse together, then all odd (R) channels'
+    // valid_out pulse together 1 cycle later. frame_start must key off an
+    // *odd* channel (the later group) so every channel's fir_out_flat data
+    // (held stable since its own valid_out, not just during the pulse) is
+    // already settled by the time spoke_framer samples it.
     wire [5:0] spoke_d_int;
     spoke_framer u_framer (
         .clk(clk), .rst(rst),
-        .frame_start(fir_valid[0]),
+        .frame_start(fir_valid[1]),
         .ch_data_flat(fir_out_flat),
         .spoke_d(spoke_d_int),
         .spoke_strobe(SPOKE_STROBE)

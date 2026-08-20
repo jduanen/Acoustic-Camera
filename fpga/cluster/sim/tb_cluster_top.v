@@ -70,38 +70,42 @@ module tb_cluster_top;
     endfunction
 
     integer li;
-    integer sample_idx;
 
     // Stimulus: interleave each line's L/R bits onto the shared wire, one new
-    // bit per half-cycle, matching pdm_line_demux.v's capture convention
-    // (negedge -> L, posedge -> R) -- see tb_pdm_line_demux.v for the same
-    // pattern on a single line.
+    // bit per PDM_CLK half-period, matching the real IM72D128 mics' own
+    // convention (falling edge -> L, rising edge -> R). Driven off PDM_CLK
+    // itself, NOT SPOKE_CLK -- since clk_reset.v now derives PDM_CLK = clk/2
+    // (SPOKE_CLK runs 2x the mics' actual rate so cic_decimator_shared can
+    // time-multiplex L/R -- see cluster_top.v's header comment), the mics
+    // only ever see PDM_CLK's edges, so that's what this testbench (standing
+    // in for the mics) must watch, exactly like real hardware would.
     //
-    // line_d is set to sample 0's L values immediately, then dut.rst
-    // (hierarchical probe -- testbench-only reference into cluster_top's
-    // internal reset, not part of its port list) is watched directly rather
-    // than guessing a fixed settle-cycle count. rst updates on a *posedge*
-    // (clk_reset.v's POR counter); pdm_line_demux's ch_l capture is
-    // *negedge*-triggered, a different edge type, so the very first negedge
-    // after rst's transition already sees the settled rst=0 -- no extra
-    // margin cycles needed (an earlier version of this held sample 0 for
-    // several extra negedges "for safety," which instead made the CIC
-    // accumulate several redundant repeats of sample 0 before ever reaching
-    // sample 1, corrupting its entire first 64-sample window).
-    initial begin
-        for (li = 0; li < N_LINES; li = li + 1) line_d[li] = l_bit(li, 0);
-        @(negedge dut.rst);
-        @(negedge SPOKE_CLK); // captures L[0] for real -- no extra margin
+    // PDM_CLK now free-runs from t=0, independent of reset (see clk_reset.v)
+    // -- exactly like the real mics, which don't know or care about the
+    // FPGA's internal reset state either. So this drives line_d reactively,
+    // keyed off PDM_CLK's own edges, for the *entire* run, not just starting
+    // after some observed reset-release margin: cur_l_idx/cur_r_idx stay
+    // pinned at 0 (repeatedly redriving sample 0's L/R values) for as long as
+    // dut.rst reads 1, and only start advancing once it reads 0 -- so
+    // whichever phase (L or R) happens to be first captured for real after
+    // reset releases (this depends on POR_CYCLES' parity relative to
+    // PDM_CLK's free-running phase, not fixed) is guaranteed to be sample 0,
+    // matching gen_pdm_stimulus.py's golden model. An earlier version of this
+    // assumed L is always first and pre-set line_d once before reset released
+    // instead of continuously -- on this design that assumption is wrong
+    // about half the time depending on POR_CYCLES' parity, and produced a
+    // single mismatched channel/phase sample right at reset release that the
+    // CIC's integrators then carried forward and amplified for the rest of
+    // the run (small in frame 0, badly diverged well before frame 19).
+    integer cur_l_idx = 0, cur_r_idx = 0;
 
-        for (sample_idx = 0; sample_idx < N_SAMPLES; sample_idx = sample_idx + 1) begin
-            for (li = 0; li < N_LINES; li = li + 1) line_d[li] = r_bit(li, sample_idx);
-            @(posedge SPOKE_CLK); // captures R[sample_idx]
-
-            if (sample_idx + 1 < N_SAMPLES) begin
-                for (li = 0; li < N_LINES; li = li + 1) line_d[li] = l_bit(li, sample_idx + 1);
-            end
-            @(negedge SPOKE_CLK); // captures L[sample_idx+1]
-        end
+    always @(negedge PDM_CLK) begin
+        for (li = 0; li < N_LINES; li = li + 1) line_d[li] <= l_bit(li, cur_l_idx);
+        if (!dut.rst && cur_l_idx + 1 < N_SAMPLES) cur_l_idx <= cur_l_idx + 1;
+    end
+    always @(posedge PDM_CLK) begin
+        for (li = 0; li < N_LINES; li = li + 1) line_d[li] <= r_bit(li, cur_r_idx);
+        if (!dut.rst && cur_r_idx + 1 < N_SAMPLES) cur_r_idx <= cur_r_idx + 1;
     end
 
     // Capture + deframe: wait for each SPOKE_STROBE, sample both DDR halves
