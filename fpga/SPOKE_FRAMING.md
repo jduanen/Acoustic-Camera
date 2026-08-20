@@ -1,6 +1,6 @@
 # Spoke bus framing protocol (v1)
 
-Defines how a cluster FPGA (Cmod S7) frames its 24 channels' decimated 48 kHz
+Defines how a cluster FPGA (Cmod A7-35T) frames its 24 channels' decimated 48 kHz
 PCM data onto the 6-wire spoke bus back to the hub FPGA (Cmod A7-35T). This
 did not exist anywhere before this pass -- `pcb/multi_fpga/SCHEMATIC_NOTES.md`
 and `PHASE4.md` both flagged the exact framing semantics as undesigned. It's

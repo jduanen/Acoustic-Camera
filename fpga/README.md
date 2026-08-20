@@ -1,14 +1,17 @@
 # fpga/
 
 Verilog for the multi-FPGA acoustic camera design (`pcb/multi_fpga/`). Currently covers only
-the **cluster FPGA** (Digilent Cmod S7, Xilinx Spartan-7 XC7S25) that sits on each of the 4
-arm boards — PDM capture from 24 local mics, CIC decimation, FIR compensation, and framing
-onto the spoke bus back to the hub board.
+the **cluster FPGA** (Digilent Cmod A7-35T, Xilinx Artix-7 XC7A35T -- moved from the
+originally-planned Cmod S7/XC7S25, which couldn't fit this design; see
+`fpga/cluster/xdc/cluster_top.xdc`'s header comment) that sits on each of the 4 arm boards --
+PDM capture from 24 local mics, CIC decimation, FIR compensation, and framing onto the spoke
+bus back to the hub board.
 
-**Scope of what's here today: simulation only.** No `.xdc` pin constraints, no synthesis, no
-bitstream, no hardware bring-up, and no hub-FPGA (Cmod A7-35T) gateware yet — see
-`PHASE4.md` and `pcb/multi_fpga/SCHEMATIC_NOTES.md` for the full system architecture this
-implements a piece of.
+`fpga/cluster/xdc/cluster_top.xdc` has real pin constraints and the design synthesizes,
+places, and routes cleanly (68% LUT utilization, timing closes with margin) -- still no
+bitstream/hardware bring-up yet, and no hub-FPGA gateware beyond `fpga/hub/rtl/reset_seq.v`
+-- see `PHASE4.md` and `pcb/multi_fpga/SCHEMATIC_NOTES.md` for the full system architecture
+this implements a piece of.
 
 ```
 cluster/

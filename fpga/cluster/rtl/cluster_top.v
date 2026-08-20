@@ -1,8 +1,9 @@
 `timescale 1ns / 1ps
 
-// Cluster FPGA top level (Digilent Cmod S7). Port names match
-// pcb/make_schematic_multi_fpga.py's schematic net names exactly -- do not
-// rename without updating the schematic generator too.
+// Cluster FPGA top level (Digilent Cmod A7-35T -- moved from the originally-
+// planned Cmod S7/XC7S25 partway through bring-up, see below). Port names
+// match pcb/make_schematic_multi_fpga.py's schematic net names exactly --
+// do not rename without updating the schematic generator too.
 //
 // Pipeline: SPOKE_CLK (now 6.144 MHz, 2x the mics' own PDM rate -- see
 // clk_reset.v) -> clk_reset (buffering, POR, PDM_CLK=clk/2 divider) ->
@@ -19,8 +20,17 @@
 // synthesis showed the parallel design needed 19,233 LUTs against the
 // XC7S25's 14,600 available; sharing the CIC's adder/subtractor logic
 // between each line's L/R pair (which already arrive time-interleaved on
-// the same physical PDM_Dxx wire) cuts that back to fit without adding a
-// PLL or changing any decimation math -- see cic_decimator_shared.v.
+// the same physical PDM_Dxx wire) cuts that back without adding a PLL or
+// changing any decimation math -- see cic_decimator_shared.v. Even with
+// that (plus fir_compensator.v's SRL-mapped delay line and
+// cic_decimator_shared.v's stage-0 width pruning), place_design's own
+// physical-synthesis pass -- not just opt_design's report_utilization,
+// which undersold the real cost -- still needed ~17,600-19,550 LUTs on the
+// XC7S25 due to control-set-driven packing overhead (103 unique control
+// sets), so the part itself moved to the XC7A35T (20,800 LUTs, same DIP-48
+// socket as the S7 -- see pcb/multi_fpga/Readme.txt), which places and
+// routes clean with ~30% margin. The CIC-sharing/SRL/pruning work stayed --
+// it's still a real, valid reduction, just not sufficient on its own.
 //
 // Channel numbering: physical line `li` (0..11) -> channels 2*li (L, SEL=GND,
 // falling-edge capture) and 2*li+1 (R, SEL=+1.8V, rising-edge capture) --
