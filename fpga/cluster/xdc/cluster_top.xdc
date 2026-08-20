@@ -12,8 +12,15 @@
 #
 # FPGA_RESET_N (PIO30/M13) and SPOKE_ALIVE (PIO31/J11) were already present
 # and are confirmed correct by this same cross-check.
+#
+# SPOKE_CLK/PDM_D08 were swapped (PIO16 <-> PIO29) so SPOKE_CLK lands on a
+# clock-capable pin (PIO16/P14, IO_L11P_T1_SRCC_14) -- PIO29/L13 is an
+# ordinary GPIO and failed Vivado's placer with a BUFG clock-routing rule
+# violation (rule_gclkio_bufg). PDM_D08 doesn't need to be clock-capable, so
+# it took PIO29 instead. Re-confirmed via the same kicad-cli netlist
+# cross-check after the schematic swap.
 
-set_property -dict { PACKAGE_PIN L13   IOSTANDARD LVCMOS33 } [get_ports { SPOKE_CLK }]; #IO_L7P_T1_D09_14 Sch=pio[29], schematic net SPOKE0_CLK
+set_property -dict { PACKAGE_PIN P14   IOSTANDARD LVCMOS33 } [get_ports { SPOKE_CLK }]; #IO_L11P_T1_SRCC_14 Sch=pio[16], schematic net SPOKE0_CLK
 create_clock -period 325.521 -name SPOKE_CLK [get_ports { SPOKE_CLK }]
 
 set_property -dict { PACKAGE_PIN M13   IOSTANDARD LVCMOS33 PULLTYPE PULLUP } [get_ports { FPGA_RESET_N }]; #IO_L8P_T1_D11_14 Sch=pio[30]
@@ -29,7 +36,7 @@ set_property -dict { PACKAGE_PIN P3    IOSTANDARD LVCMOS33 } [get_ports { PDM_D0
 set_property -dict { PACKAGE_PIN N3    IOSTANDARD LVCMOS33 } [get_ports { PDM_D05 }]; #IO_L21N_T3_DQS_34 Sch=pio[07], schematic net DATA_05
 set_property -dict { PACKAGE_PIN P1    IOSTANDARD LVCMOS33 } [get_ports { PDM_D06 }]; #IO_L22P_T3_34 Sch=pio[08], schematic net DATA_06
 set_property -dict { PACKAGE_PIN N1    IOSTANDARD LVCMOS33 } [get_ports { PDM_D07 }]; #IO_L22N_T3_34 Sch=pio[09], schematic net DATA_07
-set_property -dict { PACKAGE_PIN P14   IOSTANDARD LVCMOS33 } [get_ports { PDM_D08 }]; #IO_L11P_T1_SRCC_14 Sch=pio[16], schematic net DATA_08
+set_property -dict { PACKAGE_PIN L13   IOSTANDARD LVCMOS33 } [get_ports { PDM_D08 }]; #IO_L7P_T1_D09_14 Sch=pio[29], schematic net DATA_08
 set_property -dict { PACKAGE_PIN P15   IOSTANDARD LVCMOS33 } [get_ports { PDM_D09 }]; #IO_L11N_T1_SRCC_14 Sch=pio[17], schematic net DATA_09
 set_property -dict { PACKAGE_PIN N13   IOSTANDARD LVCMOS33 } [get_ports { PDM_D10 }]; #IO_L8N_T1_D12_14 Sch=pio[18], schematic net DATA_10
 set_property -dict { PACKAGE_PIN N15   IOSTANDARD LVCMOS33 } [get_ports { PDM_D11 }]; #IO_L10N_T1_D15_14 Sch=pio[19], schematic net DATA_11
