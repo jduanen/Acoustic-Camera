@@ -125,6 +125,21 @@ matching the same manual edit.
 
 ### One arm board design, fabricated 4x (not 4 distinct board files)
 
+**Update**: `arm_board.kicad_pcb` (referenced throughout this section) was
+itself later removed; the project went back to `cluster_00.kicad_pcb` for a
+while (4 hand-copied files), which then drifted apart, and has now settled
+on the same "one PCB, fabricated 4x" model this section describes but with
+**`cluster_00.kicad_pcb` as the golden file** instead of `arm_board.kicad_pcb`
+-- `cluster_01/02/03.kicad_pcb` are removed again. The 4 physical copies are
+now told apart by a `UNIT_ID` silkscreen text variable (see
+`cluster_00.kicad_pro`'s `text_variables` and the `${UNIT_ID}`
+`F.Silkscreen` text object on the board) resolved per-Gerber-export-run via
+`pcb/export_cluster_gerbers.py` (`kicad-cli --define-var UNIT_ID=0..3`),
+rather than by the physical-mounting-quadrant convention this section
+originally described. The schematic-side correspondence table below and the
+"no per-instance project pairing" reasoning still apply unchanged, just
+substitute `cluster_00.kicad_pcb` for `arm_board.kicad_pcb` throughout.
+
 `pcb/layout_multi_fpga.py` used to emit 4 separate files
 (`cluster_00..03.kicad_pcb`), each built at its own rotated angle. The user
 then hand-laid-out the arm board once (on `cluster_00`) and asked for that
