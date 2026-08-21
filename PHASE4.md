@@ -604,7 +604,7 @@ Split across the cluster and hub tiers in the primary Multi-FPGA design:
 | **Master clock generation** | 12.288 MHz TCXO → PLL → 3.072 MHz; forwarded to all 4 clusters over their spoke links |
 | **Spoke bus deframing** | Reassemble the 4× 24-channel streams into 96 channels total |
 | **Sample alignment** | All 96 PCM channels locked to the same 48 kHz word-select boundary |
-| **USB FIFO framing** | Assemble N frames × 96 channels; prepend sequence number + timestamp; send over synchronous FIFO to the FT232H bridge |
+| **USB FIFO framing** | Per-spoke tagged 76-byte records (sync + spoke_id + seq_num + 24 channels), sent independently over the synchronous FIFO to the FT232H bridge -- not a unified 96-channel frame; see `fpga/USB_FRAMING.md` |
 | **PPS input** (optional) | 1 Hz GPIO for absolute time-tagging; enables future multi-unit synchronization |
 
 > **Single-FPGA alternate**: one FPGA does the entire pipeline above end-to-end — PDM clock
@@ -648,7 +648,7 @@ Phase 4 is split into three parallel workstreams that merge at integration.
 | Sub-task | Description | Dependency |
 |---|---|---|
 | **Procure Cmod A7-35T** | Digilent ~$99; XC7A35T, 48-pin DIP + 1 Pmod; includes Vivado WebPACK license | None |
-| **Procure FT232H breakout** | ~$15 (e.g. Adafruit #2264); USB 2.0 Hi-Speed sync FIFO bridge to Pi 5 | None |
+| **Procure FT232H module** | FTDI UM232H (~$25); USB 2.0 Hi-Speed sync FIFO bridge to Pi 5 -- exposes `CLKOUT`, which the required synchronous 245 FIFO mode needs (the originally-planned Adafruit #2264 breakout doesn't) | None |
 | **Spoke + FT232H wiring** | All 4 spokes + FT232H bridge: point-to-point wiring on the DIP header, no Pmod cables (see "Why all-DIP, no Pmod", above) | Cmod A7-35T in hand |
 | **HDL development** | Clock generation/forwarding + spoke deframing/reassembly + USB FIFO framing; test on Cmod A7-35T | Cmod A7-35T in hand |
 

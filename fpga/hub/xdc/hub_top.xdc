@@ -1,9 +1,16 @@
 # Hub FPGA (Digilent Cmod A7-35T) pin constraints for hub_top.v.
 #
-# All ports hub_top.v currently declares are populated. Remaining gap: the
-# USB FIFO bridge I/O isn't in hub_top.v yet (fpga/README.md: "no hub-FPGA
-# gateware yet" for that part) -- A6 DIP pins 35-46 (USB_D0-7, USB_RXF_N/
-# TXE_N/RD_N/WR_N) stay unconstrained until then.
+# Remaining gap: hub_top.v's USB_CLKOUT/USB_D0-7/USB_WR_N/USB_TXE_N ports
+# (usb_framer.v -- see fpga/USB_FRAMING.md) stay unconstrained until A6's
+# footprint swap from the Adafruit FT232H breakout to an FTDI UM232H module
+# lands on pcb/multi_fpga/hub.kicad_sch (needed for CLKOUT/sync-mode
+# support -- see USB_FRAMING.md). They'll land within A6 DIP pins 35-46,
+# same as the old async design's USB_D0-7/RXF_N/TXE_N/RD_N/WR_N did -- this
+# design needs one fewer pin (11 vs. 12: no RD_N/RXF_N ports, see
+# usb_framer.v's header comment), so no spoke-bus pin needs to move.
+# USB_CLKOUT specifically must land on an MRCC/SRCC P-side pin (BUFG source)
+# -- pio[36]/W5 (IO_L12P_T1_MRCC_34), already within that same pin block,
+# satisfies this directly.
 #
 # Net -> Cmod A7 PIOnn / JAn assignments read directly off
 # pcb/multi_fpga/hub.kicad_sch's current wiring via `kicad-cli sch export

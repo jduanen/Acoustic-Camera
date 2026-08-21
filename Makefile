@@ -78,7 +78,7 @@ define XSIM_RUN_HUB_UNISIM
 	fi
 endef
 
-.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-all clean-sim golden-test
+.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -110,13 +110,16 @@ sim-reset-seq:
 sim-hub-deframer:
 	$(call XSIM_RUN_HUB,../rtl/spoke_deframer.v tb_spoke_deframer.v,tb_spoke_deframer)
 
+sim-usb-framer:
+	$(call XSIM_RUN_HUB,../rtl/usb_framer.v tb_usb_framer.v,tb_usb_framer)
+
 sim-hub-top:
-	$(call XSIM_RUN_HUB_UNISIM,../rtl/reset_seq.v ../rtl/spoke_deframer.v ../rtl/hub_top.v tb_hub_top.v,tb_hub_top)
+	$(call XSIM_RUN_HUB_UNISIM,../rtl/reset_seq.v ../rtl/spoke_deframer.v ../rtl/usb_framer.v ../rtl/hub_top.v tb_hub_top.v,tb_hub_top)
 
 golden-test:
-	python3 -m pytest fpga/cluster/golden -q
+	python3 -m pytest fpga/cluster/golden fpga/hub/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-hub-top
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

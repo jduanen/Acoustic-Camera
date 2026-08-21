@@ -16,16 +16,31 @@
 // output, mirroring how a real cluster board (clk_reset.v) receives it,
 // rather than assuming any particular phase relationship to TCXO_CLK.
 //
-// ch_data_flat/valid aren't top-level hub_top.v ports (nothing downstream
-// consumes them yet -- see hub_top.v's header) -- reached here via
+// ch_data_flat/valid aren't top-level hub_top.v ports -- reached here via
 // hierarchical reference into the DUT, simulation-only.
+//
+// USB side: drives USB_CLKOUT (independent 60MHz clock, genuinely
+// asynchronous to tcxo_clk -- no attempt made here to phase-lock them,
+// proving the CDC doesn't need it) and USB_TXE_N held low (FIFO always
+// ready), then checks the first spoke's full 76-byte record against
+// fpga/USB_FRAMING.md's format -- spoke0 is served first since all 4
+// spokes' valid pulses land at effectively the same time here and
+// usb_framer.v's arbiter starts at spoke0 after reset (see its own header
+// comment). Byte-level framing itself is already checked bit-exactly by
+// tb_usb_framer.v against usb_framer_golden.py; this only needs to prove
+// hub_top.v wires the 4 deframers into usb_framer.v correctly end-to-end.
 module tb_hub_top;
     localparam integer N_CH         = 24;
     localparam integer DATA_WIDTH   = 24;
     localparam integer FRAME_CYCLES = 64;
+    localparam integer RECORD_LEN   = 76;
 
     reg tcxo_clk = 0;
     always #(81.380/2) tcxo_clk = ~tcxo_clk; // 12.288 MHz, matches hub_top.xdc's create_clock
+
+    reg usb_clkout = 0;
+    always #(16.667/2) usb_clkout = ~usb_clkout; // 60 MHz, FT232H's CLKOUT
+    reg usb_txe_n = 1'b1;
 
     reg spoke0_alive = 0, spoke1_alive = 0, spoke2_alive = 0, spoke3_alive = 0;
 
@@ -43,6 +58,9 @@ module tb_hub_top;
     wire [5:0] spoke_d1; assign #1 spoke_d1 = spoke_clk ? rise1 : fall1;
     wire [5:0] spoke_d2; assign #1 spoke_d2 = spoke_clk ? rise2 : fall2;
     wire [5:0] spoke_d3; assign #1 spoke_d3 = spoke_clk ? rise3 : fall3;
+
+    wire [7:0] usb_d;
+    wire       usb_wr_n;
 
     hub_top dut (
         .TCXO_CLK(tcxo_clk),
@@ -62,8 +80,23 @@ module tb_hub_top;
         .SPOKE2_STROBE(strobe2),
         .SPOKE3_D0(spoke_d3[0]), .SPOKE3_D1(spoke_d3[1]), .SPOKE3_D2(spoke_d3[2]),
         .SPOKE3_D3(spoke_d3[3]), .SPOKE3_D4(spoke_d3[4]), .SPOKE3_D5(spoke_d3[5]),
-        .SPOKE3_STROBE(strobe3)
+        .SPOKE3_STROBE(strobe3),
+        .USB_CLKOUT(usb_clkout),
+        .USB_D0(usb_d[0]), .USB_D1(usb_d[1]), .USB_D2(usb_d[2]), .USB_D3(usb_d[3]),
+        .USB_D4(usb_d[4]), .USB_D5(usb_d[5]), .USB_D6(usb_d[6]), .USB_D7(usb_d[7]),
+        .USB_WR_N(usb_wr_n), .USB_TXE_N(usb_txe_n)
     );
+
+    // Captures one byte per active write cycle (usb_wr_n low), same convention as
+    // tb_usb_framer.v's own byte-capture block.
+    reg [7:0] usb_cap [0:RECORD_LEN-1];
+    integer   usb_cap_idx = 0;
+    always @(posedge usb_clkout) begin
+        if (!usb_wr_n) begin
+            if (usb_cap_idx < RECORD_LEN) usb_cap[usb_cap_idx] <= usb_d;
+            usb_cap_idx <= usb_cap_idx + 1;
+        end
+    end
 
     reg [DATA_WIDTH-1:0] mem_channels [0:6*N_CH-1];
     reg [15:0]            mem_expected [0:6*FRAME_CYCLES-1]; // {strobe,fall[5:0],rise[5:0]}
@@ -115,6 +148,7 @@ module tb_hub_top;
         // Bring all 4 spokes "alive" so reset_seq.v releases FPGA_RESET_N
         // and the sclk-domain reset (rst_sclk) clears -- deframers hold in
         // reset until then, matching real power-up sequencing.
+        usb_txe_n = 1'b0; // FIFO always ready
         repeat (8) @(posedge tcxo_clk);
         spoke0_alive = 1; spoke1_alive = 1; spoke2_alive = 1; spoke3_alive = 1;
 
@@ -170,8 +204,39 @@ module tb_hub_top;
             end
         end
 
+        // USB side: wait for spoke0's record (first served, see header comment) to fully
+        // drain, then check it against USB_FRAMING.md's format -- sync bytes, spoke_id=0,
+        // seq_num=0 (first-ever request), 24 channels' worth of MSB-first payload bytes
+        // matching SPOKE0_FRAME's own channel values. usb_cap[] only ever captures its
+        // first RECORD_LEN bytes (see the capture block above), so it still holds this
+        // first record's bytes even though, by this point in the test, all 4 spokes'
+        // records have likely already finished draining (this loop's own settle time
+        // dwarfs one record's ~1.3us serialization time) -- hence >= here, not ==: a
+        // transient-equality wait would already have been missed.
+        wait (usb_cap_idx >= RECORD_LEN);
+        @(posedge usb_clkout);
+        if (usb_cap[0] !== 8'hA5 || usb_cap[1] !== 8'h5A) begin
+            $display("FAIL: USB record sync bytes = %02h %02h, expected a5 5a", usb_cap[0], usb_cap[1]);
+            errors = errors + 1;
+        end
+        if (usb_cap[2] !== 8'd0) begin
+            $display("FAIL: USB record spoke_id = %0d, expected 0", usb_cap[2]);
+            errors = errors + 1;
+        end
+        if (usb_cap[3] !== 8'd0) begin
+            $display("FAIL: USB record seq_num = %0d, expected 0", usb_cap[3]);
+            errors = errors + 1;
+        end
+        for (c = 0; c < N_CH; c = c + 1) begin
+            if ({usb_cap[4+3*c], usb_cap[5+3*c], usb_cap[6+3*c]} !== mem_channels[SPOKE0_FRAME*N_CH + c]) begin
+                $display("FAIL: USB record ch %0d got %h expected %h", c,
+                         {usb_cap[4+3*c], usb_cap[5+3*c], usb_cap[6+3*c]}, mem_channels[SPOKE0_FRAME*N_CH + c]);
+                errors = errors + 1;
+            end
+        end
+
         if (errors == 0) begin
-            $display("PASS: tb_hub_top, 4 spokes x %0d channels all bit-exact, no cross-spoke mixups", N_CH);
+            $display("PASS: tb_hub_top, 4 spokes x %0d channels all bit-exact, no cross-spoke mixups, USB record end-to-end OK", N_CH);
             $finish;
         end else begin
             $display("FAIL: tb_hub_top, %0d errors", errors);
