@@ -7,20 +7,24 @@ Figure 3 (Module Dimensions). Run with the repo's venv (has cadquery):
 Coordinate system ("natural" landscape orientation, matching how Figure 3
 itself is drawn -- USB connector at the -X end, pin field centered on the
 origin so this model's origin lines up with the UM232H footprint's own
-origin (pin-field center) after a 90deg Z rotation -- see the "(model ...)"
-block in footprints.pretty/UM232H.kicad_mod):
+origin (pin-field center) after a Z rotation -- see the "(model ...)" block
+in footprints.pretty/UM232H.kicad_mod):
     X : along the board's length (44.5mm). Pin 1 is nearest the connector
         (-X), pin 14 is farthest (+X).
     Y : along the board's width (18.25mm). The two pin rows sit at
         Y=+/-7.62 (15.24mm row spacing), centered on the origin.
-    Z : up. Z=0 is the module's OWN pcb top surface (where its pins are
-        soldered into its own board) -- not the host board's surface. This
-        module stands on its own long pins, proud of whatever socket it
-        plugs into; Z=0 is just this part's local reference plane, same as
-        this repo's other 3-D models (ECS-TXO, Adafruit_FT232H) are built
-        around their own footprint origin rather than the host board's Z.
+    Z : up. Z=0 is the module's OWN pcb BOTTOM surface -- not the host
+        board's surface, and not this module's own top surface either (an
+        earlier version of this script used top=0; moved to bottom=0 on
+        request, since "how far the module's board floats above the host
+        board" is the one number the footprint actually needs to place via
+        its (offset ...), and bottom-of-board is the natural handle for
+        that). PIN_TOTAL_DROP-long pins hang down from the board's top
+        surface (Z=BOARD_T) through Z=0 and on below it; the connector and
+        board body sit above Z=BOARD_T.
 
-Dimensions used, all taken directly from Figure 3 (mm):
+Dimensions used, all taken directly from Figure 3 (mm), except PIN_TOTAL_DROP
+(see below):
     44.5 x 18.25 x 1.6    overall board L x W x thickness
     15.24 / 2.54          pin row spacing / pin pitch
     10.0 / 43.0           first/last pin X, measured from the board edge
@@ -28,20 +32,15 @@ Dimensions used, all taken directly from Figure 3 (mm):
     13.0 / 5.3            connector Y-span / bare-board gap on the far side
     4.1                   connector height above the pcb top surface
     0.50                  pin diameter
-    14.9                  board-top-surface to pin-tip -- interpreted as the
-                           single unambiguous total drop given in the side
-                           view (the 4.1/5.8/5.0 front-view sub-breakdown is
-                           genuinely ambiguous from the figure's dashed
-                           reference lines and is NOT used for the total --
-                           see the "Description" property in
-                           footprints.pretty/UM232H.kicad_mod for the full
-                           list of interpretive choices made here).
 
-Everything not explicitly dimensioned (connector overhang past the board
-edge, the pin-housing collar thickness, the extra unlabeled GND through-hole
-and resistor-shaped silkscreen icon near the bottom of the real board) is a
-documented simplification -- this is a representative mechanical-fit model,
-not a vendor-exact reproduction.
+PIN_TOTAL_DROP (board-top-surface to pin-tip) is set to 8.0mm here at the
+user's explicit request -- it does NOT come from Figure 3's 14.9mm dimension
+(this model originally used that figure directly; see git history for that
+version). Everything not explicitly dimensioned (connector overhang past the
+board edge, the pin-housing collar thickness, the extra unlabeled GND
+through-hole and resistor-shaped silkscreen icon near the bottom of the real
+board) is a documented simplification -- this is a representative
+mechanical-fit model, not a vendor-exact reproduction.
 """
 import cadquery as cq
 
@@ -85,12 +84,19 @@ conn_y0 = board_y0
 conn_x0 = board_x0 - CONN_OVERHANG
 
 # ---- pins below the board -----------------------------------------------
-TOTAL_DROP = 14.9      # board top surface -> pin tip (see docstring)
-HOUSING_T = 1.27       # assumed pin-collar thickness (not separately
-                       # dimensioned in the datasheet)
-pin_bottom_z = -TOTAL_DROP
+PIN_TOTAL_DROP = 8.0   # board top surface -> pin tip -- user-specified
+                       # override, see docstring (was 14.9, from Fig 3)
+# (an earlier version of this script also modeled a 1.27mm-thick pin-housing
+# collar directly under the board -- removed: it wasn't dimensioned in the
+# datasheet, wasn't asked for, and ate most of the requested board-to-host
+# clearance in renders, making the (correct) Z offset look wrong at a
+# glance. Pins now run bare from the board's top surface straight to the tip.)
 
-# ---- build ----------------------------------------------------------------
+# ---- build --------------------------------------------------------------
+# Built first in the old "board top surface = Z 0" frame (all the relative
+# geometry below -- board/connector/pin math -- is unchanged from that
+# convention and already verified), then the whole assembly is shifted by
+# +BOARD_T at the end so Z=0 becomes the board's BOTTOM surface instead.
 board = (
     cq.Workplane("XY")
     .box(BOARD_L, BOARD_W, BOARD_T, centered=(False, False, False))
@@ -103,17 +109,6 @@ connector = (
     .translate((conn_x0, conn_y0, 0))
 )
 
-# housing sized to the pin field itself (with a small margin) -- must stay
-# within the board's own footprint, not an arbitrary fraction of board length
-housing_margin = 1.5
-housing_x0 = x0 - housing_margin
-housing_x1 = (x0 + (N_PINS - 1) * PIN_PITCH) + housing_margin
-housing = (
-    cq.Workplane("XY")
-    .box(housing_x1 - housing_x0, ROW_SPACING + 3.0, HOUSING_T, centered=(False, False, False))
-    .translate((housing_x0, -(ROW_SPACING + 3.0) / 2, -BOARD_T - HOUSING_T))
-)
-
 pins = cq.Workplane("XY")
 for row in (-row_y, row_y):
     for i in range(N_PINS):
@@ -122,13 +117,18 @@ for row in (-row_y, row_y):
             cq.Workplane("XY")
             .moveTo(px, row)
             .circle(PIN_DIA / 2)
-            .extrude(-TOTAL_DROP)
+            .extrude(-PIN_TOTAL_DROP)
         )
+
+# shift the whole assembly so Z=0 becomes the board's BOTTOM surface
+Z_SHIFT = BOARD_T
+board = board.translate((0, 0, Z_SHIFT))
+connector = connector.translate((0, 0, Z_SHIFT))
+pins = pins.translate((0, 0, Z_SHIFT))
 
 assy = cq.Assembly()
 assy.add(board, name="pcb", color=cq.Color(0.09, 0.35, 0.18, 1.0))
 assy.add(connector, name="usb_connector", color=cq.Color(0.75, 0.75, 0.78, 1.0))
-assy.add(housing, name="pin_housing", color=cq.Color(0.05, 0.05, 0.05, 1.0))
 assy.add(pins, name="pins", color=cq.Color(0.85, 0.68, 0.25, 1.0))
 
 out_dir = "/home/jdn/Code/Acoustic-Camera/lib/UM232H"
@@ -136,4 +136,4 @@ cq.exporters.assembly.exportAssembly(assy, f"{out_dir}/UM232H.step")
 print(f"wrote {out_dir}/UM232H.step")
 print("board X", board_x0, board_x1, " Y", board_y0, board_y1)
 print("pin field X", x0, x0 + (N_PINS - 1) * PIN_PITCH, " rows Y", -row_y, row_y)
-print("pin tip Z", pin_bottom_z)
+print("board bottom Z 0, board top Z", Z_SHIFT, " pin tip Z", Z_SHIFT - PIN_TOTAL_DROP)
