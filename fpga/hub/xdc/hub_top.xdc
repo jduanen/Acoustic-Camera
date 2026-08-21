@@ -1,16 +1,21 @@
 # Hub FPGA (Digilent Cmod A7-35T) pin constraints for hub_top.v.
 #
-# Remaining gap: hub_top.v's USB_CLKOUT/USB_D0-7/USB_WR_N/USB_TXE_N ports
-# (usb_framer.v -- see fpga/USB_FRAMING.md) stay unconstrained until A6's
-# footprint swap from the Adafruit FT232H breakout to an FTDI UM232H module
-# lands on pcb/multi_fpga/hub.kicad_sch (needed for CLKOUT/sync-mode
-# support -- see USB_FRAMING.md). They'll land within A6 DIP pins 35-46,
-# same as the old async design's USB_D0-7/RXF_N/TXE_N/RD_N/WR_N did -- this
-# design needs one fewer pin (11 vs. 12: no RD_N/RXF_N ports, see
-# usb_framer.v's header comment), so no spoke-bus pin needs to move.
-# USB_CLKOUT specifically must land on an MRCC/SRCC P-side pin (BUFG source)
-# -- pio[36]/W5 (IO_L12P_T1_MRCC_34), already within that same pin block,
-# satisfies this directly.
+# All ports hub_top.v currently declares are populated, including the USB
+# FIFO bridge (usb_framer.v -- see fpga/USB_FRAMING.md) to the FTDI UM232H
+# module (A5). USB_D0-7/USB_WR_N/USB_TXE_N land on A6 DIP pins 35-44, same
+# range the old (removed) async Adafruit FT232H design used -- this design
+# needs one fewer pin (11 vs. 12: no RD_N/RXF_N ports, see usb_framer.v's
+# header comment for why), so no spoke-bus pin needed to move.
+#
+# USB_CLKOUT specifically had to land on an MRCC/SRCC P-side pin (it feeds a
+# BUFG in hub_top.v) -- pio[45]/U7 (IO_L19P_T3_34, where the schematic
+# originally routed it) is NOT clock-capable and fails Vivado's placer with
+# a hard rule_gclkio_bufg error ("Poor placement for routing between an IO
+# pin and BUFG" / "IO Clock Placer failed"), confirmed by an actual
+# synth+place run before the schematic was corrected -- same class of issue
+# as the earlier SPOKE_CLK/PDM_D08 pin swap. Moved to pio[46]/W7
+# (IO_L13P_T2_MRCC_34, P-side MRCC), which was unused and satisfies the
+# requirement directly.
 #
 # Net -> Cmod A7 PIOnn / JAn assignments read directly off
 # pcb/multi_fpga/hub.kicad_sch's current wiring via `kicad-cli sch export
@@ -143,3 +148,54 @@ set_false_path -from [get_ports { \
     SPOKE2_D0 SPOKE2_D1 SPOKE2_D2 SPOKE2_D3 SPOKE2_D4 SPOKE2_D5 SPOKE2_STROBE \
     SPOKE3_D0 SPOKE3_D1 SPOKE3_D2 SPOKE3_D3 SPOKE3_D4 SPOKE3_D5 SPOKE3_STROBE \
 }]
+
+# USB FIFO bridge (A5, FTDI UM232H) -- see USB_FRAMING.md. Net -> DIP pin
+# read off hub.kicad_sch the same way as every pin above; USB_CLKOUT's pin
+# choice is explained in this file's header comment.
+set_property -dict { PACKAGE_PIN W7    IOSTANDARD LVCMOS33 } [get_ports { USB_CLKOUT }]; #IO_L13P_T2_MRCC_34 Sch=pio[46]
+set_property -dict { PACKAGE_PIN V3    IOSTANDARD LVCMOS33 } [get_ports { USB_D0 }]; #IO_L6P_T0_34 Sch=pio[35]
+set_property -dict { PACKAGE_PIN W5    IOSTANDARD LVCMOS33 } [get_ports { USB_D1 }]; #IO_L12P_T1_MRCC_34 Sch=pio[36]
+set_property -dict { PACKAGE_PIN V4    IOSTANDARD LVCMOS33 } [get_ports { USB_D2 }]; #IO_L11N_T1_SRCC_34 Sch=pio[37]
+set_property -dict { PACKAGE_PIN U4    IOSTANDARD LVCMOS33 } [get_ports { USB_D3 }]; #IO_L11P_T1_SRCC_34 Sch=pio[38]
+set_property -dict { PACKAGE_PIN V5    IOSTANDARD LVCMOS33 } [get_ports { USB_D4 }]; #IO_L16N_T2_34 Sch=pio[39]
+set_property -dict { PACKAGE_PIN W4    IOSTANDARD LVCMOS33 } [get_ports { USB_D5 }]; #IO_L12N_T1_MRCC_34 Sch=pio[40]
+set_property -dict { PACKAGE_PIN U5    IOSTANDARD LVCMOS33 } [get_ports { USB_D6 }]; #IO_L16P_T2_34 Sch=pio[41]
+set_property -dict { PACKAGE_PIN U2    IOSTANDARD LVCMOS33 } [get_ports { USB_D7 }]; #IO_L9N_T1_DQS_34 Sch=pio[42]
+set_property -dict { PACKAGE_PIN W6    IOSTANDARD LVCMOS33 } [get_ports { USB_WR_N }]; #IO_L13N_T2_MRCC_34 Sch=pio[43]
+set_property -dict { PACKAGE_PIN U3    IOSTANDARD LVCMOS33 } [get_ports { USB_TXE_N }]; #IO_L9P_T1_DQS_34 Sch=pio[44]
+
+# USB_CLKOUT: a real, independent clock (FT232H's own 60MHz oscillator, not
+# derived from TCXO_CLK) -- create_clock, not a generated clock.
+create_clock -period 16.667 -name usb_clk_pin [get_ports { USB_CLKOUT }]
+
+# usb_clk has no fixed phase relationship to clk/sclk (genuinely
+# asynchronous, unlike sclk which is generated from clk) -- first
+# fabric-internal async clock-domain crossing in this project's XDC, so the
+# constraint has to name the clock groups directly rather than a port (see
+# USB_FRAMING.md's "Clock domain crossing" section for the CDC design this
+# covers: usb_framer.v's per-spoke toggle+2FF-sync).
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks TCXO_CLK] \
+    -group [get_clocks usb_clk_pin]
+
+# ASYNC_REG on both stages of every toggle-bit synchronizer usb_framer.v
+# uses to cross spokeN_valid into the usb_clk domain, plus the rst_usb
+# synchronizer hub_top.v generates locally -- report_methodology's TIMING-10
+# flags CDC synchronizers missing this property; it's a placement hint
+# (keep the 2 FFs physically adjacent for minimum metastability MTBF), not a
+# functional requirement, but there's no reason not to have it.
+set_property ASYNC_REG true [get_cells -hier -filter { \
+    NAME =~ "*/tgl?_meta_reg" || NAME =~ "*/tgl?_sync_reg" || \
+    NAME =~ "*rst_usb_meta_reg" || NAME =~ "*rst_usb_reg" \
+}]
+
+# USB_D0-7/USB_WR_N/USB_TXE_N: same reasoning as SPOKE_CLK/SPOKE_D* above --
+# genuinely untimed by design (no real board-trace numbers to constrain
+# against yet), and the FT245 sync FIFO protocol's own timing is already
+# covered by usb_clk_pin/usb_framer.v treating usb_txe_n as an ordinary
+# same-domain synchronous input and driving usb_d/usb_wr_n as ordinary
+# same-domain registered outputs -- ISE/Vivado just needs telling there's no
+# separate board-trace budget to check here, same class of gap TIMING-18
+# flags for SPOKE_CLK.
+set_false_path -to [get_ports { USB_D0 USB_D1 USB_D2 USB_D3 USB_D4 USB_D5 USB_D6 USB_D7 USB_WR_N }]
+set_false_path -from [get_ports { USB_TXE_N }]

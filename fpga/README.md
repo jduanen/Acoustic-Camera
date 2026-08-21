@@ -13,12 +13,12 @@ bitstream/hardware bring-up yet.
 
 The **hub FPGA** (also a Cmod A7-35T) covers power-up reset sequencing (`reset_seq.v`),
 `SPOKE_CLK` generation, per-spoke deframing (`spoke_deframer.v` x4, one per spoke), and USB
-FIFO framing to the Pi 5 (`usb_framer.v`) over the FT232H bridge's synchronous 245 FIFO
-interface -- all wired together in `hub_top.v`. Bit-exact in simulation (`make sim-hub-top`); full place-and-route + `hub_top.xdc`'s USB pin
-constraints await A6's footprint swap from the Adafruit FT232H breakout (async-only wiring,
-can't carry the required throughput) to an FTDI UM232H module, which exposes the `CLKOUT`
-pin synchronous mode needs. Cross-spoke sample-alignment/cable-skew calibration is the one
-remaining piece of scope, still not attempted anywhere in this project.
+FIFO framing to the Pi 5 (`usb_framer.v`) over the FT232H bridge's (an FTDI UM232H module)
+synchronous 245 FIFO interface -- all wired together in `hub_top.v`. Bit-exact in simulation
+(`make sim-hub-top`) and synthesizes, places, and routes cleanly (9.8% LUT / 18.4% register
+utilization, timing closes with margin, `report_methodology` clean). Cross-spoke
+sample-alignment/cable-skew calibration is the one remaining piece of scope, still not
+attempted anywhere in this project.
 
 See `PHASE4.md` and `pcb/multi_fpga/SCHEMATIC_NOTES.md` for the full system architecture this
 implements a piece of, `fpga/SPOKE_FRAMING.md` for the spoke-bus protocol both sides
