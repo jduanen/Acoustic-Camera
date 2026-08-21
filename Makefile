@@ -64,6 +64,20 @@ define XSIM_RUN_HUB
 	fi
 endef
 
+# Same as XSIM_RUN_HUB, but also links glbl.v + unisims_ver -- needed once
+# hub_top.v's own IBUF/BUFG/OBUF (mirrors clk_reset.v's usage) are pulled in.
+define XSIM_RUN_HUB_UNISIM
+	source $(VIVADO_SETTINGS) >/dev/null
+	cd $(HUB_SIM)
+	xvlog --work work $(1) $(GLBL_V)
+	xelab work.$(2) work.glbl -s $(2)_sim -L unisims_ver
+	xsim $(2)_sim -R | tee $(2).run.log
+	if ! grep -q '^PASS:' $(2).run.log; then
+		echo "*** $(2) did not report PASS -- treating as failed ***"
+		exit 1
+	fi
+endef
+
 .PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-all clean-sim golden-test
 
 sim-pdm:
@@ -93,10 +107,16 @@ sim-top:
 sim-reset-seq:
 	$(call XSIM_RUN_HUB,../rtl/reset_seq.v tb_reset_seq.v,tb_reset_seq)
 
+sim-hub-deframer:
+	$(call XSIM_RUN_HUB,../rtl/spoke_deframer.v tb_spoke_deframer.v,tb_spoke_deframer)
+
+sim-hub-top:
+	$(call XSIM_RUN_HUB_UNISIM,../rtl/reset_seq.v ../rtl/spoke_deframer.v ../rtl/hub_top.v tb_hub_top.v,tb_hub_top)
+
 golden-test:
 	python3 -m pytest fpga/cluster/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-hub-top
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

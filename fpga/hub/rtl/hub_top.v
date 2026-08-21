@@ -1,31 +1,120 @@
 `timescale 1ns / 1ps
 
-// Hub FPGA (Cmod A7-35T) top level. Currently implements only the power-up
-// reset-sequencing handshake + RGB LED status (see reset_seq.v) -- the rest
-// of the hub's responsibilities (spoke deframing, USB FIFO bridge -- see
-// fpga/README.md) are future additions to this same top module.
+// Hub FPGA (Cmod A7-35T) top level. Implements the power-up reset-sequencing
+// handshake + RGB LED status (reset_seq.v), SPOKE_CLK generation, and
+// per-spoke deframing (spoke_deframer.v x4) -- the USB FIFO bridge to the
+// Pi 5 (see fpga/README.md) is still future work; the 4 deframers' outputs
+// are internal-only for now, nothing downstream consumes them yet.
 //
 // Port names match pcb/multi_fpga/hub.kicad_sch's global-label net names
-// exactly (TCXO_CLK, FPGA_RESET_N, SPOKEn_ALIVE), same convention as
-// fpga/cluster/rtl/cluster_top.v -- do not rename without updating the
-// schematic. led0_r/g/b have no schematic net (Cmod A7's on-board RGB LED
-// LD0 is wired directly to dedicated FPGA pins inside the module, not
-// brought out through any connector), so they follow Digilent's own
-// out-of-box-demo naming instead (see XilinxProjects/s7_hw/.../top.v).
+// exactly (TCXO_CLK, FPGA_RESET_N, SPOKEn_ALIVE, SPOKE_CLK, SPOKEn_D0-5,
+// SPOKEn_STROBE), same convention as fpga/cluster/rtl/cluster_top.v -- do
+// not rename without updating the schematic. led0_r/g/b have no schematic
+// net (Cmod A7's on-board RGB LED LD0 is wired directly to dedicated FPGA
+// pins inside the module, not brought out through any connector), so they
+// follow Digilent's own out-of-box-demo naming instead (see
+// XilinxProjects/s7_hw/.../top.v).
+//
+// SPOKE_D<n> <-> spoke_deframer's spoke_d[5:0] bit mapping matches
+// cluster_top.v's own convention (SPOKE_FRAMING.md doesn't specify a bit
+// order itself): SPOKE_D0 = bit 0 (LSB) .. SPOKE_D5 = bit 5 (MSB).
 module hub_top (
     input  wire TCXO_CLK,       // 12.288 MHz HCMOS TCXO (Y1)
     output wire FPGA_RESET_N,   // -> all 4 SpokeBus connectors' pin 11
     input  wire SPOKE0_ALIVE, SPOKE1_ALIVE, SPOKE2_ALIVE, SPOKE3_ALIVE,
-    output wire led0_r, led0_g, led0_b // on-board RGB LED (LD0)
+    output wire led0_r, led0_g, led0_b, // on-board RGB LED (LD0)
+
+    // SPOKE_CLK: one shared FPGA pin, fanned out to all 4 SpokeBus
+    // connectors on the PCB copper -- not 4 separate pins. See
+    // SPOKE_FRAMING.md and PHASE4.md's pin-budget note (A6 DIP pins 15/16
+    // are dedicated XADC analog inputs, not usable as GPIO, which is what
+    // forced this sharing).
+    output wire SPOKE_CLK,
+    input  wire SPOKE0_D0, SPOKE0_D1, SPOKE0_D2, SPOKE0_D3, SPOKE0_D4, SPOKE0_D5, SPOKE0_STROBE,
+    input  wire SPOKE1_D0, SPOKE1_D1, SPOKE1_D2, SPOKE1_D3, SPOKE1_D4, SPOKE1_D5, SPOKE1_STROBE,
+    input  wire SPOKE2_D0, SPOKE2_D1, SPOKE2_D2, SPOKE2_D3, SPOKE2_D4, SPOKE2_D5, SPOKE2_STROBE,
+    input  wire SPOKE3_D0, SPOKE3_D1, SPOKE3_D2, SPOKE3_D3, SPOKE3_D4, SPOKE3_D5, SPOKE3_STROBE
 );
     wire clk_ibuf, clk;
     IBUF ibuf_inst (.I(TCXO_CLK), .O(clk_ibuf));
     BUFG bufg_inst (.I(clk_ibuf), .O(clk));
 
+    wire spoke_reset_n;
     reset_seq u_reset_seq (
         .clk(clk),
         .spoke_alive_i({SPOKE3_ALIVE, SPOKE2_ALIVE, SPOKE1_ALIVE, SPOKE0_ALIVE}),
-        .spoke_reset_n(FPGA_RESET_N),
+        .spoke_reset_n(spoke_reset_n),
         .led_r_n(led0_r), .led_g_n(led0_g), .led_b_n(led0_b)
+    );
+    assign FPGA_RESET_N = spoke_reset_n;
+
+    // SPOKE_CLK generation: clk/2 = 6.144 MHz -- plain divide-by-2 toggle FF,
+    // explicitly not a PLL/MMCM, matching the cluster's own clk_reset.v and
+    // the project's "no PLL, single shared clock domain" architecture.
+    // Ungated by rst, same reasoning as clk_reset.v's pdm_clk_r: this is the
+    // actual clock every cluster board synchronizes to, so its phase after
+    // reset release can't be allowed to depend on how long POR happened to
+    // hold.
+    reg sclk_r = 1'b0;
+    always @(posedge clk) sclk_r <= ~sclk_r;
+
+    // BUFG'd copy also clocks the 4 spoke_deframer instances below -- they
+    // capture the returning spoke_d/spoke_strobe signals on this same
+    // divided clock rather than any recovered per-spoke clock (no PLL, see
+    // above; SPOKE_FRAMING.md's false-path treatment of the data/strobe
+    // inputs is what covers the resulting lack of real setup/hold margin
+    // numbers on the round trip).
+    wire sclk;
+    BUFG bufg_sclk (.I(sclk_r), .O(sclk));
+    OBUF obuf_sclk (.I(sclk_r), .O(SPOKE_CLK));
+
+    // Cross spoke_reset_n (registered on `clk`) into the sclk domain -- same
+    // 2-FF synchronizer pattern clk_reset.v uses for FPGA_RESET_N on the
+    // cluster side (different clock domain despite common TCXO ancestry, for
+    // the same reason: arbitrary skew through independent BUFG/toggle-FF
+    // pipelines). Deframers stay held in reset until the hub's own
+    // reset_seq.v reaches S_RUNNING (all spokes confirmed alive) -- spoke_d/
+    // spoke_strobe aren't meaningful before then anyway.
+    reg rst_meta = 1'b1, rst_sclk = 1'b1;
+    always @(posedge sclk) begin
+        rst_meta <= ~spoke_reset_n;
+        rst_sclk <= rst_meta;
+    end
+
+    wire [24*24-1:0] spoke0_ch_data_flat, spoke1_ch_data_flat, spoke2_ch_data_flat, spoke3_ch_data_flat;
+    wire spoke0_valid, spoke1_valid, spoke2_valid, spoke3_valid;
+
+    // dont_touch: ch_data_flat/valid have no consumer yet (see header
+    // comment), so without this Vivado's synthesis sweeps the whole
+    // spoke_deframer instance away as dead logic -- taking its
+    // SPOKE_D*/STROBE input ports/pins with it. Remove once the USB FIFO
+    // bridge actually reads these outputs.
+    (* dont_touch = "true" *)
+    spoke_deframer u_deframer0 (
+        .clk(sclk), .rst(rst_sclk),
+        .spoke_d({SPOKE0_D5, SPOKE0_D4, SPOKE0_D3, SPOKE0_D2, SPOKE0_D1, SPOKE0_D0}),
+        .spoke_strobe(SPOKE0_STROBE),
+        .ch_data_flat(spoke0_ch_data_flat), .valid(spoke0_valid)
+    );
+    (* dont_touch = "true" *)
+    spoke_deframer u_deframer1 (
+        .clk(sclk), .rst(rst_sclk),
+        .spoke_d({SPOKE1_D5, SPOKE1_D4, SPOKE1_D3, SPOKE1_D2, SPOKE1_D1, SPOKE1_D0}),
+        .spoke_strobe(SPOKE1_STROBE),
+        .ch_data_flat(spoke1_ch_data_flat), .valid(spoke1_valid)
+    );
+    (* dont_touch = "true" *)
+    spoke_deframer u_deframer2 (
+        .clk(sclk), .rst(rst_sclk),
+        .spoke_d({SPOKE2_D5, SPOKE2_D4, SPOKE2_D3, SPOKE2_D2, SPOKE2_D1, SPOKE2_D0}),
+        .spoke_strobe(SPOKE2_STROBE),
+        .ch_data_flat(spoke2_ch_data_flat), .valid(spoke2_valid)
+    );
+    (* dont_touch = "true" *)
+    spoke_deframer u_deframer3 (
+        .clk(sclk), .rst(rst_sclk),
+        .spoke_d({SPOKE3_D5, SPOKE3_D4, SPOKE3_D3, SPOKE3_D2, SPOKE3_D1, SPOKE3_D0}),
+        .spoke_strobe(SPOKE3_STROBE),
+        .ch_data_flat(spoke3_ch_data_flat), .valid(spoke3_valid)
     );
 endmodule
