@@ -353,9 +353,9 @@ source — see "ERC: zero errors").
 - **+1.8V (mic array)**: one LDO per arm board, `VR1` (MCP1700T-1802E/TT,
   SOT-23, 250mA — plenty for ~31mA/board at 24 mics × ~1.3mA typical per
   the datasheet), fed from that board's own `+5V` (via `J2`), output on
-  `C{idx}_1V8` — a per-cluster-scoped net (via `make_arm()`'s `vdd_label`
+  `C{idx}_3V3` — a per-cluster-scoped net (via `make_arm()`'s `vdd_label`
   parameter in `pcb/make_schematic.py`), not the single-FPGA design's
-  shared `+1V8` power symbol, since 4 independent LDOs can't share one
+  shared `+3V3` power symbol, since 4 independent LDOs can't share one
   global net. Bypass caps `C25`(in)/`C26`(out), 1uF ceramic per the
   datasheet's typical application circuit.
 - **+3.3V (hub's FT232H + TCXO)**: one LDO on the hub, `VR5`
@@ -442,7 +442,7 @@ were fixed at the root rather than documented as accepted:
   on-schematic source, so ERC has no driver for them. Fixed with
   `power:PWR_FLAG` symbols (the standard KiCad idiom for this): one pair
   each for GND/+5V in `hub.kicad_sch` — see `_pwr_flag_pair()` in
-  `pcb/make_schematic_multi_fpga.py`. `+3V3`/`+1V8` (`C{idx}_1V8`) used to
+  `pcb/make_schematic_multi_fpga.py`. `+3V3` (`C{idx}_3V3`) used to
   need the same treatment, but now that `VR1`/`VR5` (the per-board LDOs)
   drive them with a real output pin, ERC is satisfied naturally — no flag
   needed, and adding one would be redundant.
