@@ -3,7 +3,7 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "FTDI UM232H USB Hi-Speed FT232H dev module -- 28-pin (2x14, 0.6in/15.24mm row spacing, 2.54mm pitch) THT DIP-style module, plugs into a standard 0.6in 28-pin DIP socket. Geometry derived directly from DS_UM232H.pdf Figure 3 (Module Dimensions): pin field is 33.02mm (13 x 2.54mm) long, starting 10.0mm from the USB-connector end of the 44.5mm-long, 18.25mm-wide board -- pin1 of each row sits at Y=-16.51 (10.0mm in from the top/USB-connector edge at Y=-26.51), pin14 at Y=+16.51 (1.48mm shy of the far edge at Y=+17.99). J2 is the left row (x=-7.62), J1 is the right row (x=+7.62), matching the module's own silkscreened orientation in Figure 2 (USB connector at top, J2 left/J1 right). Pad numbers are the datasheet's own J1-n/J2-n designators -- must match the UM232H symbol's pin numbers exactly. Drill/pad sized generously (1.0mm/1.8mm) for the module's 0.5mm round pins in a socket mount. Decorative/mechanical details shown in Fig 2/3 but not part of the J1/J2 signal interface (the extra unlabeled GND through-hole and crystal-shaped silkscreen icon near the bottom of the real board) are intentionally omitted.")
+	(descr "FTDI UM232H USB Hi-Speed FT232H dev module -- 28-pin (2x14, 0.6in/15.24mm row spacing, 2.54mm pitch) THT DIP-style module, plugs into a standard 0.6in 28-pin DIP socket. Geometry derived directly from DS_UM232H.pdf Figure 3 (Module Dimensions): pin field is 33.02mm (13 x 2.54mm) long, starting 10.0mm from the USB-connector end of the 44.5mm-long, 18.25mm-wide board -- pin1 of each row sits at Y=-16.51 (10.0mm in from the top/USB-connector edge at Y=-26.51), pin14 at Y=+16.51 (1.48mm shy of the far edge at Y=+17.99). J2 is the left row (x=-7.62), J1 is the right row (x=+7.62), matching the module's own silkscreened orientation in Figure 2 (USB connector at top, J2 left/J1 right). Pad numbers are the datasheet's own J1-n/J2-n designators -- must match the UM232H symbol's pin numbers exactly. Drill/pad sized generously (1.0mm/1.8mm) for the module's 0.5mm round pins in a socket mount. Decorative/mechanical details shown in Fig 2/3 but not part of the J1/J2 signal interface (the extra unlabeled GND through-hole and crystal-shaped silkscreen icon near the bottom of the real board) are intentionally omitted. 3D model is lib/UM232H/UM232H.step, procedurally generated from the same Figure 3 dimensions by lib/UM232H/generate_step.py (not a vendor-supplied file -- see that script's docstring for every interpretive choice made, e.g. the 14.9mm board-to-pin-tip total and the assumed 1.5mm connector overhang). The model is built in its own landscape orientation with its origin at the pin-field center and its own pcb top surface at Z=0; aligning it to this footprint (portrait, also pin-field-centered) is (rotate (xyz 0 0 -90)) plus (offset (xyz 0 0 14.9)). Both the rotation sign and the Z offset were empirically verified (not just derived on paper) by loading this exact footprint via pcbnew's Python API onto a throwaway board and running `kicad-cli pcb export step` on it: all 28 pin solids land exactly on their pads (X=+/-7.62, Y stepping -16.51..+16.51) and the pin tips sit exactly at the host board's top copper surface for both a 1.6mm and a 0.8mm test stackup (i.e. the +14.9 offset is correct regardless of host board thickness, since KiCad's footprint Z=0 reference is the top-copper plane, not the absolute board Z=0) -- an initial (rotate (xyz 0 0 90)) attempt was caught this way (it placed the connector at the wrong, +Y end) and corrected to -90.")
 	(tags "FTDI UM232H FT232H USB DIP module")
 	(property "Reference" "REF**"
 		(at 0 -29 0)
@@ -53,4 +53,15 @@
 	(pad "J2-14" thru_hole circle (at -7.62 16.51) (size 1.8 1.8) (drill 1.0) (layers "*.Cu" "*.Mask"))
 	(pad "J1-14" thru_hole circle (at 7.62 16.51) (size 1.8 1.8) (drill 1.0) (layers "*.Cu" "*.Mask"))
 	(embedded_fonts no)
+	(model "/home/jdn/Code/Acoustic-Camera/lib/UM232H/UM232H.step"
+		(offset
+			(xyz 0 0 14.9)
+		)
+		(scale
+			(xyz 1 1 1)
+		)
+		(rotate
+			(xyz 0 0 -90)
+		)
+	)
 )
