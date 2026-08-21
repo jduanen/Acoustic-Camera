@@ -24,6 +24,12 @@
 # for the Cmod A7's on-board Pmod header) -- see hub.kicad_sch. J20 pin
 # 1/2/3/4 = physical JA1/JA2/JA3/JA4 in order (confirmed with board owner).
 
+# Bank 0 (config) voltage: same as the cluster XDC -- Cmod A7-35T's config
+# bank runs off the module's own 3.3V rail, matching every IOSTANDARD
+# LVCMOS33 used below.
+set_property CFGBVS VCCO [current_design]
+set_property CONFIG_VOLTAGE 3.3 [current_design]
+
 set_property -dict { PACKAGE_PIN U8    IOSTANDARD LVCMOS33 } [get_ports { TCXO_CLK }]; #IO_L14P_T2_SRCC_34 Sch=pio[47], 12.288 MHz HCMOS TCXO (Y1)
 create_clock -period 81.380 -name TCXO_CLK [get_ports { TCXO_CLK }]
 
@@ -38,3 +44,18 @@ set_property -dict { PACKAGE_PIN L18   IOSTANDARD LVCMOS33 } [get_ports { SPOKE3
 set_property -dict { PACKAGE_PIN C16   IOSTANDARD LVCMOS33 } [get_ports { led0_g }];
 set_property -dict { PACKAGE_PIN C17   IOSTANDARD LVCMOS33 } [get_ports { led0_r }];
 set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33 } [get_ports { led0_b }];
+
+# False paths (same reasoning as fpga/cluster/xdc/cluster_top.xdc -- these
+# are genuinely untimed by design, not "checked and fine" or "ignored"):
+#
+# SPOKE0-3_ALIVE: async status from 4 independent cluster boards, each on
+# its own clock domain. reset_seq.v already runs them through its own 2-FF
+# synchronizer (alive_meta/alive_sync) specifically because they're untimed
+# relative to TCXO_CLK.
+set_false_path -from [get_ports { SPOKE0_ALIVE SPOKE1_ALIVE SPOKE2_ALIVE SPOKE3_ALIVE }]
+
+# FPGA_RESET_N: each cluster board receives this into its own clk_reset.v,
+# which runs it through its own 2-FF synchronizer for the same reason --
+# no meaningful setup/hold relationship to constrain from the hub side.
+# led0_r: just the status LED, not timing-critical.
+set_false_path -to [get_ports { FPGA_RESET_N led0_r }]
