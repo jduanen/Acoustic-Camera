@@ -7,9 +7,11 @@
 // See fpga/USB_FRAMING.md for the USB-side protocol.
 //
 // Port names match pcb/multi_fpga/hub.kicad_sch's global-label net names
-// exactly (TCXO_CLK, FPGA_RESET_N, SPOKEn_ALIVE, SPOKE_CLK, SPOKEn_D0-5,
+// exactly (TCXO_CLK, FPGA_RESET_N, SPOKES_ALIVE, SPOKE_CLK, SPOKEn_D0-5,
 // SPOKEn_STROBE, USB_*), same convention as fpga/cluster/rtl/cluster_top.v
-// -- do not rename without updating the schematic. led0_r/g/b have no
+// -- do not rename without updating the schematic. SPOKES_ALIVE is a single
+// wired-AND net shared by all 4 clusters (see reset_seq.v), not 4
+// independent SPOKEn_ALIVE signals. led0_r/g/b have no
 // schematic net (Cmod A7's on-board RGB LED LD0 is wired directly to
 // dedicated FPGA pins inside the module, not brought out through any
 // connector), so they follow Digilent's own out-of-box-demo naming instead
@@ -29,7 +31,8 @@
 module hub_top (
     input  wire TCXO_CLK,       // 12.288 MHz HCMOS TCXO (Y1)
     output wire FPGA_RESET_N,   // -> all 4 SpokeBus connectors' pin 11
-    input  wire SPOKE0_ALIVE, SPOKE1_ALIVE, SPOKE2_ALIVE, SPOKE3_ALIVE,
+    input  wire SPOKES_ALIVE,   // wired-AND net shared by all 4 clusters'
+                                 // SPOKE_ALIVE pins -- see reset_seq.v
     output wire led0_r, led0_g, led0_b, // on-board RGB LED (LD0)
 
     // SPOKE_CLK: one shared FPGA pin, fanned out to all 4 SpokeBus
@@ -57,7 +60,7 @@ module hub_top (
     wire spoke_reset_n;
     reset_seq u_reset_seq (
         .clk(clk),
-        .spoke_alive_i({SPOKE3_ALIVE, SPOKE2_ALIVE, SPOKE1_ALIVE, SPOKE0_ALIVE}),
+        .spoke_alive_i(SPOKES_ALIVE),
         .spoke_reset_n(spoke_reset_n),
         .led_r_n(led0_r), .led_g_n(led0_g), .led_b_n(led0_b)
     );

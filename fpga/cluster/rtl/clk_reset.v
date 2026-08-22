@@ -14,6 +14,15 @@
 // tells the hub "POR is done and I'm safely parked in reset" so it knows
 // it's safe to release fpga_reset_n.
 //
+// spoke_alive is a tri-state (open-drain-emulated) drive, not push-pull:
+// pulls the shared SPOKES_ALIVE net low while not ready, releases to Hi-Z
+// once ready. All 4 clusters' SPOKE_ALIVE pins tie into one wired-AND net on
+// the PCB (one external pull-up on the hub board) -- the net reads high only
+// once all 4 release it, so reset_seq.v's `&`-of-4 reduction is now done for
+// free by the wire itself (see fpga/hub/rtl/reset_seq.v). Must stay
+// tri-state, not push-pull: wiring 4 push-pull outputs together directly
+// would risk output-driver contention.
+//
 // pdm_phase is pdm_clk_r itself (pre-OBUF, combinational passthrough -- NOT
 // an extra registered copy), broadcast to every pdm_line_sync/
 // cic_decimator_shared instance. Each of those registers pdm_phase and
@@ -44,8 +53,9 @@ module clk_reset #(
     output wire pdm_clk,
     output wire pdm_phase,
     output reg  rst = 1'b1,
-    output wire spoke_alive,    // high once POR is done AND parked in
-                                 // externally-held reset
+    output wire spoke_alive,    // tri-state: Hi-Z once POR is done AND
+                                 // parked in externally-held reset, else
+                                 // driven low (see header comment)
     output wire led_r_n, led_g_n, led_b_n // on-board RGB LED (LD0),
                                            // common-anode -> active-low
 );
@@ -82,7 +92,7 @@ module clk_reset #(
         rst <= (por_cnt < POR_CYCLES) | ~fpga_rst_n_sync;
     end
 
-    assign spoke_alive = por_done & ~fpga_rst_n_sync;
+    assign spoke_alive = (por_done & ~fpga_rst_n_sync) ? 1'bz : 1'b0;
 
     // YELLOW (R+G) while resetting, GREEN (G only) once running, B unused --
     // same block as reset_seq.v's LED logic, driven by rst instead of a

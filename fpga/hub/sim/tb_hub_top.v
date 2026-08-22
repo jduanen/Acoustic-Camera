@@ -42,7 +42,7 @@ module tb_hub_top;
     always #(16.667/2) usb_clkout = ~usb_clkout; // 60 MHz, FT232H's CLKOUT
     reg usb_txe_n = 1'b1;
 
-    reg spoke0_alive = 0, spoke1_alive = 0, spoke2_alive = 0, spoke3_alive = 0;
+    reg spokes_alive = 0; // wired-AND net driven by 4 clusters -- see reset_seq.v
 
     wire spoke_clk, fpga_reset_n, led0_r, led0_g, led0_b;
 
@@ -65,8 +65,7 @@ module tb_hub_top;
     hub_top dut (
         .TCXO_CLK(tcxo_clk),
         .FPGA_RESET_N(fpga_reset_n),
-        .SPOKE0_ALIVE(spoke0_alive), .SPOKE1_ALIVE(spoke1_alive),
-        .SPOKE2_ALIVE(spoke2_alive), .SPOKE3_ALIVE(spoke3_alive),
+        .SPOKES_ALIVE(spokes_alive),
         .led0_r(led0_r), .led0_g(led0_g), .led0_b(led0_b),
         .SPOKE_CLK(spoke_clk),
         .SPOKE0_D0(spoke_d0[0]), .SPOKE0_D1(spoke_d0[1]), .SPOKE0_D2(spoke_d0[2]),
@@ -145,12 +144,13 @@ module tb_hub_top;
     reg [15:0] exp0, exp1, exp2, exp3;
 
     initial begin
-        // Bring all 4 spokes "alive" so reset_seq.v releases FPGA_RESET_N
-        // and the sclk-domain reset (rst_sclk) clears -- deframers hold in
-        // reset until then, matching real power-up sequencing.
+        // Bring SPOKES_ALIVE up (models all 4 clusters' wired-AND net
+        // resolving high) so reset_seq.v releases FPGA_RESET_N and the
+        // sclk-domain reset (rst_sclk) clears -- deframers hold in reset
+        // until then, matching real power-up sequencing.
         usb_txe_n = 1'b0; // FIFO always ready
         repeat (8) @(posedge tcxo_clk);
-        spoke0_alive = 1; spoke1_alive = 1; spoke2_alive = 1; spoke3_alive = 1;
+        spokes_alive = 1;
 
         // Wait for FPGA_RESET_N to release, then a few more SPOKE_CLK edges
         // for the cross-domain synchronizer to settle.

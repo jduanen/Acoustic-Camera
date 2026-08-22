@@ -4,7 +4,10 @@
 // divider, needs Xilinx's unisim simulation models + glbl -- see the
 // Makefile's sim-clk target), its power-on-reset timing, the
 // fpga_reset_n/spoke_alive handshake with the hub (see
-// fpga/hub/rtl/reset_seq.v), and the led_r_n/led_g_n/led_b_n health
+// fpga/hub/rtl/reset_seq.v -- spoke_alive is checked as a tri-state signal:
+// 1'bz when "ready", not 1'b1, since it's now a wired-AND drive; an
+// external pull-up, not modeled here, is what resolves that to a real
+// logic 1 on the shared bus), and the led_r_n/led_g_n/led_b_n health
 // indicator (YELLOW while rst is asserted, GREEN once running -- checked
 // alongside every rst assertion via check_led()). Reset-hold length only
 // needs to be "about POR_CYCLES", not bit-exact against a golden model like
@@ -113,16 +116,19 @@ module tb_clk_reset;
 
         // ... POR finishes, but fpga_reset_n is still held low (hub hasn't
         // seen all 4 clusters yet): rst must STAY asserted (now held by the
-        // external pin, not POR) and spoke_alive must assert -- "POR done,
-        // parked in reset, waiting on the hub".
+        // external pin, not POR) and spoke_alive must release to Hi-Z (tri-
+        // state "ready" drive -- see clk_reset.v's header comment; an
+        // external pull-up, not modeled here, is what turns this into a
+        // logic 1 on the shared wired-AND net) -- "POR done, parked in
+        // reset, waiting on the hub".
         repeat (POR_CYCLES) @(posedge clk);
         #1;
         if (rst !== 1'b1) begin
             $display("FAIL: rst dropped while fpga_reset_n still held low");
             errors = errors + 1;
         end
-        if (spoke_alive !== 1'b1) begin
-            $display("FAIL: spoke_alive not asserted once POR done + still in external reset");
+        if (spoke_alive !== 1'bz) begin
+            $display("FAIL: spoke_alive not released to Hi-Z once POR done + still in external reset");
             errors = errors + 1;
         end
         check_led("POR done, parked in external reset");
@@ -181,8 +187,8 @@ module tb_clk_reset;
             $display("FAIL: rst did not reassert on a later fpga_reset_n low pulse");
             errors = errors + 1;
         end
-        if (spoke_alive !== 1'b1) begin
-            $display("FAIL: spoke_alive did not track a later fpga_reset_n low pulse (por_done should stay latched)");
+        if (spoke_alive !== 1'bz) begin
+            $display("FAIL: spoke_alive did not release to Hi-Z on a later fpga_reset_n low pulse (por_done should stay latched)");
             errors = errors + 1;
         end
         check_led("reasserted on a later fpga_reset_n low pulse");

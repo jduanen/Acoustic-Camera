@@ -23,7 +23,7 @@ set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 
 set_property -dict { PACKAGE_PIN N3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_CLK }]; #IO_L12P_T1_MRCC_35 Sch=pio[18], schematic net SPOKE0_CLK -- clock-capable, P-side (MRCC)
-create_clock -period 325.521 -name SPOKE_CLK [get_ports { SPOKE_CLK }]
+create_clock -period 162.760 -name SPOKE_CLK [get_ports { SPOKE_CLK }]
 
 set_property -dict { PACKAGE_PIN T1    IOSTANDARD LVCMOS33 PULLTYPE PULLUP } [get_ports { FPGA_RESET_N }]; #IO_L3P_T0_DQS_34 Sch=pio[29]
 set_property -dict { PACKAGE_PIN T2    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_ALIVE }]; #IO_L1N_T0_34 Sch=pio[30]
