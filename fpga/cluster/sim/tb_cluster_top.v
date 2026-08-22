@@ -9,7 +9,10 @@
 // fir_bitexact() golden models) -- bit-exact. This is the "done" criterion
 // for the whole cluster pipeline: every module already has its own
 // standalone testbench: this one instead exists to catch integration/wiring
-// bugs (channel order, bit truncation, port mapping) those can't see.
+// bugs (channel order, bit truncation, port mapping) those can't see. Also
+// confirms the LED health indicator (clk_reset.v) reads steady GREEN while
+// running -- the reset-transition (YELLOW->GREEN) behavior itself is
+// tb_clk_reset.v's job.
 //
 // Vectors from gen_vectors.py's gen_cluster_top_vectors():
 //   top_pdm_bits.mem  -- N_CH * N_SAMPLES lines, channel-major, 1 bit/line
@@ -38,6 +41,7 @@ module tb_cluster_top;
     wire [5:0] spoke_d_bus;
     wire SPOKE_STROBE;
     wire SPOKE_ALIVE;
+    wire led0_r, led0_g, led0_b;
 
     cluster_top dut (
         .SPOKE_CLK(SPOKE_CLK),
@@ -49,8 +53,26 @@ module tb_cluster_top;
         .SPOKE_D0(spoke_d_bus[0]), .SPOKE_D1(spoke_d_bus[1]), .SPOKE_D2(spoke_d_bus[2]),
         .SPOKE_D3(spoke_d_bus[3]), .SPOKE_D4(spoke_d_bus[4]), .SPOKE_D5(spoke_d_bus[5]),
         .SPOKE_STROBE(SPOKE_STROBE),
-        .SPOKE_ALIVE(SPOKE_ALIVE)
+        .SPOKE_ALIVE(SPOKE_ALIVE),
+        .led0_r(led0_r), .led0_g(led0_g), .led0_b(led0_b)
     );
+
+    integer errors = 0;
+
+    // GREEN = led0_r high, led0_g low, led0_b high (active-low, common-anode
+    // -- see clk_reset.v). This test never asserts FPGA_RESET_N, so once
+    // SPOKE_STROBE is running (checked at both ends of the frame loop below)
+    // the LED must already be steady GREEN -- the reset-transition behavior
+    // itself (YELLOW->GREEN) is tb_clk_reset.v's job, not duplicated here.
+    task check_led_green(input [255:0] label);
+        begin
+            if (led0_r !== 1'b1 || led0_g !== 1'b0 || led0_b !== 1'b1) begin
+                $display("FAIL: %0s: LED not GREEN (led0_r=%b led0_g=%b led0_b=%b)",
+                         label, led0_r, led0_g, led0_b);
+                errors = errors + 1;
+            end
+        end
+    endtask
 
     // channel c's PDM bits: pdm_mem[c*N_SAMPLES + sample_idx]
     reg pdm_mem [0:N_CH*N_SAMPLES-1];
@@ -116,10 +138,10 @@ module tb_cluster_top;
     reg [DATA_WIDTH-1:0] got [0:N_CH-1];
     integer frame_num, cyc, c_idx, chunk_pair;
     reg [5:0] rise_v, fall_v;
-    integer errors = 0;
 
     initial begin
         @(posedge SPOKE_STROBE); // first frame's cycle 0 (rising half already valid)
+        check_led_green("running, before frame loop");
 
         for (frame_num = 0; frame_num < N_FRAMES; frame_num = frame_num + 1) begin
             if (frame_num != 0) @(posedge SPOKE_STROBE);
@@ -151,9 +173,10 @@ module tb_cluster_top;
                 end
             end
         end
+        check_led_green("running, after frame loop");
 
         if (errors == 0) begin
-            $display("PASS: tb_cluster_top, %0d frames x %0d channels all bit-exact", N_FRAMES, N_CH);
+            $display("PASS: tb_cluster_top, %0d frames x %0d channels all bit-exact, LED steady GREEN throughout", N_FRAMES, N_CH);
             $finish;
         end else begin
             $display("FAIL: tb_cluster_top, %0d errors", errors);

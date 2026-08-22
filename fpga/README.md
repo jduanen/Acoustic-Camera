@@ -4,11 +4,12 @@ Verilog for the multi-FPGA acoustic camera design (`pcb/multi_fpga/`). Currently
 the **cluster FPGA** (Digilent Cmod A7-35T, Xilinx Artix-7 XC7A35T -- moved from the
 originally-planned Cmod S7/XC7S25, which couldn't fit this design; see
 `fpga/cluster/xdc/cluster_top.xdc`'s header comment) that sits on each of the 4 arm boards --
-PDM capture from 24 local mics, CIC decimation, FIR compensation, and framing onto the spoke
-bus back to the hub board.
+PDM capture from 24 local mics, CIC decimation, FIR compensation, framing onto the spoke
+bus back to the hub board, and an on-board RGB LED health indicator (`clk_reset.v`,
+YELLOW while resetting / GREEN once running -- same convention as the hub's own LED).
 
 `fpga/cluster/xdc/cluster_top.xdc` has real pin constraints and the design synthesizes,
-places, and routes cleanly (68% LUT utilization, timing closes with margin) -- still no
+places, and routes cleanly (71% LUT utilization, timing closes with margin) -- still no
 bitstream/hardware bring-up yet.
 
 The **hub FPGA** (also a Cmod A7-35T) covers power-up reset sequencing (`reset_seq.v`),

@@ -41,6 +41,13 @@
 // SPOKE_D<n> <-> spoke_framer's spoke_d[5:0] bit mapping (this module's own
 // convention, not specified upstream): SPOKE_D0 = bit 0 (LSB) .. SPOKE_D5 =
 // bit 5 (MSB).
+//
+// led0_r/led0_g/led0_b: on-board RGB LED (LD0) health indicator (see
+// clk_reset.v). No schematic net -- like the hub, LD0 is wired directly to
+// dedicated FPGA pins inside the Cmod A7-35T module itself, not brought out
+// through any connector -- so these follow Digilent's own out-of-box-demo
+// naming (fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc), same convention
+// fpga/hub/rtl/hub_top.v already uses for its identical on-board LED.
 module cluster_top (
     input  wire SPOKE_CLK,
     input  wire FPGA_RESET_N,
@@ -51,7 +58,8 @@ module cluster_top (
     output wire SPOKE_D0, SPOKE_D1, SPOKE_D2,
     output wire SPOKE_D3, SPOKE_D4, SPOKE_D5,
     output wire SPOKE_STROBE,
-    output wire SPOKE_ALIVE
+    output wire SPOKE_ALIVE,
+    output wire led0_r, led0_g, led0_b
 );
     localparam integer N_LINES   = 12;
     localparam integer N_CH      = 24;
@@ -66,7 +74,8 @@ module cluster_top (
         .pdm_clk(PDM_CLK),
         .pdm_phase(pdm_phase),
         .rst(rst),
-        .spoke_alive(SPOKE_ALIVE)
+        .spoke_alive(SPOKE_ALIVE),
+        .led_r_n(led0_r), .led_g_n(led0_g), .led_b_n(led0_b)
     );
 
     wire [N_LINES-1:0] pdm_d;

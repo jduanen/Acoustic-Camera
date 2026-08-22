@@ -15,7 +15,7 @@
 # from fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc (Digilent's own master
 # XDC for this module, used identically for the hub board's XDC).
 #
-# All 23 ports are populated.
+# All 26 ports are populated.
 
 # Bank 0 (config) voltage: the Cmod A7-35T's configuration bank runs off the
 # module's own 3.3V rail, matching every IOSTANDARD LVCMOS33 used below.
@@ -51,6 +51,15 @@ set_property -dict { PACKAGE_PIN R3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_
 set_property -dict { PACKAGE_PIN T3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_D5 }]; #IO_L2N_T0_34 Sch=pio[27], schematic net SPOKE0_D5
 set_property -dict { PACKAGE_PIN R2    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_STROBE }]; #IO_L1P_T0_34 Sch=pio[28], schematic net SPOKE0_STROBE
 
+# On-board RGB LED (LD0), Bank 16 -- common-anode, active-low. Pins taken
+# from fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc (Digilent's own master
+# XDC), same as fpga/hub/xdc/hub_top.xdc uses for its identical on-board LED
+# -- NOT the demo XDC's separate led[0]/led[1] pins (A17/C16), which are a
+# different, non-RGB LED.
+set_property -dict { PACKAGE_PIN B16   IOSTANDARD LVCMOS33 } [get_ports { led0_g }];
+set_property -dict { PACKAGE_PIN C17   IOSTANDARD LVCMOS33 } [get_ports { led0_r }];
+set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33 } [get_ports { led0_b }];
+
 # False paths (not just waived TIMING-18 warnings -- these are genuinely
 # untimed by design, not "checked and found fine" or "ignored for now"):
 #
@@ -76,3 +85,9 @@ set_false_path -from [get_ports { PDM_D00 PDM_D01 PDM_D02 PDM_D03 PDM_D04 PDM_D0
 # side is designed and a real cross-board timing budget exists to constrain
 # against.
 set_false_path -to [get_ports { PDM_CLK SPOKE_D0 SPOKE_D1 SPOKE_D2 SPOKE_D3 SPOKE_D4 SPOKE_D5 SPOKE_STROBE SPOKE_ALIVE }]
+
+# led0_r: driven from the registered rst signal, just the status LED, not
+# timing-critical (same reasoning/precedent as hub_top.xdc's led0_r false
+# path). led0_g/led0_b aren't listed -- they're pure constants (clk_reset.v's
+# led_g_n/led_b_n assigns), no clocked fan-in to flag.
+set_false_path -to [get_ports { led0_r }]

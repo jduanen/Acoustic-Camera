@@ -29,6 +29,12 @@
 // own state is still properly held at 0 through rst regardless of what
 // PDM_CLK/pdm_phase are doing -- and it matches the old design, where
 // PDM_CLK was an un-gated passthrough of the single shared clock too.
+//
+// led_r_n/led_g_n/led_b_n: on-board RGB LED (LD0) health indicator, same
+// YELLOW(resetting)/GREEN(running) convention as the hub's own
+// fpga/hub/rtl/reset_seq.v -- driven straight off rst (level, not latched,
+// matching how rst itself already behaves; see tb_clk_reset.v). No "error"
+// state yet -- nothing in the pipeline detects a real fault to key one off.
 module clk_reset #(
     parameter integer POR_CYCLES = 16
 ) (
@@ -38,8 +44,10 @@ module clk_reset #(
     output wire pdm_clk,
     output wire pdm_phase,
     output reg  rst = 1'b1,
-    output wire spoke_alive     // high once POR is done AND parked in
+    output wire spoke_alive,    // high once POR is done AND parked in
                                  // externally-held reset
+    output wire led_r_n, led_g_n, led_b_n // on-board RGB LED (LD0),
+                                           // common-anode -> active-low
 );
     wire clk_ibuf;
 
@@ -75,4 +83,11 @@ module clk_reset #(
     end
 
     assign spoke_alive = por_done & ~fpga_rst_n_sync;
+
+    // YELLOW (R+G) while resetting, GREEN (G only) once running, B unused --
+    // same block as reset_seq.v's LED logic, driven by rst instead of a
+    // state register.
+    assign led_r_n = rst ? 1'b0 : 1'b1;
+    assign led_g_n = 1'b0;
+    assign led_b_n = 1'b1;
 endmodule

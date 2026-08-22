@@ -2,12 +2,14 @@
 
 // Checks clk_reset.v's clock chain (IBUF/BUFG/OBUF + the PDM_CLK = clk/2
 // divider, needs Xilinx's unisim simulation models + glbl -- see the
-// Makefile's sim-clk target), its power-on-reset timing, and the
+// Makefile's sim-clk target), its power-on-reset timing, the
 // fpga_reset_n/spoke_alive handshake with the hub (see
-// fpga/hub/rtl/reset_seq.v). Reset-hold length only needs to be "about
-// POR_CYCLES", not bit-exact against a golden model like the other modules
-// -- so this checks a safe lower/upper bound rather than an exact edge
-// count.
+// fpga/hub/rtl/reset_seq.v), and the led_r_n/led_g_n/led_b_n health
+// indicator (YELLOW while rst is asserted, GREEN once running -- checked
+// alongside every rst assertion via check_led()). Reset-hold length only
+// needs to be "about POR_CYCLES", not bit-exact against a golden model like
+// the other modules -- so this checks a safe lower/upper bound rather than
+// an exact edge count.
 module tb_clk_reset;
     localparam integer POR_CYCLES = 16;
 
@@ -16,6 +18,7 @@ module tb_clk_reset;
     always #5 spoke_clk = ~spoke_clk;
 
     wire clk, pdm_clk, pdm_phase, rst, spoke_alive;
+    wire led_r_n, led_g_n, led_b_n;
 
     clk_reset #(.POR_CYCLES(POR_CYCLES)) dut (
         .spoke_clk(spoke_clk),
@@ -24,8 +27,32 @@ module tb_clk_reset;
         .pdm_clk(pdm_clk),
         .pdm_phase(pdm_phase),
         .rst(rst),
-        .spoke_alive(spoke_alive)
+        .spoke_alive(spoke_alive),
+        .led_r_n(led_r_n), .led_g_n(led_g_n), .led_b_n(led_b_n)
     );
+
+    integer errors = 0;
+    integer i;
+
+    // led_r_n/led_g_n/led_b_n track rst combinationally (YELLOW while
+    // resetting, GREEN once running) -- checked alongside every rst
+    // assertion below rather than as a separate pass.
+    task check_led(input [255:0] label);
+        begin
+            if (led_r_n !== (rst ? 1'b0 : 1'b1)) begin
+                $display("FAIL: %0s: led_r_n (%b) != expected (rst=%b)", label, led_r_n, rst);
+                errors = errors + 1;
+            end
+            if (led_g_n !== 1'b0) begin
+                $display("FAIL: %0s: led_g_n not held low", label);
+                errors = errors + 1;
+            end
+            if (led_b_n !== 1'b1) begin
+                $display("FAIL: %0s: led_b_n not held high", label);
+                errors = errors + 1;
+            end
+        end
+    endtask
 
     // Independent model of the expected PDM_CLK = clk/2 divider (free-running
     // from a fixed phase, NOT gated by rst -- see clk_reset.v's header
@@ -34,9 +61,6 @@ module tb_clk_reset;
     reg expected_pdm_clk = 1'b0;
     always @(posedge clk)
         expected_pdm_clk <= ~expected_pdm_clk;
-
-    integer errors = 0;
-    integer i;
 
     initial begin
         // let time-0 initial-value assignments across modules settle before
@@ -53,6 +77,7 @@ module tb_clk_reset;
             $display("FAIL: spoke_alive not low at startup (got %b)", spoke_alive);
             errors = errors + 1;
         end
+        check_led("at startup");
 
         // clk must track spoke_clk (IBUF/BUFG passthrough); pdm_clk keeps
         // free-running through reset too (see clk_reset.v), checked against
@@ -84,6 +109,7 @@ module tb_clk_reset;
             $display("FAIL: spoke_alive high before POR finished");
             errors = errors + 1;
         end
+        check_led("partway through POR");
 
         // ... POR finishes, but fpga_reset_n is still held low (hub hasn't
         // seen all 4 clusters yet): rst must STAY asserted (now held by the
@@ -99,6 +125,7 @@ module tb_clk_reset;
             $display("FAIL: spoke_alive not asserted once POR done + still in external reset");
             errors = errors + 1;
         end
+        check_led("POR done, parked in external reset");
 
         // hub releases fpga_reset_n -- after synchronizer latency, rst must
         // drop and spoke_alive must drop too (it only means "alive AND
@@ -114,6 +141,7 @@ module tb_clk_reset;
             $display("FAIL: spoke_alive still asserted after leaving reset");
             errors = errors + 1;
         end
+        check_led("just after fpga_reset_n released");
 
         // and stay deasserted, with pdm_clk now toggling at clk/2 (checked
         // against the independent expected_pdm_clk model above, not the
@@ -139,6 +167,7 @@ module tb_clk_reset;
                 $display("FAIL: pdm_phase (%b) != pdm_clk (%b) post-POR (iter %0d)", pdm_phase, pdm_clk, i);
                 errors = errors + 1;
             end
+            check_led("running (post-POR loop)");
         end
 
         // fpga_reset_n dropping again later (e.g. a second hub-initiated
@@ -156,9 +185,10 @@ module tb_clk_reset;
             $display("FAIL: spoke_alive did not track a later fpga_reset_n low pulse (por_done should stay latched)");
             errors = errors + 1;
         end
+        check_led("reasserted on a later fpga_reset_n low pulse");
 
         if (errors == 0) begin
-            $display("PASS: tb_clk_reset, clk passthrough + PDM_CLK/2 divider + POR timing + fpga_reset_n/spoke_alive handshake verified");
+            $display("PASS: tb_clk_reset, clk passthrough + PDM_CLK/2 divider + POR timing + fpga_reset_n/spoke_alive handshake + LED health indicator verified");
             $finish;
         end else begin
             $display("FAIL: tb_clk_reset, %0d errors", errors);

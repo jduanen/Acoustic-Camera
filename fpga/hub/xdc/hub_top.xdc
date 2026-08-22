@@ -105,8 +105,15 @@ set_property -dict { PACKAGE_PIN W3    IOSTANDARD LVCMOS33 } [get_ports { SPOKE_
 # SPOKE0-3_ALIVE/FPGA_RESET_N already are.
 create_generated_clock -name sclk -source [get_pins bufg_inst/O] -divide_by 2 [get_pins bufg_sclk/O]
 
-# On-board RGB LED (LD0), Bank 16 -- common-anode, active-low
-set_property -dict { PACKAGE_PIN C16   IOSTANDARD LVCMOS33 } [get_ports { led0_g }];
+# On-board RGB LED (LD0), Bank 16 -- common-anode, active-low. Pin bug fixed:
+# led0_g was on C16, which fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc
+# (Digilent's own master XDC) actually assigns to led[1], a different,
+# non-RGB LED -- the real led0_g pin is B16. Wouldn't have been caught by
+# synth/place/route or report_methodology (C16 is a valid, otherwise-unused
+# pin on this design), only by real hardware bring-up (wrong LED lighting
+# up). Found while cross-checking pins for the cluster FPGA's identical LED
+# addition.
+set_property -dict { PACKAGE_PIN B16   IOSTANDARD LVCMOS33 } [get_ports { led0_g }];
 set_property -dict { PACKAGE_PIN C17   IOSTANDARD LVCMOS33 } [get_ports { led0_r }];
 set_property -dict { PACKAGE_PIN B17   IOSTANDARD LVCMOS33 } [get_ports { led0_b }];
 
