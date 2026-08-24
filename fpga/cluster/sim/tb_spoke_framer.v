@@ -9,6 +9,7 @@ module tb_spoke_framer;
     localparam integer N_CH         = 24;
     localparam integer DATA_WIDTH   = 24;
     localparam integer FRAME_CYCLES = 64;
+    localparam integer BUSY_CYCLES  = N_CH * (DATA_WIDTH/6) / 2; // matches spoke_framer_golden.py
 
     reg clk = 0;
     reg rst = 1;
@@ -18,11 +19,11 @@ module tb_spoke_framer;
     reg [15:0]            mem_expected [0:N_FRAMES*FRAME_CYCLES-1]; // {strobe,fall[5:0],rise[5:0]}
 
     reg frame_start = 0;
-    reg [24*24-1:0] ch_data_flat = 0;
+    reg [N_CH*24-1:0] ch_data_flat = 0;
     wire [5:0] spoke_d;
     wire spoke_strobe;
 
-    spoke_framer dut (
+    spoke_framer #(.N_CH(N_CH)) dut (
         .clk(clk), .rst(rst),
         .frame_start(frame_start),
         .ch_data_flat(ch_data_flat),
@@ -103,6 +104,21 @@ module tb_spoke_framer;
                 // cyc_eff is a level-sensitive (not edge-registered) mux in
                 // spoke_framer.v.
                 if (cyc == 0) frame_start = 0;
+            end
+        end
+
+        // Regression check for the cyc_r bit-width bug (see spoke_framer.v's
+        // CYC_W comment): with cyc_r sized too small for BUSY_CYCLES, it
+        // would silently wrap back to 0 instead of holding, spuriously
+        // re-asserting spoke_strobe on stale latched_flat mid-idle. Run well
+        // past BUSY_CYCLES with no further frame_start and confirm
+        // spoke_strobe never re-fires.
+        for (c = 0; c < 2 * BUSY_CYCLES; c = c + 1) begin
+            @(posedge clk);
+            #1;
+            if (spoke_strobe !== 1'b0) begin
+                $display("FAIL: spoke_strobe spuriously high %0d cycles after the last frame's BUSY_CYCLES window, with no new frame_start (cyc_r wraparound?)", c);
+                errors = errors + 1;
             end
         end
 

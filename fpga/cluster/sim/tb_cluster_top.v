@@ -131,9 +131,9 @@ module tb_cluster_top;
     end
 
     // Capture + deframe: wait for each SPOKE_STROBE, sample both DDR halves
-    // for 48 busy cycles, reconstruct 24 channel values per
-    // fpga/cluster/SPOKE_FRAMING.md, compare against golden.
-    localparam integer BUSY_CYCLES = 48;
+    // for BUSY_CYCLES busy cycles, reconstruct N_CH channel values per
+    // fpga/cluster/SPOKE_FRAMING.md's protocol, compare against golden.
+    localparam integer BUSY_CYCLES = N_CH * (DATA_WIDTH/6) / 2; // matches spoke_framer_golden.py
 
     reg [DATA_WIDTH-1:0] got [0:N_CH-1];
     integer frame_num, cyc, c_idx, chunk_pair;

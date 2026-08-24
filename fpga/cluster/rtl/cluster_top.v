@@ -5,11 +5,22 @@
 // match pcb/make_schematic_multi_fpga.py's schematic net names exactly --
 // do not rename without updating the schematic generator too.
 //
-// Pipeline: SPOKE_CLK (now 6.144 MHz, 2x the mics' own PDM rate -- see
+// N_LINES/N_CH below (12/24, 3 arms/cluster) are Mark I's shipping config.
+// A Mark II feasibility spike (3 clusters x 4 arms/32ch each instead of 4 x
+// 3/24ch -- see the project's plan file's "Mark II re-partition" section)
+// built this same module at N_LINES=16/N_CH=32 and got a real, honest
+// placed result on xc7a35tcpg236-1: 19,662/20,800 Slice LUTs = 94.53% (vs.
+// this config's 71.00%, see below) -- fits, but with almost no margin,
+// against an explicit 80%-utilization gate. Mark II was not pursued further
+// on that result; reverted back to this config. spoke_framer.v's N_CH
+// parameter (and the cyc_r bit-width bug that spike surfaced) stayed fixed
+// regardless -- see that module's header.
+//
+// Pipeline: SPOKE_CLK (6.144 MHz, 2x the mics' own PDM rate -- see
 // clk_reset.v) -> clk_reset (buffering, POR, PDM_CLK=clk/2 divider) ->
-// 12x pdm_line_sync -> 12x cic_decimator_shared (each one line's L+R
-// channels, time-multiplexed on one shared arithmetic path -- see that
-// module's header comment) -> 24x fir_compensator -> spoke_framer ->
+// N_LINES x pdm_line_sync -> N_LINES x cic_decimator_shared (each one line's
+// L+R channels, time-multiplexed on one shared arithmetic path -- see that
+// module's header comment) -> N_CH x fir_compensator -> spoke_framer ->
 // SPOKE_D0-5/SPOKE_STROBE. See fpga/cluster/SPOKE_FRAMING.md for the output
 // protocol and fpga/cluster/golden/fir_design.py for the CIC->FIR
 // fixed-point convention (top 24 of the CIC's 31 output bits feed the FIR).
@@ -150,7 +161,7 @@ module cluster_top (
     // (held stable since its own valid_out, not just during the pulse) is
     // already settled by the time spoke_framer samples it.
     wire [5:0] spoke_d_int;
-    spoke_framer u_framer (
+    spoke_framer #(.N_CH(N_CH)) u_framer (
         .clk(clk), .rst(rst),
         .frame_start(fir_valid[1]),
         .ch_data_flat(fir_out_flat),
