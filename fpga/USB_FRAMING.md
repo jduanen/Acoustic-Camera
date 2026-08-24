@@ -94,3 +94,7 @@ that -- the host can detect the gap via `seq_num`'s skip.
 - Per-spoke `seq_num` gap detection.
 - Cross-spoke alignment / cable-skew calibration -- not attempted anywhere in this project
   yet (see `SPOKE_FRAMING.md`).
+
+`fpga/host/usb_stream_test.py` is a reference implementation of the first two (sync recovery
++ gap detection), plus per-channel WAV dump -- written as a breadboard bring-up diagnostic,
+not the production Pi 5 reader.
