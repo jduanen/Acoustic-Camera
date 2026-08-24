@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
 layout_multi_fpga.py -- board outline + footprint placement for the Phase 4
-Multi-FPGA (Clustered) alternative: ONE arm board design (Cmod S7 + 24 mics
-+ their decoupling caps) and 1 hub board (Cmod A7-35T + FT232H breakout +
+Multi-FPGA (Clustered) alternative: ONE arm board design (Cmod A7-35T + 24
+mics + their decoupling caps) and 1 hub board (Cmod A7-35T + FT232H breakout +
 TCXO), written as 2 SEPARATE, independently-fabricable files --
 arm_board.kicad_pcb + hub.kicad_pcb.
 
@@ -115,8 +115,8 @@ SPOKE_HEADER_LIB    = "/usr/share/kicad/footprints/Connector_PinHeader_2.54mm.pr
 SPOKE_HEADER_NAME   = "PinHeader_2x06_P2.54mm_Vertical"
 
 # Power connector (+5V/GND from hub to each arm board) -- separate from the
-# spoke connector above: that one mates directly into the Cmod S7's own
-# Pmod JA, whose power-position pins turn out to be that module's OWN
+# spoke connector above: that one mates directly into the cluster's own Cmod
+# A7-35T's Pmod JA, whose power-position pins turn out to be that module's OWN
 # onboard regulator output (see SCHEMATIC_NOTES.md's power section), not a
 # usable 5V input. So +5V has to reach the arm board some other way -- a
 # small dedicated 2-pin header/socket, same connector family/pitch as the
@@ -131,7 +131,7 @@ PWR_SOCKET_NAME = "PinSocket_1x02_P2.54mm_Vertical"
 LDO_FP_LIB  = "/usr/share/kicad/footprints/Package_TO_SOT_SMD.pretty"
 LDO_FP_NAME = "SOT-23"
 
-# Cmod S7 module: mounted RADIALLY (long axis running outward along the
+# Cluster's own Cmod A7-35T module: mounted RADIALLY (long axis running outward along the
 # gap between two arms, not across it -- see find_module_placement() for
 # why), tucked into the natural gap between this cluster's 2nd and 3rd
 # arms, as far in towards the array centre as it can go without colliding
@@ -170,7 +170,7 @@ def _cut_curve_points(offset_deg, n=24, t_min=None, t_max=None):
     both boundary curves use the same one. Looks up the current
     R_BOARD_MAX_MM fresh each call (rather than a bound default argument)
     since main() finalises that value only after searching for where the
-    Cmod S7 modules actually land -- see R_BOARD_MAX_MM comment."""
+    Cmod A7-35T modules actually land -- see R_BOARD_MAX_MM comment."""
     if t_min is None:
         t_min = _t_at_r(BOARD_INNER_RADIUS_MM)
     if t_max is None:
@@ -260,7 +260,7 @@ def _true_corners(px_mm, py_mm, rot_deg, local_corners):
     produces phantom points further out than any real corner. This instead
     transforms the known local corners directly, using the empirically
     confirmed mapping local+X -> world (cos t, -sin t), local+Y -> world
-    (sin t, cos t) (see find_module_placement()'s Cmod S7 comment)."""
+    (sin t, cos t) (see find_module_placement()'s docstring)."""
     t = math.radians(rot_deg)
     xdir = (math.cos(t), -math.sin(t))
     ydir = (math.sin(t), math.cos(t))
@@ -417,29 +417,34 @@ def _mic_and_cap_xy(x, y, mic_num=None):
     return x + CAP_TO_MIC_DX_MM, y + dy, CAP_ROT_DEG
 
 
-# Cmod S7 placement: fixed constants approximating the user's latest manual
-# edit on cluster_00 (moved A1, alongside J1 -- see CLUSTER_HUB_CONNECTOR_*
-# below) -- recovered the same way as always: find the file's manual
-# page-centring translation from a mic's actual position vs. its known
-# array_xy.csv position (confirmed a pure translation -- U1 and U2 agreed
-# exactly), subtract it back out to recover A1's true array-centred
-# (r, angle, rotation). Rotation is now 0deg (was 30-90c) -- reset to the
-# footprint's default orientation, not derived from the position angle.
-CMOD_S7_PLACEMENT_R_MM     = 91.47
-CMOD_S7_PLACEMENT_ANGLE_DEG = 43.75  # offset from each cluster's own 90*c base
-CMOD_S7_PLACEMENT_ROT_DEG   = 0.0    # rot_deg = CMOD_S7_PLACEMENT_ROT_DEG - 90*c
+# Cluster's own Cmod A7-35T placement: fixed constants approximating the
+# user's latest manual edit on cluster_00 (moved A1, alongside J1 -- see
+# CLUSTER_HUB_CONNECTOR_* below) -- recovered the same way as always: find
+# the file's manual page-centring translation from a mic's actual position
+# vs. its known array_xy.csv position (confirmed a pure translation -- U1
+# and U2 agreed exactly), subtract it back out to recover A1's true
+# array-centred (r, angle, rotation). Rotation is now 0deg (was 30-90c) --
+# reset to the footprint's default orientation, not derived from the
+# position angle. Chip-agnostic: this places the generic DIP48_LIB/
+# DIP48_NAME footprint (see find_module_placement() below), so the Cmod S7
+# -> Cmod A7-35T FPGA swap didn't change these numbers, only which part is
+# silkscreened there.
+CLUSTER_CMOD_PLACEMENT_R_MM     = 91.47
+CLUSTER_CMOD_PLACEMENT_ANGLE_DEG = 43.75  # offset from each cluster's own 90*c base
+CLUSTER_CMOD_PLACEMENT_ROT_DEG   = 0.0    # rot_deg = CLUSTER_CMOD_PLACEMENT_ROT_DEG - 90*c
 
 
 def find_module_placement(c, mic_rows):
-    """Cmod S7 placement for cluster c -- see CMOD_S7_PLACEMENT_* comment
-    above. mic_rows is unused (kept in the signature since build_cluster()
-    and main() already pass it, and a future revision may want it again
-    for a collision check) but the placement itself is now a fixed formula,
-    not searched. Returns (mx, my, rot_deg, max_corner_radius_mm)."""
-    angle_deg = 90.0 * c + CMOD_S7_PLACEMENT_ANGLE_DEG
-    rot_deg = CMOD_S7_PLACEMENT_ROT_DEG - 90.0 * c
+    """Cluster c's own Cmod A7-35T placement -- see
+    CLUSTER_CMOD_PLACEMENT_* comment above. mic_rows is unused (kept in the
+    signature since build_cluster() and main() already pass it, and a
+    future revision may want it again for a collision check) but the
+    placement itself is now a fixed formula, not searched. Returns (mx, my,
+    rot_deg, max_corner_radius_mm)."""
+    angle_deg = 90.0 * c + CLUSTER_CMOD_PLACEMENT_ANGLE_DEG
+    rot_deg = CLUSTER_CMOD_PLACEMENT_ROT_DEG - 90.0 * c
     theta = math.radians(angle_deg)
-    mx, my = CMOD_S7_PLACEMENT_R_MM * math.cos(theta), CMOD_S7_PLACEMENT_R_MM * math.sin(theta)
+    mx, my = CLUSTER_CMOD_PLACEMENT_R_MM * math.cos(theta), CLUSTER_CMOD_PLACEMENT_R_MM * math.sin(theta)
 
     local_corners = _local_courtyard_corners(DIP48_LIB, DIP48_NAME)
     corners = _true_corners(mx, my, rot_deg, local_corners)
@@ -449,7 +454,7 @@ def find_module_placement(c, mic_rows):
 
 # Board-to-board spoke connector: fixed constants approximating the user's
 # latest manual edit on cluster_00 (moved J1, alongside A1 above) --
-# recovered the same way as always (see CMOD_S7_PLACEMENT_* comment).
+# recovered the same way as always (see CLUSTER_CMOD_PLACEMENT_* comment).
 # Rotation is also now 0deg (was 45deg).
 CLUSTER_HUB_CONNECTOR_R_MM = 48.30
 CLUSTER_HUB_CONNECTOR_ANGLE_DEG = 25.55  # offset from each cluster's own 90*c base
@@ -482,10 +487,10 @@ def cluster_standoff_xy(c):
 
 # Enclosure-mounting holes: 2 per cluster board, near the outer rim, at
 # +-40deg from that cluster's wedge bisector (90c+30) -- clear of both the
-# Cmod S7 (which sits at +20.2deg from the bisector, see
-# CMOD_S7_PLACEMENT_ANGLE_DEG=50.2 vs the 30deg bisector) and the wedge's
-# own +-45deg boundary (5deg margin so a hole doesn't land right at the
-# board edge).
+# cluster's own Cmod A7-35T (which sits at +20.2deg from the bisector, see
+# CLUSTER_CMOD_PLACEMENT_ANGLE_DEG=50.2 vs the 30deg bisector) and the
+# wedge's own +-45deg boundary (5deg margin so a hole doesn't land right at
+# the board edge).
 ENCLOSURE_HOLE_OFFSET_DEG = 40.0
 
 
@@ -510,7 +515,7 @@ def build_cluster(board, c, mic_rows, module_placement):
 
     # Board-to-board spoke connector (header; mates with a socket at the
     # identical (x,y) on the hub board -- see place_hub()). Connects to
-    # this cluster's own Cmod S7 Pmod JA pins via traces, not yet routed.
+    # this cluster's own Cmod A7-35T Pmod JA pins via traces, not yet routed.
     jx, jy, jrot = cluster_hub_connector_xy(c)
     board.Add(load_fp(SPOKE_HEADER_LIB, SPOKE_HEADER_NAME, f"J{c + 1}", jx, jy, rot_deg=jrot))
 
@@ -552,7 +557,7 @@ def build_cluster(board, c, mic_rows, module_placement):
 # through a centre cutout and the Pi 5 stacked on the same standoffs
 # behind it. See PHASE4.md / SCHEMATIC_NOTES.md "Spoke connector" for the
 # board-to-board connector choice (plain 2x6 2.54mm header/socket -- now a
-# standalone connector reached by a PCB trace from each Cmod S7's Pmod JA,
+# standalone connector reached by a PCB trace from each cluster's Cmod A7-35T's Pmod JA,
 # not plugged directly into it, see cluster_hub_connector_xy()) and its
 # flagged signal-integrity caveat (shared Pmod ground / spoke CLK jitter
 # risk, not solved in this pass).
@@ -612,7 +617,7 @@ RPI5_CENTRE_XY_MM = (0.0, -160.0)  # clear of the hub's own footprint entirely -
 #   CMOD_A7_35T: vertical, tucked between the centre keepout and the
 #   J3/J4/H3B/H4B connectors in the lower-right, clear of everything --
 #   position/rotation match the user's manual edit of A5 on hub.kicad_pcb
-#   (extracted the same way as CMOD_S7_PLACEMENT_*/CLUSTER_HUB_CONNECTOR_*
+#   (extracted the same way as CLUSTER_CMOD_PLACEMENT_*/CLUSTER_HUB_CONNECTOR_*
 #   above: recovered the file's page-centring shift from A6/H*B/J*/HCAM*,
 #   which all matched a single uniform translation exactly, then subtracted
 #   it back out of A5's saved position).
@@ -692,7 +697,7 @@ def main():
     with open(CSV_PATH, newline="") as f:
         rows = list(csv.DictReader(f))
 
-    # Plan pass: find each cluster's mic rows + its Cmod S7 placement
+    # Plan pass: find each cluster's mic rows + its Cmod A7-35T placement
     # before drawing anything. R_BOARD_MAX_MM depends on how far out the
     # search actually needs to go, and the 4 boards must stay identical
     # (just rotated 90deg each) -- so every cluster_outline_points() call
@@ -761,7 +766,7 @@ def main():
     # sockets/standoffs.
     os.makedirs(OUTDIR, exist_ok=True)
     total_fp = 0
-    # 24 mics + 24 caps + 1 Cmod S7 + 1 spoke connector header + 1 cluster<->hub
+    # 24 mics + 24 caps + 1 Cmod A7-35T + 1 spoke connector header + 1 cluster<->hub
     # standoff + 2 enclosure holes + 1 power header (J2) + 1 LDO (VR1) + 2 bypass caps
     expected_per_cluster = 24 + 24 + 1 + 1 + 1 + 2 + 1 + 1 + 2
     arm_board = pcbnew.CreateEmptyBoard()

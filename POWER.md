@@ -11,17 +11,17 @@
      "externally supplied" via PWR_FLAG symbols, with no real regulator anywhere in the
      design — see pcb/multi_fpga/SCHEMATIC_NOTES.md's ERC section).
 
-     A real bug was found while researching this: earlier this session, the spoke Pmod
-     connector (CMOD_S7_PMOD_JA) was given 2 extra pins, SPOKE_GND/SPOKE_VU at Pmod
-     positions 5/6, wired to the hub's GND/+5V nets — the idea being the hub sources +5V to
-     each cluster board over the same connector as the spoke signals. Digilent's actual Cmod S7
-     schematic (datasheets/Cmod+S7_sch-public.pdf, page 1 + page 6) shows this is not possible:
-     Pmod JA's pins 5/6 (and 11/12) are hard-wired on the Cmod S7 itself to GND/VCC3V3 — its
-     own onboard LTC3569 triple-buck regulator's 3.3V output, generated locally from that
-     cluster's own VU input. There is no way to inject the hub's +5V into that pin; doing so
-     would fight the Cmod's own regulator output. None of Cmod S7's internal rails (1.0V/1.8V/
-     3.3V) are exposed anywhere else on the DIP header either — only VU (raw 5V in, pin 24) and
-     GND (pin 25).
+     A real bug was found while researching this: earlier this session, the cluster board's
+     Pmod JA connector (its spoke bus header) was given 2 extra pins, SPOKE_GND/SPOKE_VU at
+     Pmod positions 5/6, wired to the hub's GND/+5V nets — the idea being the hub sources +5V
+     to each cluster board over the same connector as the spoke signals. Digilent's actual
+     Cmod A7 schematic (datasheets/cmod_a7_sch_rev_c0.pdf, page 1 for the Pmod/DIP pinout,
+     page 7 for the regulator) shows this is not possible: Pmod JA's pins 5/6 (and 11/12) are
+     hard-wired on the Cmod A7-35T itself to GND/VCC3V3 — its own onboard LTC3569 triple-buck
+     regulator's 3.3V output, generated locally from that cluster's own VU input. There is no
+     way to inject the hub's +5V into that pin; doing so would fight the Cmod's own regulator
+     output. None of the Cmod A7-35T's internal rails (1.0V/1.8V/3.3V) are exposed anywhere
+     else on the DIP header either — only VU (raw 5V in, pin 24) and GND (pin 25).
 
      This plan both fixes that bug (remove SPOKE_GND/SPOKE_VU, add a dedicated small power
      connector instead) and designs the actual regulator chain the user asked for.
@@ -34,7 +34,7 @@
      connector mounted next to the existing spoke connector — PinHeader_1x02_P2.54mm_Vertical
      on the arm board (J2), mating PinSocket_1x02_P2.54mm_Vertical on the hub, one per
      cluster (J5-J8, continuing after the existing spoke sockets J1-J4). Pin 1 = +5V,
-     pin 2 = GND. This feeds that arm board's own A1/Cmod S7 VU pin (unchanged wiring) and
+     pin 2 = GND. This feeds that arm board's own A1/Cmod A7-35T VU pin (unchanged wiring) and
      the new local LDO below.
      - +1.8V (mic array supply, ~31mA per arm board at 24 mics × ~1.3mA typ. per
      docs/infineon-im72d128-datasheet-en.pdf): one LDO per arm board, local to that
@@ -135,7 +135,7 @@
      architecture (rail-by-rail, matching the "Power architecture" section above), part numbers
      with the same confidence-flagging convention already used in this file (e.g. Cmod pin 16,
      Pi Camera lens diameter) — flag MCP1700's exact SOT-23 pin-to-function mapping and the
-     mic/Cmod S7 current-draw estimates as needing datasheet confirmation before fab.
+     mic/Cmod A7-35T current-draw estimates as needing datasheet confirmation before fab.
      Update the ERC section's PWR_FLAG list (remove +1V8/+3V3, note why).
      - DESIGN.md: replace "Power Supply: TBD" with a short summary of the above (source →
      hub/arm distribution → per-board LDOs), pointing at the schematic notes for detail.
@@ -153,7 +153,7 @@
      baseline established this session) — 0 new unconnected items expected.
      - Visual SVG render of both boards (established pattern) to confirm the new parts land in
      open space with no overlaps.
-     - Sanity-check the current budget: ~125mA (96 mics) + Cmod S7/A7-35T board draw (flag as
+     - Sanity-check the current budget: ~125mA (96 mics) + Cmod A7-35T board draw, both tiers (flag as
      needing Digilent's published figures, not directly in the schematic PDF) + FT232H/TCXO
      (~50mA) comfortably inside the user's stated 4A+ 5V supply once the Pi 5's own consumption
      is accounted for — call out as an estimate, not a hard guarantee, consistent with this

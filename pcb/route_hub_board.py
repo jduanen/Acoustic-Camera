@@ -7,7 +7,7 @@ route_arm_board.py (reused directly for the generic net/zone helpers).
 
 Net assignment, pad-for-pad:
   A5 (CMOD_A7_35T, DIP-48): pad N == Digilent's own "D{N}" pin numbering
-    (same convention confirmed on the arm board's Cmod S7). Which signal
+    (same convention confirmed on the arm board's own Cmod A7-35T). Which signal
     lands on which DIP pin comes straight from make_schematic_multi_fpga.py's
     CMOD_A7_35T_DIP list (imported directly, not retyped, so this can't drift
     out of sync with the schematic generator): entries 0-31 are the 4 spokes'
@@ -26,10 +26,10 @@ Net assignment, pad-for-pad:
   J1-J4 (spoke sockets, one per cluster): pin positions 1,2,3,4,7,8,9,10 ->
     that cluster's SPOKE{cidx}_D0-D5/STROBE/CLK (same position convention as
     the arm board's mating header); positions 5/6/11/12 unused -- these are
-    hard-wired on the real Cmod S7 to GND/VCC3V3 (that module's own onboard
-    regulator output), not a usable power input, so this design doesn't
-    wire anything to them (see datasheets/Cmod+S7_sch-public.pdf and
-    SCHEMATIC_NOTES.md's power section for the full story).
+    hard-wired on the real Cmod A7-35T to GND/VCC3V3 (that module's own
+    onboard regulator output), not a usable power input, so this design
+    doesn't wire anything to them (see datasheets/cmod_a7_sch_rev_c0.pdf
+    and SCHEMATIC_NOTES.md's power section for the full story).
   J5-J8 (power sockets, one per cluster, PinSocket_1x02): pin1 -> +5V,
     pin2 -> GND -- the actual path +5V/GND take to each arm board, since
     J1-J4 can't carry them.
@@ -93,7 +93,7 @@ TCXO_PAD_NETS = {"1": "+3V3", "2": "GND", "3": "+3V3", "4": "TCXO_CLK"}
 VR5_PAD_NETS = {"1": "GND", "2": "+3V3", "3": "+5V"}
 
 # Spoke socket pin position -> index into SPOKE_SIGNAL_SUFFIX (matches the
-# arm board header's CMOD_S7_PMOD_JA position convention: 1,2,3,4,7,8,9,10).
+# arm board header's J1 position convention: 1,2,3,4,7,8,9,10).
 SOCKET_POS_TO_SUFFIX_IDX = {1: 0, 2: 1, 3: 2, 4: 3, 7: 4, 8: 5, 9: 6, 10: 7}
 
 

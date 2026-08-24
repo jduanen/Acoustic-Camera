@@ -9,8 +9,8 @@ Freerouting (Specctra DSN export -> external autorouter -> Specctra SES
 import).
 
 Net assignment mirrors pcb/make_schematic.py's make_arm() (per-mic wiring)
-and pcb/make_schematic_multi_fpga.py's make_cluster() (Cmod S7 DIP header,
-power connector, LDO) pad-for-pad:
+and pcb/make_schematic_multi_fpga.py's make_cluster() (this cluster's own
+Cmod A7-35T DIP header, power connector, LDO) pad-for-pad:
   mic (IFX-PG-LLGA-5-4) pad numbers match the REAL IM72D128V01 datasheet
     (Table 9: 1=DATA, 2=VDD, 3=CLOCK, 4=SELECT, 5=GND -- confirmed against
     both the datasheet and the vendor's own KiCad symbol,
@@ -25,21 +25,22 @@ power connector, LDO) pad-for-pad:
     layout_multi_fpga.py's _mic_and_cap_xy()) -- pad1->C0_1V8 (near VDD),
     pad2->GND (near GND, ~0.28mm away -- see fix_gnd_stub() for why this
     matters).
-  Cmod S7 (DIP-48, A1): pad N == Digilent's own "D{N}" pin numbering
+  Cmod A7-35T (DIP-48, A1): pad N == Digilent's own "D{N}" pin numbering
     (confirmed: pad1 at one end of the left column, pad25 starts the right
     column, standard IC DIP numbering) -- pad1->C0_PDM_CLK, pads2-13->
-    DATA_00..DATA_11, pad24 (VU)->+5V, pad25 (GND)->GND, pads16-23->
-    SPOKE0_D0-D5/STROBE/CLK (see SPOKE_SIGNAL_SUFFIX below -- PIO16-23,
-    real DIP-header-connected GPIO on the actual Digilent module, confirmed
-    against datasheets/Cmod+S7_sch-public.pdf; fixes the KNOWN GAP this
-    used to describe, see below). Pads 14-15/26-48 (excl. spoke pins) are
-    real DIP pins with no net in this design (unused GPIO), left without a
-    net -- not a routing gap, just unused hardware pins.
+    DATA_00..DATA_11, pad24 (VU)->+5V, pad25 (GND)->GND, pads20-23/26-28/18->
+    SPOKE0_D0-D5/STROBE/CLK (see SPOKE_SIGNAL_SUFFIX below -- taken directly
+    from fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
+    pin constraints, cross-checked against Digilent's own CmodA7_Master.xdc;
+    fixes the KNOWN GAP this used to describe, see below). All other DIP
+    pins (excl. spoke pins) are real DIP pins with no net in this design
+    (unused GPIO), left without a net -- not a routing gap, just unused
+    hardware pins.
   J1 (spoke header, PinHeader_2x06, same Pmod-2x6 pad layout as the hub's
     J1-J4): positions 1,2,3,4,7,8,9,10 -> SPOKE0_D0-D5/STROBE/CLK (see
-    J1_POS_TO_SUFFIX_IDX); 5,6,11,12 unused (would be the Cmod S7's own
-    Pmod JA GND/VCC3V3 pins if this were still wired to the Pmod header --
-    it isn't, see below -- left unpopulated for mechanical/footprint-shape
+    J1_POS_TO_SUFFIX_IDX); 5,6,11,12 unused (would be the Cmod's own Pmod
+    JA GND/VCC3V3 pins if this were still wired to the Pmod header -- it
+    isn't, see below -- left unpopulated for mechanical/footprint-shape
     reasons only).
   J2 (power connector from hub, PinHeader_1x02): pad1->+5V, pad2->GND.
   VR1 (MCP1700-1802 LDO, SOT-23): pad1 (GND)->GND, pad2 (OUT)->C0_1V8,
@@ -54,18 +55,17 @@ power connector, LDO) pad-for-pad:
   LDOs, can't share one global net).
 
 FORMER KNOWN GAP, now fixed: the spoke bus used to be wired (in the
-schematic) to Cmod S7's Pmod JA header -- but the PCB layout only ever
-placed a single 48-pin DIP footprint for Cmod S7, no separate Pmod JA
+schematic) to the cluster's Cmod's Pmod JA header -- but the PCB layout
+only ever placed a single 48-pin DIP footprint for it, no separate Pmod JA
 footprint/pads, so J1 had no physically-modelled source pad to route to.
 Worse, it turned out the Pmod JA pins aren't even reachable from the DIP
 header at all on the real module (confirmed against Digilent's own
 schematic: the 8 Pmod JA balls are electrically distinct from every ball
 already broken out to the DIP header) -- so the old approach could never
 have been fixed by just adding a Pmod footprint either. Fixed by moving
-the spoke bus onto DIP pins 16-23 (PIO16-23) instead, which *are* real,
-DIP-connected, and otherwise-unused GPIO -- see cluster_00..03.kicad_sch's
-CMOD_S7 symbol (hand-patched pin names/numbers, "JA1..JA10"->"D16..D23")
-and SCHEMATIC_NOTES.md.
+the spoke bus onto real DIP-connected, otherwise-unused GPIO pins instead
+(20-23/26-28/18, see above) -- see cluster_00..03.kicad_sch's
+CMOD_A7_35T_CLUSTER symbol and SCHEMATIC_NOTES.md.
 
 Usage (from project root):
   python pcb/route_arm_board.py                 # assign nets + set up design rules, save
@@ -124,22 +124,29 @@ def mic_nets(g):
     }
 
 
-CMOD_S7_PAD_NETS = {1: CLK_NET}
-CMOD_S7_PAD_NETS.update({2 + i: f"DATA_{i:02d}" for i in range(12)})
-CMOD_S7_PAD_NETS[24] = "+5V"
-CMOD_S7_PAD_NETS[25] = "GND"
+CLUSTER_PAD_NETS = {1: CLK_NET}
+CLUSTER_PAD_NETS.update({2 + i: f"DATA_{i:02d}" for i in range(12)})
+CLUSTER_PAD_NETS[24] = "+5V"
+CLUSTER_PAD_NETS[25] = "GND"
 
-# Spoke bus, DIP pins 16-23 (Digilent's PIO16-23 -- confirmed real, DIP-header-
-# connected GPIO on the real Cmod S7, not shared with anything else in this
-# design; see cluster_00..03.kicad_sch's CMOD_S7 symbol and SCHEMATIC_NOTES.md
-# for the Pmod-JA-pins-aren't-on-the-DIP-header bug this replaced).
+# Spoke bus, DIP pins 20, 21, 22, 23, 26, 27, 28, 18 (in D0..CLK order --
+# not contiguous, unlike the PDM pins above) -- taken directly from
+# fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
+# SPOKE_D0-5/SPOKE_STROBE/SPOKE_CLK pin constraints (same source
+# pcb/make_schematic_multi_fpga.py's CLUSTER_SPOKE_DIP_PINS uses), not
+# shared with anything else in this design; see cluster_00..03.kicad_sch's
+# CMOD_A7_35T_CLUSTER symbol and SCHEMATIC_NOTES.md for the
+# Pmod-JA-pins-aren't-on-the-DIP-header bug this replaced.
 SPOKE_SIGNAL_SUFFIX = ["D0", "D1", "D2", "D3", "D4", "D5", "STROBE", "CLK"]
-CMOD_S7_PAD_NETS.update({16 + j: f"SPOKE0_{suffix}" for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX)})
+CLUSTER_SPOKE_DIP_PINS = [20, 21, 22, 23, 26, 27, 28, 18]
+CLUSTER_PAD_NETS.update({dip: f"SPOKE0_{suffix}"
+                          for dip, suffix in zip(CLUSTER_SPOKE_DIP_PINS, SPOKE_SIGNAL_SUFFIX)})
 
 # J1 (spoke header, PinHeader_2x06 -- same Pmod-2x6 pad layout/position
 # convention as the hub's J1-J4 spoke sockets): positions 1,2,3,4,7,8,9,10 ->
-# SPOKE0_D0-D5/STROBE/CLK; 5,6,11,12 unused (see CMOD_S7_PMOD_JA's old
-# comment on why -- still true, just no longer relevant to J1's own wiring).
+# SPOKE0_D0-D5/STROBE/CLK; 5,6,11,12 unused (see the Pmod JA GND/VCC3V3
+# hard-wiring note above -- still true, just no longer relevant to J1's own
+# wiring).
 J1_POS_TO_SUFFIX_IDX = {1: 0, 2: 1, 3: 2, 4: 3, 7: 4, 8: 5, 9: 6, 10: 7}
 
 # VR1 (LDO_1V8, MCP1700-1802): pad1=GND, pad2=OUT, pad3=IN -- see LDO_PINS
@@ -178,7 +185,7 @@ def assign_nets(board):
         elif ref == "A1":
             for pad in fp.Pads():
                 pad_num = int(pad.GetPadName())
-                name = CMOD_S7_PAD_NETS.get(pad_num)
+                name = CLUSTER_PAD_NETS.get(pad_num)
                 if name is None:
                     continue  # real DIP pin, unused in this design
                 pad.SetNet(get_or_create_net(board, netinfo_list, name))
@@ -195,10 +202,10 @@ def assign_nets(board):
                 pad.SetNet(get_or_create_net(board, netinfo_list, name))
                 assigned += 1
         elif ref == "J1":
-            # Spoke header -- see CMOD_S7_PAD_NETS/J1_POS_TO_SUFFIX_IDX above;
+            # Spoke header -- see CLUSTER_PAD_NETS/J1_POS_TO_SUFFIX_IDX above;
             # module docstring's old KNOWN GAP (no modelled DIP pads to route
             # these to) is fixed now that the spoke bus lands on real DIP
-            # pins 16-23 instead of the Cmod S7's DIP-inaccessible Pmod JA.
+            # pins instead of the Cmod's DIP-inaccessible Pmod JA.
             for pad in fp.Pads():
                 pos = int(pad.GetPadName())
                 if pos not in J1_POS_TO_SUFFIX_IDX:

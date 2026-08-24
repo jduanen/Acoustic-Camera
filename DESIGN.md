@@ -72,16 +72,20 @@ Single-FPGA alternate: same responsibilities in one FPGA, plus direct GbE/UDP pa
 
 ##### Primary: Multi-FPGA (Clustered)
 
-Splits the front end across 4 small Xilinx Spartan-7 (XC7S25) "cluster" FPGAs — one per
-90° quadrant of 3 arms / 24 mics each, doing local PDM capture + CIC/FIR — plus 1 Xilinx
-Artix-7 (XC7A35T) hub FPGA that aggregates their output over a parallel single-ended bus
-(not true LVDS — the Cmod S7's exposed I/O has no differential-capable pins). The hub never
-speaks Ethernet: it bridges the aggregated stream over USB (FTDI FT232H sync FIFO) to a
-co-located Raspberry Pi 5, which either runs beamforming locally (standalone) or relays the
-stream out its own on-board GbE port to an external host (tethered) — no RGMII PHY chip or
-GbE MAC anywhere in this design. Both FPGA tiers are far smaller than a single-chip XC7A200T
-design (under 6% of its LUTs each), all on hand-assembly-friendly modules (Digilent Cmod S7 /
-Cmod A7-35T — same compact DIP form factor on both), no BGA rework needed even at prototype
+Splits the front end across 4 small "cluster" FPGAs — one per 90° quadrant of 3 arms / 24
+mics each, doing local PDM capture + CIC/FIR — plus 1 hub FPGA that aggregates their output
+over a parallel single-ended bus (not true LVDS — the Cmod A7-35T's exposed I/O has no
+differential-capable pins). Both tiers use the same part, Xilinx Artix-7 XC7A35T: the cluster
+tier originally targeted a smaller Spartan-7 XC7S25, but that part couldn't fit the CIC/FIR
+pipeline even after sharing optimizations (see `fpga/cluster/rtl/cluster_top.v`'s header
+comment), so it moved to the same XC7A35T the hub already used — landing on one part number
+for all 5 modules instead of two. The hub never speaks Ethernet: it bridges the aggregated
+stream over USB (FTDI FT232H sync FIFO) to a co-located Raspberry Pi 5, which either runs
+beamforming locally (standalone) or relays the stream out its own on-board GbE port to an
+external host (tethered) — no RGMII PHY chip or GbE MAC anywhere in this design. Both FPGA
+tiers are far smaller than a single-chip XC7A200T design (the hub uses under 10% of its LUTs,
+the cluster ~71% — see `fpga/README.md` for current synthesis numbers), all on
+hand-assembly-friendly Digilent Cmod A7-35T modules, no BGA rework needed even at prototype
 stage.
 
 Chosen over the single-chip alternate (below) because the XC7A200T ships only in a 484-pin

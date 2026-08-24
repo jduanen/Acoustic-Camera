@@ -15,12 +15,15 @@ level deeper: top -> cluster -> arm, vs. mic_array's top -> arm).
 
 Dev boards are represented as simplified connector-block symbols exposing
 only the physical header pins actually used, labeled with their real FPGA
-pin names (from the Cmod S7 / Cmod A7-35T reference manuals) — not a redraw
-of Digilent's own internal board schematic.
+pin names (from Digilent's Cmod A7-35T reference material — both the cluster
+and hub tiers use this same module; the cluster tier originally targeted a
+Cmod S7 but moved after real HDL synthesis, see
+fpga/cluster/rtl/cluster_top.v's header comment) — not a redraw of
+Digilent's own internal board schematic.
 
 Outputs (in pcb/multi_fpga/):
   top.kicad_sch                    — root sheet: 4 cluster sub-sheets + 1 hub sub-sheet
-  cluster_00..03.kicad_sch         — Cmod S7 + spoke bus + 3 arm sub-sheets each
+  cluster_00..03.kicad_sch         — Cmod A7-35T + spoke bus + 3 arm sub-sheets each
   arm_00..11.kicad_sch             — per-mic wiring, reused from make_schematic.make_arm()
   hub.kicad_sch                    — Cmod A7-35T + 4 spoke buses + TCXO + USB bridge
   multi_fpga.kicad_pro             — KiCad project file
@@ -51,20 +54,25 @@ PROJECT = "multi_fpga"
 KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 
 # ── real pinout data, from Digilent reference manuals ─────────────────────────
-# Cmod S7: spoke bus lands on DIP pins 16-23 (Digilent's PIO16-23) -- real,
-# DIP-header-connected GPIO, confirmed against
-# datasheets/Cmod+S7_sch-public.pdf. NOT the module's Pmod JA header: an
-# earlier revision wired the spoke bus there instead (FPGA balls J2, H2, H4,
-# F3, H3, H1, G1, F4), but those balls are electrically distinct from every
-# ball already broken out to the DIP header -- unreachable on a board (like
-# this one) that only exposes Cmod S7's 48-pin DIP header in copper, not a
-# separate Pmod JA footprint. 200 ohm series resistors on every pin, no
-# differential-capable pins anywhere on the module (see PHASE4.md "Spoke
-# link: parallel single-ended bus, not LVDS"). See also
-# route_arm_board.py's module docstring.
-CMOD_S7_SPOKE_DIP_PINS = [16, 17, 18, 19, 20, 21, 22, 23]  # PIO16-23
+# Cluster's own Cmod A7-35T: spoke bus (D0..CLK, matching SPOKE_SIGNAL_SUFFIX
+# order below) lands on DIP pins 20, 21, 22, 23, 26, 27, 28, 18 -- not a
+# contiguous run, unlike the cluster's PDM pins (1-13, see cmod_pins below).
+# Taken directly from fpga/cluster/xdc/cluster_top.xdc's real, already
+# place-and-routed SPOKE_D0-5/SPOKE_STROBE/SPOKE_CLK constraints (SPOKE_D0=
+# M2=pio20, D1=N1=pio21, D2=N2=pio22, D3=P1=pio23, D4=R3=pio26, D5=T3=pio27,
+# STROBE=R2=pio28, CLK=N3=pio18 -- cross-checked against CMOD_A7_35T_DIP
+# above, same pin/DIP-number table the hub already uses, since both tiers
+# are the same physical module). NOT the module's Pmod JA header: an earlier
+# revision wired the spoke bus there instead, but those balls are
+# electrically distinct from every ball already broken out to the DIP
+# header -- unreachable on a board (like this one) that only exposes the
+# Cmod's 48-pin DIP header in copper, not a separate Pmod JA footprint. 200
+# ohm series resistors on every pin, no differential-capable pins anywhere
+# on the module (see PHASE4.md "Spoke link: parallel single-ended bus, not
+# LVDS"). See also route_arm_board.py's module docstring.
+CLUSTER_SPOKE_DIP_PINS = [20, 21, 22, 23, 26, 27, 28, 18]
 
-# Cmod A7-35T (hub): 48-pin DIP form factor, same as Cmod S7 — see PHASE4.md
+# Cmod A7-35T (hub): 48-pin DIP form factor, same module as the cluster's own — see PHASE4.md
 # "Why Cmod A7-35T for the hub, not Arty A7-35T". Real pin names from
 # Digilent's own CmodA7_Master.xdc (Cmod-A7-35T-GPIO reference project),
 # cross-checked against the "Sch=" pin-number comments in that file. All 4
@@ -295,15 +303,19 @@ BODY_HW   = 12.7   # body half-width
 STUB      = 8 * GRID   # stub-and-label/pwr wire length (≈10)
 
 # Real footprints for the dev-board module symbols, used when this schematic
-# is laid out as a carrier PCB (see pcb/layout_multi_fpga.py). Cmod S7 and
-# Cmod A7-35T share the same 48-pin, 2x24, 600mil-row-spacing DIP form factor
-# (confirmed from Digilent's Cmod S7 reference manual), which matches the
+# is laid out as a carrier PCB (see pcb/layout_multi_fpga.py). The Cmod
+# A7-35T module (both tiers use this same part) is a 48-pin, 2x24,
+# 600mil-row-spacing DIP form factor (confirmed from Digilent's Cmod A7
+# reference schematic, datasheets/cmod_a7_sch_rev_c0.pdf), which matches the
 # stock KiCad DIP-48_W15.24mm_Socket footprint exactly -- no custom footprint
-# needed for either module. FT232H_BRK/TCXO_OSC use project-local
-# approximate footprints (see pcb/multi_fpga/footprints.pretty/*.kicad_mod
-# file descriptions for what's approximated and why).
+# needed. CMOD_A7_35T_CLUSTER is a distinct lib_id from CMOD_A7_35T (below)
+# only because it exposes a different, smaller pin subset (13 PDM + 8 spoke
+# + VU/GND, vs. the hub's full 45 DIP signals) -- same physical module and
+# footprint either way. FT232H_BRK/TCXO_OSC use project-local approximate
+# footprints (see pcb/multi_fpga/footprints.pretty/*.kicad_mod file
+# descriptions for what's approximated and why).
 FOOTPRINTS = {
-    "CMOD_S7":      "Package_DIP:DIP-48_W15.24mm_Socket",
+    "CMOD_A7_35T_CLUSTER": "Package_DIP:DIP-48_W15.24mm_Socket",
     "CMOD_A7_35T":  "Package_DIP:DIP-48_W15.24mm_Socket",
     "FT232H_BRK":   "multi_fpga:Adafruit_FT232H",
     "TCXO_OSC":     "multi_fpga:TCXO_Can",
@@ -399,17 +411,17 @@ def _all_lib_symbols():
         [("PDM_CLK", "D1", "passive")]
         + [(f"PDM_D{i:02d}", f"D{i+2}", "passive") for i in range(12)]
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
-        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CMOD_S7_SPOKE_DIP_PINS]
-        # Pmod JA positions 5/6/11/12 are hard-wired on the real Cmod S7 to
-        # GND/VCC3V3 (that module's own onboard regulator output, generated
-        # locally from ITS OWN VU) -- confirmed from Digilent's public Cmod S7
-        # schematic (datasheets/Cmod+S7_sch-public.pdf). An earlier revision
-        # of this design modeled JA5/JA6 as "SPOKE_GND"/"SPOKE_VU" carrying
-        # the hub's +5V out to this cluster board over the same connector --
-        # not physically possible (would drive straight into another
-        # regulator's output pin), so removed. Power to this cluster board
-        # instead arrives over a separate dedicated connector -- see J2/VR1
-        # in make_cluster().
+        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CLUSTER_SPOKE_DIP_PINS]
+        # Pmod JA positions 5/6/11/12 are hard-wired on the real Cmod A7-35T
+        # to GND/VCC3V3 (that module's own onboard regulator output,
+        # generated locally from ITS OWN VU) -- confirmed from Digilent's
+        # public Cmod A7 schematic (datasheets/cmod_a7_sch_rev_c0.pdf). An
+        # earlier revision of this design modeled JA5/JA6 as "SPOKE_GND"/
+        # "SPOKE_VU" carrying the hub's +5V out to this cluster board over
+        # the same connector -- not physically possible (would drive
+        # straight into another regulator's output pin), so removed. Power
+        # to this cluster board instead arrives over a separate dedicated
+        # connector -- see J2/VR1 in make_cluster().
     )
     # Hub: same Cmod A7-35T module as used physically — all 45 signals (4
     # spokes + FT232H + TCXO) on its DIP header, no Pmod (see CMOD_A7_35T_DIP
@@ -437,15 +449,14 @@ def _all_lib_symbols():
         + _lib_pwr_flag("+3V3")
         + _lib_flag()
         + _lib_cap()
-        + _conn_lib("CMOD_S7", "U", "Digilent Cmod S7 (XC7S25-1CSGA225C)", cmod_pins,
+        + _conn_lib("CMOD_A7_35T_CLUSTER", "U", "Digilent Cmod A7-35T (XC7A35T-1CPG236C)", cmod_pins,
                     "Cluster FPGA module — Pmod JA (8 sig, 200ohm series) + DIP header "
-                    "(13 of 32 GPIO used for local PDM capture); every pin series-resistor "
+                    "(13 of 44 GPIO used for local PDM capture); every pin series-resistor "
                     "protected, no differential-capable I/O (see PHASE4.md Spoke link)")
         + _conn_lib("CMOD_A7_35T", "U", "Digilent Cmod A7-35T (XC7A35T-1CPG236C)", hub_pins,
                     "Hub FPGA module — all 4 spokes + FT232H USB bridge + TCXO clock in "
-                    "(45 signals) on its 48-pin DIP header, no Pmod used; same DIP module "
-                    "form factor as the cluster's Cmod S7, see PHASE4.md, Why all-DIP, "
-                    "no Pmod")
+                    "(45 signals) on its 48-pin DIP header, no Pmod used; same module as "
+                    "the cluster's own Cmod A7-35T, see PHASE4.md, Why all-DIP, no Pmod")
         + _conn_lib("FT232H_BRK", "U", "FTDI FT232H USB-FIFO breakout", ft232h_pins,
                     "USB 2.0 Hi-Speed synchronous 245-mode FIFO bridge to Raspberry Pi 5 "
                     "USB 3.0 port (device is USB2-speed, ~320 Mbps, backward compatible)")
@@ -474,7 +485,7 @@ def make_cluster(idx):
         f'  (paper "A3")\n'
         f'  (title_block\n'
         f'    (title "Multi-FPGA Alternative — Cluster {idx} (arms {idx*3}-{idx*3+2}, mics {idx*24}-{idx*24+23})")\n'
-        f'    (comment 1 "Digilent Cmod S7 (XC7S25) — CIC/FIR done in HDL, not shown here")\n'
+        f'    (comment 1 "Digilent Cmod A7-35T (XC7A35T) — CIC/FIR done in HDL, not shown here")\n'
         f'    (comment 2 "Spoke bus: 6 data + strobe + fwd clock, parallel single-ended (not LVDS)")\n'
         f'    (comment 3 "PDM: 12 data lines (2 mics/line) + 1 clock, to this cluster\'s 3 arms")\n'
         f'  )\n'
@@ -485,12 +496,13 @@ def make_cluster(idx):
         [("PDM_CLK", "D1", "passive")]
         + [(f"PDM_D{i:02d}", f"D{i+2}", "passive") for i in range(12)]
         + [("VU", "D24", "power_in"), ("GND", "D25", "power_in")]
-        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CMOD_S7_SPOKE_DIP_PINS]
+        + [(f"PIO{dip}", f"D{dip}", "passive") for dip in CLUSTER_SPOKE_DIP_PINS]
     )
     n = len(cmod_pins)
 
-    # Arm sub-sheet block geometry, needed here to centre CMOD_S7 against it
-    # (used again below where the sheets themselves are placed).
+    # Arm sub-sheet block geometry, needed here to centre the cluster's Cmod
+    # A7-35T against it (used again below where the sheets themselves are
+    # placed).
     AW, AH = 47 * GRID, 24 * GRID
     AX, AY0 = 94 * GRID, 64 * GRID
     ARM_GAP = 12 * GRID                        # y-spacing between stacked arm sheets
@@ -501,8 +513,9 @@ def make_cluster(idx):
     # "A" (assembly/board module), not "U" — this project's "U" range is the
     # 96 mics (U1-U96, see make_arm()); reusing "U1" here collided with both
     # the first mic in every cluster's own arm_00-equivalent sheet and with
-    # every other cluster's own CMOD_S7 (all 4 clusters previously said "U1").
-    buf.append(_conn_instance("CMOD_S7", f"A{idx + 1}", CX, CY, sch_uuid, cmod_pins))
+    # every other cluster's own Cmod module (all 4 clusters previously said
+    # "U1").
+    buf.append(_conn_instance("CMOD_A7_35T_CLUSTER", f"A{idx + 1}", CX, CY, sch_uuid, cmod_pins))
 
     # PDM_CLK: this cluster's own forwarded-clock copy (not shared with other
     # clusters — see PHASE4.md Spoke link). PDM_D00..D11: tie straight to the
@@ -524,7 +537,7 @@ def make_cluster(idx):
     x, y = _conn_pin_xy(CX, CY, i_gnd, n)
     buf.append(_stub_and_pwr("power:GND", "GND", x, y, STUB, sch_uuid))
 
-    # Spoke bus: pins 15..22 = DIP 16..23 (CMOD_S7_SPOKE_DIP_PINS) = D0..D5, STROBE, CLK
+    # Spoke bus: pins 15..22 (CLUSTER_SPOKE_DIP_PINS) = D0..D5, STROBE, CLK
     for j, suffix in enumerate(SPOKE_SIGNAL_SUFFIX):
         net = f"SPOKE{idx}_{suffix}"
         x, y = _conn_pin_xy(CX, CY, 15 + j, n)
@@ -534,7 +547,7 @@ def make_cluster(idx):
     # VR1: this cluster's own +1.8V LDO for its 24 mics -- fed from this
     # board's own +5V (arriving over the new dedicated power connector, see
     # pcb/layout_multi_fpga.py -- not modelled as a schematic symbol, same as
-    # the spoke connector itself: see CMOD_S7_SPOKE_DIP_PINS's comment on why
+    # the spoke connector itself: see CLUSTER_SPOKE_DIP_PINS's comment on why
     # board-to-board connectors are PCB-layout-only in this project),
     # output on a per-cluster-scoped net (C{idx}_1V8, not the single-FPGA
     # design's shared "+1V8") so 4 independent LDOs don't drive one net.
@@ -746,7 +759,7 @@ def make_top():
         f'  (paper "A3")\n'
         f'  (title_block\n'
         f'    (title "Phase 4 — Multi-FPGA (Clustered) Alternative — Top Level")\n'
-        f'    (comment 1 "4x cluster (Cmod S7, 24 mics each) + 1x hub (Cmod A7-35T) + Pi 5 via USB")\n'
+        f'    (comment 1 "4x cluster (Cmod A7-35T, 24 mics each) + 1x hub (Cmod A7-35T) + Pi 5 via USB")\n'
         f'    (comment 2 "See PHASE4.md #fpga--multi-fpga-clustered-alternative for full reasoning")\n'
         f'    (comment 3 "Dev-board interconnect only -- not the 96-mic array itself (pcb/mic_array/)")\n'
         f'  )\n'

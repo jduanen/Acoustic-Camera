@@ -77,24 +77,38 @@ numbers above.)
 connectors) and over coarser groupings that start eating into headroom without much
 further connector reduction.
 
+> **Superseded by real synthesis**: the table above (and the XC7S25-based reasoning through
+> this whole section) reflects pre-HDL, pre-synthesis estimates. Once the CIC/FIR pipeline
+> was actually built, the chosen 3-arm/24ch grouping's *real* placed cost came back at
+> **14,768 LUT** (see `fpga/cluster/rtl/cluster_top.v`'s header comment) — 1.9× the ~7,750
+> estimated above, driven by control-set packing overhead a pre-place estimate doesn't see.
+> That's too big for the XC7S25 (14,600 LUT) this section chose, so the cluster tier moved to
+> the same XC7A35T (20,800 LUT) the hub already used — landing on **71.00%** utilization
+> there, not the ~47% "headroom" this table projected. A later exploration (this project's
+> plan file, "Mark II re-partition") built the 4-arm/32ch row for real too: **19,662 LUT =
+> 94.53%** of the XC7A35T, nowhere near this table's ~30%-unused projection — confirming the
+> 3-arm/24ch grouping chosen here was the right call, just on a bigger, single-part-number
+> chip than planned. See `fpga/README.md` for current numbers on both tiers.
+
 #### Architecture: hub-and-spoke, single shared clock domain
 
-- **4× cluster FPGA** (Xilinx Spartan-7 **XC7S25**, 14,600 LUT): PDM clock fan-out to its
+- **4× cluster FPGA** (Xilinx Artix-7 **XC7A35T**, 20,800 LUT — originally planned as a
+  Spartan-7 XC7S25, moved after real synthesis, see the note above): PDM clock fan-out to its
   24 local mics, per-cluster CIC decimation + FIR compensation, then frames the decimated
   48kHz PCM onto a parallel single-ended bus back to the hub (see Spoke link below — not
-  true LVDS; the Cmod S7's exposed I/O has no differential-capable pins). No GbE MAC, no PHY
-  chip, no TCXO on the tile. Fits on the **Digilent Cmod S7 module** (~$45) — BGA
+  true LVDS; the Cmod A7-35T's exposed I/O has no differential-capable pins). No GbE MAC, no
+  PHY chip, no TCXO on the tile. Fits on the **Digilent Cmod A7-35T module** (~$99) — BGA
   pre-mounted, no hand rework needed even at prototype stage.
-- **1× hub FPGA** (Xilinx Artix-7 **XC7A35T**, 20,800 LUT): holds the single 12.288 MHz
-  TCXO, generates the 3.072 MHz PDM clock and forwards it to all 4 clusters over the same
-  spoke links — source-synchronous, one clock domain end-to-end (only a fixed,
-  calibrate-once per-spoke cable-length skew, not drift). Reassembles the 4 incoming streams
-  (96 channels total) and frames the result out over a **USB FIFO bridge to a
-  Raspberry Pi 5** (see Host interface below) — no GbE MAC, no RGMII PHY chip, no Ethernet
-  routing on the hub board at all. Available on the **Digilent Cmod A7-35T module** (~$99) —
-  same compact 48-pin DIP breadboardable form factor as the cluster tiles' Cmod S7 (see "Why
-  Cmod A7-35T, not Arty A7-35T" below); no on-board Ethernet PHY to leave unused, since this
-  module doesn't have one at all.
+- **1× hub FPGA** (Xilinx Artix-7 **XC7A35T**, 20,800 LUT — same part as the clusters, see
+  above): holds the single 12.288 MHz TCXO, generates the 3.072 MHz PDM clock and forwards it
+  to all 4 clusters over the same spoke links — source-synchronous, one clock domain
+  end-to-end (only a fixed, calibrate-once per-spoke cable-length skew, not drift).
+  Reassembles the 4 incoming streams (96 channels total) and frames the result out over a
+  **USB FIFO bridge to a Raspberry Pi 5** (see Host interface below) — no GbE MAC, no RGMII
+  PHY chip, no Ethernet routing on the hub board at all. Available on the **Digilent Cmod
+  A7-35T module** (~$99) — same compact 48-pin DIP breadboardable form factor as the cluster
+  tiles (see "Why Cmod A7-35T, not Arty A7-35T" below); no on-board Ethernet PHY to leave
+  unused, since this module doesn't have one at all.
 
 Star topology, not a daisy-chain: each cluster connects directly to the hub over its own
 short link (clusters already sit close to the center), rather than chaining cluster→
@@ -113,7 +127,7 @@ of it.
 
 #### Spoke link: parallel single-ended bus, not LVDS
 
-Both the cluster's Cmod S7 and the hub's Cmod A7-35T route every exposed I/O pin (Pmod and
+Both the cluster's and the hub's Cmod A7-35T modules route every exposed I/O pin (Pmod and
 48-pin DIP header alike) through a 200-240Ω series protection resistor, capped at 25 MHz —
 standard practice for a breadboard-friendly module on both boards, but it rules out true
 differential LVDS: a series resistor at the connector breaks the controlled 100Ω
@@ -124,8 +138,8 @@ neither Cmod module has that option on any connector.
 Instead, each spoke is an ordinary **parallel single-ended bus**: **6 data bits + 1 strobe +
 1 forwarded PDM clock (in) = 8 signals**, one cable per spoke. 27.6 Mbps payload ÷ 6 bits ≈
 4.6 MHz per wire — about 5× margin under the 25 MHz cap, comfortable for a short cable at
-prototype stage. Cluster-side, all 4 clusters carry their spoke on the same connector (Cmod
-S7's single Pmod, JA). Hub-side, all 4 spokes land on the hub's DIP header, not its Pmod —
+prototype stage. Cluster-side, each cluster carries its spoke on its own Cmod A7-35T's single
+Pmod, JA. Hub-side, all 4 spokes land on the hub's DIP header, not its Pmod —
 see "Why all-DIP, no Pmod" below.
 
 #### Host interface: USB bridge to Raspberry Pi 5
@@ -156,31 +170,36 @@ tethered mode — an extra hop, but a trivial one: 110 Mbps is ~11% of the Pi 5'
 link, and Cortex-A76 UDP relay/forwarding overhead at this rate is not a real bottleneck.
 The Pi 5 becomes a mandatory part of the BOM for both configurations, not just standalone.
 
-#### Why XC7A35T for the hub, not XC7S25 like the clusters
+#### Why XC7A35T for the hub, not XC7S25 like the clusters were originally planned
 
-Dropping GbE MAC/PHY from the hub, and replacing its LVDS deserializer with a simpler
-parallel-bus deframer (see Spoke link and Host interface, above/below), shrinks its LUT
-need well below the earlier GbE-hub estimate — the hub's ~1,800-2,100 LUT would leave
-**~86-88% headroom on the same XC7S25** used for the clusters, an even stronger case for
-one single part number (5× identical Cmod S7 modules) than before.
+Historical reasoning (from when the clusters were still planned as XC7S25 — see the
+"Superseded by real synthesis" note earlier in this section for what actually happened to
+that plan): dropping GbE MAC/PHY from the hub, and replacing its LVDS deserializer with a
+simpler parallel-bus deframer (see Spoke link and Host interface, above/below), shrinks its
+LUT need well below the earlier GbE-hub estimate — the hub's ~1,800-2,100 LUT would leave
+**~86-88% headroom on the same XC7S25** planned for the clusters at the time, an even
+stronger case for one single part number (5× identical Cmod S7 modules) than before.
 
 Chosen instead: **XC7A35T for the hub** (~90-91% headroom at this LUT count),
 matching the single-FPGA alternate's reasoning for picking the bigger XC7A200T over XC7A100T —
 headroom for future FPGA-side additions (octave-band parallel beamforming, hardware PSF
 correction) — while still being a small, cheap part relative to the XC7A200T it replaces.
-With GbE gone, LUT budget no longer drives this choice at all in either direction; it's
-purely a bet on whether future hub-side additions are worth keeping open. All-XC7S25
-remains a documented lower-cost/single-part-number fallback if that headroom isn't needed.
+With GbE gone, LUT budget no longer drove this choice in either direction; it was purely a
+bet on whether future hub-side additions were worth keeping open. All-XC7S25 was noted here
+as a documented lower-cost/single-part-number fallback if that headroom wasn't needed —
+**that fallback never happened, but the "one single part number" outcome did anyway**: once
+real synthesis forced the clusters off XC7S25 (see above), they landed on this same XC7A35T,
+so the hub's choice here turned out to set the part both tiers would eventually share.
 
 #### Why Cmod A7-35T, not Arty A7-35T
 
 The chip choice above (XC7A35T) is independent of which physical board carries it. The
 original build used the **Arty A7-35T dev board** (~$130): 4 pluggable Pmods (one per spoke
 — no DIP-header wiring needed) plus a shield connector roomy enough for the FT232H bridge,
-at the cost of being a full-size dev board unlike the clusters' compact Cmod S7 modules.
+at the cost of being a full-size dev board unlike the clusters' compact Cmod modules.
 
 Chosen instead: the **Digilent Cmod A7-35T module** (~$99) — same XC7A35T die, but in the
-identical 48-pin DIP breadboardable form factor as the cluster tiles' Cmod S7, rather than a
+identical 48-pin DIP breadboardable form factor as the cluster tiles, rather than a
 different, larger board family for the one-off hub. Digilent's own reference design
 (`Cmod-A7-35T-GPIO`) confirms 44 digital DIP GPIO pins across the header, enough on its own
 for all 4 spokes (32 signals) + the FT232H bridge (12) + TCXO clock in (1) = 45 signals with
@@ -360,8 +379,10 @@ Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
 
 > Note: this tradeoff is specific to this single-FPGA alternate's fixed LUT budget. The
 > primary Multi-FPGA (Clustered) design (above) scales past 96 mics by adding a 5th cluster
-> (still comfortably-sized XC7S25 tiles) rather than upsizing one chip — this LUT-headroom
-> squeeze is itself a reason to prefer the primary design if the mic count is likely to grow.
+> (each cluster tile's own per-FPGA cost stays fixed at 24ch/71% LUT regardless of cluster
+> count, confirmed by real synthesis — see `fpga/README.md`) rather than upsizing one chip —
+> this LUT-headroom squeeze is itself a reason to prefer the primary design if the mic count
+> is likely to grow.
 
 #### Considered and rejected: 350 mm aperture
 
@@ -635,13 +656,17 @@ Split across the cluster and hub tiers in the primary Multi-FPGA design:
 
 Phase 4 is split into three parallel workstreams that merge at integration.
 
-### Workstream 1 — Cluster tiles (Cmod S7 dev boards)
+### Workstream 1 — Cluster tiles (Cmod A7-35T dev boards)
+
+Originally planned around Cmod S7 (XC7S25) dev boards — moved to Cmod A7-35T after real
+synthesis showed the CIC/FIR pipeline didn't fit the XC7S25 (see the "Superseded by real
+synthesis" note earlier in this doc).
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **Procure 4× Cmod S7** | Digilent ~$45 each (~$180 total); XC7S25, BGA pre-mounted; includes Vivado WebPACK license | None |
-| **HDL development** | CIC + FIR + spoke bus framing pipeline in Verilog/VHDL, 24ch; test on one Cmod S7 before duplicating to the other 3 | Cmod S7 in hand |
-| **Spoke bus cabling** | Pmod cable per cluster (8 signals: 6 data + strobe + fwd clock, see Spoke link) — Cmod S7's Pmod JA to flying leads on the hub's DIP header, not Pmod-to-Pmod (see "Why all-DIP, no Pmod") | HDL ping-pong test passing |
+| **Procure 4× Cmod A7-35T** | Digilent ~$99 each (~$396 total); XC7A35T, BGA pre-mounted; includes Vivado WebPACK license | None |
+| **HDL development** | CIC + FIR + spoke bus framing pipeline in Verilog/VHDL, 24ch; test on one Cmod A7-35T before duplicating to the other 3 | Cmod A7-35T in hand |
+| **Spoke bus cabling** | Pmod cable per cluster (8 signals: 6 data + strobe + fwd clock, see Spoke link) — the cluster's Cmod A7-35T's Pmod JA to flying leads on the hub's DIP header, not Pmod-to-Pmod (see "Why all-DIP, no Pmod") | HDL ping-pong test passing |
 
 ### Workstream 2 — Hub (Cmod A7-35T module)
 
@@ -657,7 +682,7 @@ Phase 4 is split into three parallel workstreams that merge at integration.
 | Sub-task | Description | Dependency |
 |---|---|---|
 | **Geometry finalization** | Confirm 8×12 Underbrink spiral from Phase 1 simulation; generate mic XY coordinates | Phase 1 data |
-| **PCB design** | 96× IM72D128 in spiral, split into 4 quadrant sections (3 arms/24 mics each) matching the cluster partition; 12.288 MHz TCXO lives on the hub, not the array board; per-cluster PDM clock fan-out with matched traces; DIP-header cable to each cluster's Cmod S7 | Geometry final |
+| **PCB design** | 96× IM72D128 in spiral, split into 4 quadrant sections (3 arms/24 mics each) matching the cluster partition; 12.288 MHz TCXO lives on the hub, not the array board; per-cluster PDM clock fan-out with matched traces; DIP-header cable to each cluster's Cmod A7-35T | Geometry final |
 | **PCB fabrication** | Likely fewer layers than the single-FPGA design's 6-layer recommendation — each quadrant only routes matched PDM traces to 3 nearby arms, not the full 300mm span; confirm during layout | Layout complete |
 | **Assembly** | IM72D128 is a small LGA; reflow oven or PCB assembly service | PCB received |
 
@@ -665,14 +690,14 @@ Phase 4 is split into three parallel workstreams that merge at integration.
 
 | Sub-task | Description | Dependency |
 |---|---|---|
-| **First integration** | Connect mic array PCB quadrants to their Cmod S7 clusters, clusters to the Cmod A7-35T hub via spoke cables/DIP wiring, hub to Pi 5 via USB; verify all 96 PDM channels on ILA | All 3 workstreams complete |
+| **First integration** | Connect mic array PCB quadrants to their Cmod A7-35T clusters, clusters to the Cmod A7-35T hub via spoke cables/DIP wiring, hub to Pi 5 via USB; verify all 96 PDM channels on ILA | All 3 workstreams complete |
 | **Host software** | USB ingestion (Config A) / GbE relay (Config B) + 96-ch pipeline; extend `acoustic_camera_p3.py` → `acoustic_camera_p4.py` | Hub producing a valid USB stream |
 | **Camera** | Pi Camera Module 3 Wide (Config A) or USB webcam (Config B) | Host software running |
 | **Calibration** | Gain + phase estimation at 96-ch scale; extend nb17 approach | Hardware assembled |
 
 ### Rev-2 (deferred)
 
-Custom cluster PCBs (bare XC7S25, one per quadrant) and a custom hub PCB (bare XC7A35T +
+Custom cluster PCBs (bare XC7A35T, one per quadrant) and a custom hub PCB (bare XC7A35T +
 FT232H + 12.288 MHz TCXO) designed after the full pipeline is validated on the dev boards.
 Eliminates the 5 dev boards and produces compact integrated tiles suitable for the Phase 4b
 housing.
@@ -720,7 +745,7 @@ housing.
 - Underbrink multi-arm log-spiral array patent — geometry basis
 - Infineon IM72D128 datasheet — mic specs and PDM timing
 - FTDI FT232H datasheet + D2XX/D3XX driver docs — USB sync-FIFO bridge (primary design's hub)
-- Digilent Cmod S7 / Cmod A7-35T reference manuals — connector pinouts, FPGA pin names
+- Digilent Cmod A7-35T reference manual — connector pinouts, FPGA pin names
   (primary design's dev-board modules)
 - Xilinx TEMAC IP core product guide (PG051) — GbE MAC integration (single-FPGA alternate)
 - `alexforencich/verilog-ethernet` — open-source GbE MAC, alternative to TEMAC (single-FPGA
