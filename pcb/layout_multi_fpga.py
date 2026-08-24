@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+DEPRECATED (2026-08-23): the user now manages pcb/multi_fpga/'s schematics
+and PCBs directly in KiCad. Do NOT run this script to (re)generate or
+overwrite any .kicad_pcb file -- it will conflict with, and can destroy,
+hand-placed/hand-routed state (this has already happened once this
+project). Kept in the repo for historical/documentation reference only.
+
 layout_multi_fpga.py -- board outline + footprint placement for the Phase 4
 Multi-FPGA (Clustered) alternative: ONE arm board design (Cmod A7-35T + 24
 mics + their decoupling caps) and 1 hub board (Cmod A7-35T + FT232H breakout +

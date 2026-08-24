@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+DEPRECATED (2026-08-23): the user now manages schematics and PCBs directly
+in KiCad (pcb/multi_fpga/, and by extension anything using this shared
+generator). Do NOT run this script to (re)generate or overwrite any
+.kicad_sch file. Kept in the repo for historical/documentation reference
+only.
+
 make_schematic.py  —  generate KiCad 10 schematics for the 96-mic IM72D128 PDM array.
 
 Outputs (in pcb/mic_array/):

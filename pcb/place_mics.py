@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""KiCad scripting console script — place 96 IM72D128 mic footprints.
+"""DEPRECATED (2026-08-23): the user now manages schematics and PCBs
+directly in KiCad. Do NOT run this script -- it will overwrite footprint
+positions with hand-placed state. Kept in the repo for
+historical/documentation reference only.
+
+KiCad scripting console script — place 96 IM72D128 mic footprints.
 
 Workflow:
   1. Draw schematic (see SCHEMATIC_NOTES.md in this directory).

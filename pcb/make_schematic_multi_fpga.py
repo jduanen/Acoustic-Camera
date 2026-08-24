@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
 """
+DEPRECATED (2026-08-23): the user now manages pcb/multi_fpga/'s schematics
+and PCBs directly in KiCad. Do NOT run this script to (re)generate or
+overwrite any .kicad_sch file -- it will conflict with, and can destroy,
+hand-edited state. Kept in the repo for historical/documentation reference
+only (the reasoning behind pin assignments, net names, etc. that the
+checked-in .kicad_sch files now carry forward by hand).
+
 make_schematic_multi_fpga.py — generate KiCad 10 schematics for the Phase 4
 Multi-FPGA (Clustered) Alternative dev-board wiring (see PHASE4.md).
 

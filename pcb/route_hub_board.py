@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
 """
+DEPRECATED (2026-08-23): the user now manages pcb/multi_fpga/'s schematics
+and PCBs directly in KiCad. Do NOT run this script -- net assignment and
+autorouting will conflict with, and can destroy, hand-placed/hand-routed
+state. Kept in the repo for historical/documentation reference only.
+
 route_hub_board.py -- assign nets to hub.kicad_pcb's pads (from
 pcb/multi_fpga/hub.kicad_sch's actual wiring, see make_schematic_multi_fpga.py's
 make_hub()), then autoroute via Freerouting, same pipeline as

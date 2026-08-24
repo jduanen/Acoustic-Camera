@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
 """
+DEPRECATED (2026-08-23): the user now manages pcb/multi_fpga/'s schematics
+and PCBs directly in KiCad. Do NOT run this script -- net assignment,
+autorouting, and the manual fix-up passes below will conflict with, and can
+destroy, hand-placed/hand-routed state. Kept in the repo for
+historical/documentation reference only.
+
 route_arm_board.py -- assign nets to arm_board.kicad_pcb's pads (from
 pcb/multi_fpga/cluster_00.kicad_sch's actual wiring, since arm_board is
 built once at c=0 and its local U1-U24/C1-C24/A1 numbering coincides
