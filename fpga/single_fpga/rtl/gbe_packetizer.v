@@ -17,6 +17,19 @@
 // crossing" section for the margin analysis (~8.7x) backing why a single ping-pong pair is
 // enough, no deeper queuing needed.
 //
+// Payload storage is a proper array-addressed memory (pkt_ch_mem[bank][slot], one 24-bit
+// channel sample per address) rather than a flat bit-vector sliced at a dynamic bit offset.
+// An earlier version used the latter (`pkt_buf[wr_bank][(...)*8 +: 2304] <= ...`) -- it
+// simulated correctly, but a real placed build showed it cost ~46K LUTs on
+// xc7a200tfbg484-1 (see the project's plan file, Stage 2 utilization section): Vivado
+// can't map "insert a wide chunk at a runtime bit offset within a huge vector" onto a real
+// RAM write port, so it fell back to a wide barrel-shifter/mux network built from
+// distributed-RAM primitives, and `report_methodology`'s own `ULMTCS-2` flagged the
+// resulting control-set count as requiring reduction. Proper array indexing (address is
+// still runtime-computed, but selects a whole memory word rather than an arbitrary bit
+// range) is the pattern synthesis tools map to real RAM efficiently, regardless of the
+// address being dynamic -- confirmed by a real re-placed build after this rewrite.
+//
 // Header (Ethernet+IP+UDP, 42 bytes) is byte-identical on every packet -- every field is a
 // build-time constant (fixed addresses, fixed length, DF=1/Identification=0 so it never
 // fragments). Built once at elaboration time as FIXED_HDR below, including the IPv4 header
@@ -54,12 +67,14 @@ module gbe_packetizer #(
     output wire                          tx_axis_tuser
 );
 
-    localparam integer PAYLOAD_BYTES     = N_CH * 3;                         // 288
     localparam integer HDR_FIELD_BYTES   = 4 + 8;                            // seq_num + timestamp = 12
-    localparam integer PKT_PAYLOAD_BYTES = HDR_FIELD_BYTES + FRAMES_PER_PKT*PAYLOAD_BYTES; // 1452
     localparam integer ETH_HDR_BYTES     = 42;                               // Eth(14)+IP(20)+UDP(8)
-    localparam integer TOTAL_PKT_BYTES   = ETH_HDR_BYTES + PKT_PAYLOAD_BYTES; // 1494
+    localparam integer HDR_TOTAL_BYTES   = ETH_HDR_BYTES + HDR_FIELD_BYTES;  // 54
+    localparam integer PAYLOAD_CH_TOTAL  = FRAMES_PER_PKT * N_CH;            // 480 (channel slots/bank)
+    localparam integer PKT_PAYLOAD_BYTES = HDR_FIELD_BYTES + PAYLOAD_CH_TOTAL*3; // 1452
+    localparam integer TOTAL_PKT_BYTES   = HDR_TOTAL_BYTES + PAYLOAD_CH_TOTAL*3; // 1494
     localparam integer BYTE_CNT_W        = $clog2(TOTAL_PKT_BYTES);
+    localparam integer CH_IDX_W          = $clog2(PAYLOAD_CH_TOTAL);
     localparam integer FRAME_IDX_W       = $clog2(FRAMES_PER_PKT);
 
     // ------------------------------------------------------------------
@@ -103,26 +118,18 @@ module gbe_packetizer #(
     };
 
     // ------------------------------------------------------------------
-    // clk domain: frame collector. Reorders each frame's 96 channels into
-    // MSB-first-per-channel byte order (fir_data_in is LSB-first internally,
-    // matching single_fpga_top_spike.v's [FIR_WIDTH*c +: FIR_WIDTH] convention),
-    // then writes one frame (288 bytes) per fir valid pulse into the current
-    // write bank at pkt_buf[wr_bank][byte_idx], byte_idx counting up from 0.
+    // clk domain: frame collector. Each fir valid pulse writes all N_CH
+    // channels' raw samples (untouched -- MSB-first byte extraction happens
+    // on the read side below) into pkt_ch_mem[wr_bank][frame_idx*N_CH + c],
+    // one array-indexed word per channel.
     // ------------------------------------------------------------------
     wire frame_valid = &fir_valid_in; // fully parallel, identical latency per channel -- see
                                        // GBE_FRAMING.md's "real architectural advantage" note
 
-    wire [PAYLOAD_BYTES*8-1:0] frame_bytes_msb_first;
-    genvar ch;
-    generate
-        for (ch = 0; ch < N_CH; ch = ch + 1) begin : g_reorder
-            assign frame_bytes_msb_first[8*(3*ch+0) +: 8] = fir_data_in[FIR_WIDTH*ch+23 -: 8]; // MSB byte
-            assign frame_bytes_msb_first[8*(3*ch+1) +: 8] = fir_data_in[FIR_WIDTH*ch+15 -: 8]; // mid byte
-            assign frame_bytes_msb_first[8*(3*ch+2) +: 8] = fir_data_in[FIR_WIDTH*ch+7  -: 8]; // LSB byte
-        end
-    endgenerate
+    reg [FIR_WIDTH-1:0] pkt_ch_mem [0:1][0:PAYLOAD_CH_TOTAL-1]; // ping-pong payload memory
+    reg [31:0]           pkt_seq_r [0:1]; // this bank's stamped seq_num, latched at batch close
+    reg [63:0]           pkt_ts_r  [0:1]; // this bank's stamped timestamp, latched at batch close
 
-    reg [8*PKT_PAYLOAD_BYTES-1:0] pkt_buf [0:1]; // ping-pong payload memory (byte idx0 = low bit offset)
     reg [FRAME_IDX_W-1:0] frame_idx;
     reg                   wr_bank;
     reg [63:0]            sample_counter;   // free-running, increments once per frame (48kHz)
@@ -130,17 +137,7 @@ module gbe_packetizer #(
     reg [31:0]            pkt_seq;
     reg                   pkt_ready_toggle;
 
-    // Built up, then written to pkt_buf[wr_bank] with a single nonblocking
-    // assignment per cycle (below) -- an earlier version issued several
-    // separate nonblocking partial-select writes to the same dynamically-
-    // indexed pkt_buf[wr_bank] row (payload write + up to 12 header-byte
-    // writes) in one always block invocation; on the batch-closing cycle
-    // xsim did not merge all of them correctly, silently dropping some of
-    // that cycle's payload bytes (caught by the bit-exact pipeline
-    // testbench comparison, not by inspection). One write per row per
-    // cycle sidesteps that entirely and is the more conventional pattern
-    // for indexed-memory writes besides.
-    reg [8*PKT_PAYLOAD_BYTES-1:0] next_bank_val;
+    integer wc;
 
     always @(posedge clk) begin
         if (rst) begin
@@ -156,26 +153,15 @@ module gbe_packetizer #(
             if (frame_idx == {FRAME_IDX_W{1'b0}})
                 batch_ts_r <= sample_counter;
 
-            // this frame's 288 bytes, at byte offset HDR_FIELD_BYTES + frame_idx*PAYLOAD_BYTES
-            next_bank_val = pkt_buf[wr_bank];
-            next_bank_val[(HDR_FIELD_BYTES + frame_idx*PAYLOAD_BYTES)*8 +: PAYLOAD_BYTES*8]
-                = frame_bytes_msb_first;
+            // this frame's N_CH channels, at slot frame_idx*N_CH + c
+            for (wc = 0; wc < N_CH; wc = wc + 1)
+                pkt_ch_mem[wr_bank][frame_idx*N_CH + wc] <= fir_data_in[FIR_WIDTH*wc +: FIR_WIDTH];
 
             if (frame_idx == FRAMES_PER_PKT-1) begin
-                // batch complete: stamp seq_num/timestamp into this bank's first 12 bytes,
-                // hand it off to the tx_clk domain, and start filling the other bank.
-                next_bank_val[0  +: 8] = pkt_seq[31:24];
-                next_bank_val[8  +: 8] = pkt_seq[23:16];
-                next_bank_val[16 +: 8] = pkt_seq[15:8];
-                next_bank_val[24 +: 8] = pkt_seq[7:0];
-                next_bank_val[32 +: 8] = batch_ts_r[63:56];
-                next_bank_val[40 +: 8] = batch_ts_r[55:48];
-                next_bank_val[48 +: 8] = batch_ts_r[47:40];
-                next_bank_val[56 +: 8] = batch_ts_r[39:32];
-                next_bank_val[64 +: 8] = batch_ts_r[31:24];
-                next_bank_val[72 +: 8] = batch_ts_r[23:16];
-                next_bank_val[80 +: 8] = batch_ts_r[15:8];
-                next_bank_val[88 +: 8] = batch_ts_r[7:0];
+                // batch complete: stamp this bank's seq_num/timestamp, hand it off to the
+                // tx_clk domain, and start filling the other bank.
+                pkt_seq_r[wr_bank] <= pkt_seq;
+                pkt_ts_r[wr_bank]  <= batch_ts_r;
 
                 pkt_seq          <= pkt_seq + 32'd1;
                 pkt_ready_toggle <= ~pkt_ready_toggle;
@@ -184,8 +170,6 @@ module gbe_packetizer #(
             end else begin
                 frame_idx <= frame_idx + 1'b1;
             end
-
-            pkt_buf[wr_bank] <= next_bank_val; // wr_bank here is still this cycle's (pre-toggle) value
         end
     end
 
@@ -197,6 +181,12 @@ module gbe_packetizer #(
     // pulse, consumption always finishes well before the next batch closes --
     // see GBE_FRAMING.md's ~8.7x margin note), so the bank index itself is never
     // transferred across the crossing, only the toggle.
+    //
+    // byte_cnt free-runs 0..TOTAL_PKT_BYTES-1 across the whole packet (drives
+    // tlast); ch_idx/byte_in_ch track position within the payload region only
+    // (0..PAYLOAD_CH_TOTAL-1 channels x 3 bytes each), avoiding a runtime
+    // divide-by-3 to recover a channel/byte-within-channel address pair from
+    // a flat byte offset.
     // ------------------------------------------------------------------
     reg [2:0] tog_sync;
     wire      pkt_pulse = tog_sync[2] ^ tog_sync[1];
@@ -205,6 +195,8 @@ module gbe_packetizer #(
     reg                     rd_bank;
     reg                     tx_active;
     reg [BYTE_CNT_W-1:0]    byte_cnt;
+    reg [CH_IDX_W-1:0]      ch_idx;
+    reg [1:0]               byte_in_ch;
 
     always @(posedge tx_clk) begin
         if (tx_rst) begin
@@ -220,6 +212,8 @@ module gbe_packetizer #(
             rd_bank     <= 1'b0;
             tx_active   <= 1'b0;
             byte_cnt    <= {BYTE_CNT_W{1'b0}};
+            ch_idx      <= {CH_IDX_W{1'b0}};
+            byte_in_ch  <= 2'd0;
         end else begin
             if (pkt_pulse)
                 pkt_pending <= 1'b1;
@@ -235,6 +229,18 @@ module gbe_packetizer #(
                     tx_active <= 1'b0;
                     rd_bank   <= ~rd_bank;
                 end else begin
+                    if (byte_cnt == HDR_TOTAL_BYTES-1) begin
+                        // last header byte this cycle; next byte starts the payload
+                        ch_idx     <= {CH_IDX_W{1'b0}};
+                        byte_in_ch <= 2'd0;
+                    end else if (byte_cnt >= HDR_TOTAL_BYTES) begin
+                        if (byte_in_ch == 2'd2) begin
+                            byte_in_ch <= 2'd0;
+                            ch_idx     <= ch_idx + 1'b1;
+                        end else begin
+                            byte_in_ch <= byte_in_ch + 1'b1;
+                        end
+                    end
                     byte_cnt <= byte_cnt + 1'b1;
                 end
             end
@@ -245,8 +251,19 @@ module gbe_packetizer #(
     assign tx_axis_tlast  = tx_active && (byte_cnt == TOTAL_PKT_BYTES-1);
     assign tx_axis_tuser  = 1'b0; // no frame-error signaling -- nothing generates one here
 
-    assign tx_axis_tdata = (byte_cnt < ETH_HDR_BYTES)
-        ? FIXED_HDR[(ETH_HDR_BYTES-1-byte_cnt)*8 +: 8]
-        : pkt_buf[rd_bank][(byte_cnt-ETH_HDR_BYTES)*8 +: 8];
+    wire [3:0] hdr_field_idx = byte_cnt - ETH_HDR_BYTES; // valid only when HDR_TOTAL_BYTES>byte_cnt>=ETH_HDR_BYTES
+    wire [7:0] hdr_field_byte = (hdr_field_idx < 4)
+        ? pkt_seq_r[rd_bank][(3 - hdr_field_idx)*8 +: 8]
+        : pkt_ts_r[rd_bank][(11 - hdr_field_idx)*8 +: 8];
+
+    wire [FIR_WIDTH-1:0] cur_ch_val = pkt_ch_mem[rd_bank][ch_idx];
+    wire [7:0] payload_byte = (byte_in_ch == 2'd0) ? cur_ch_val[23:16] :
+                               (byte_in_ch == 2'd1) ? cur_ch_val[15:8]  :
+                                                       cur_ch_val[7:0];
+
+    assign tx_axis_tdata =
+        (byte_cnt < ETH_HDR_BYTES)   ? FIXED_HDR[(ETH_HDR_BYTES-1-byte_cnt)*8 +: 8] :
+        (byte_cnt < HDR_TOTAL_BYTES) ? hdr_field_byte :
+                                        payload_byte;
 
 endmodule
