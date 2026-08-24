@@ -17,6 +17,7 @@ RTL := fpga/cluster/rtl
 SIM := fpga/cluster/sim
 HUB_RTL := fpga/hub/rtl
 HUB_SIM := fpga/hub/sim
+SINGLE_FPGA_SIM := fpga/single_fpga/sim
 
 # $(1) = space-separated source files (relative to $(SIM)), $(2) = top testbench module name
 #
@@ -78,7 +79,21 @@ define XSIM_RUN_HUB_UNISIM
 	fi
 endef
 
-.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-all clean-sim golden-test
+# Same as XSIM_RUN, but for fpga/single_fpga's own sim tree ($(1)'s paths are
+# relative to $(SINGLE_FPGA_SIM)). No unisim primitives used yet -- no glbl.
+define XSIM_RUN_SINGLE_FPGA
+	source $(VIVADO_SETTINGS) >/dev/null
+	cd $(SINGLE_FPGA_SIM)
+	xvlog --work work $(1)
+	xelab work.$(2) -s $(2)_sim
+	xsim $(2)_sim -R | tee $(2).run.log
+	if ! grep -q '^PASS:' $(2).run.log; then
+		echo "*** $(2) did not report PASS -- treating as failed ***"
+		exit 1
+	fi
+endef
+
+.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -116,10 +131,16 @@ sim-usb-framer:
 sim-hub-top:
 	$(call XSIM_RUN_HUB_UNISIM,../rtl/reset_seq.v ../rtl/spoke_deframer.v ../rtl/usb_framer.v ../rtl/hub_top.v tb_hub_top.v,tb_hub_top)
 
-golden-test:
-	python3 -m pytest fpga/cluster/golden fpga/hub/golden -q
+sim-gbe-packetizer:
+	$(call XSIM_RUN_SINGLE_FPGA,../rtl/gbe_packetizer.v tb_gbe_packetizer.v,tb_gbe_packetizer)
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top
+sim-gbe-pipeline:
+	$(call XSIM_RUN_SINGLE_FPGA,../../cluster/rtl/pdm_line_demux.v ../../cluster/rtl/cic_decimator.v ../../cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v tb_gbe_pipeline.v,tb_gbe_pipeline)
+
+golden-test:
+	python3 -m pytest fpga/cluster/golden fpga/hub/golden fpga/single_fpga/golden -q
+
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="
@@ -127,3 +148,4 @@ sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-fra
 clean-sim:
 	rm -rf $(SIM)/xsim.dir $(SIM)/work $(SIM)/*.jou $(SIM)/*.log $(SIM)/*.pb $(SIM)/*.wdb $(SIM)/.Xil $(SIM)/*.run.log
 	rm -rf $(HUB_SIM)/xsim.dir $(HUB_SIM)/work $(HUB_SIM)/*.jou $(HUB_SIM)/*.log $(HUB_SIM)/*.pb $(HUB_SIM)/*.wdb $(HUB_SIM)/.Xil $(HUB_SIM)/*.run.log
+	rm -rf $(SINGLE_FPGA_SIM)/xsim.dir $(SINGLE_FPGA_SIM)/work $(SINGLE_FPGA_SIM)/*.jou $(SINGLE_FPGA_SIM)/*.log $(SINGLE_FPGA_SIM)/*.pb $(SINGLE_FPGA_SIM)/*.wdb $(SINGLE_FPGA_SIM)/.Xil $(SINGLE_FPGA_SIM)/*.run.log

@@ -130,6 +130,18 @@ module gbe_packetizer #(
     reg [31:0]            pkt_seq;
     reg                   pkt_ready_toggle;
 
+    // Built up, then written to pkt_buf[wr_bank] with a single nonblocking
+    // assignment per cycle (below) -- an earlier version issued several
+    // separate nonblocking partial-select writes to the same dynamically-
+    // indexed pkt_buf[wr_bank] row (payload write + up to 12 header-byte
+    // writes) in one always block invocation; on the batch-closing cycle
+    // xsim did not merge all of them correctly, silently dropping some of
+    // that cycle's payload bytes (caught by the bit-exact pipeline
+    // testbench comparison, not by inspection). One write per row per
+    // cycle sidesteps that entirely and is the more conventional pattern
+    // for indexed-memory writes besides.
+    reg [8*PKT_PAYLOAD_BYTES-1:0] next_bank_val;
+
     always @(posedge clk) begin
         if (rst) begin
             frame_idx        <= {FRAME_IDX_W{1'b0}};
@@ -145,24 +157,25 @@ module gbe_packetizer #(
                 batch_ts_r <= sample_counter;
 
             // this frame's 288 bytes, at byte offset HDR_FIELD_BYTES + frame_idx*PAYLOAD_BYTES
-            pkt_buf[wr_bank][(HDR_FIELD_BYTES + frame_idx*PAYLOAD_BYTES)*8 +: PAYLOAD_BYTES*8]
-                <= frame_bytes_msb_first;
+            next_bank_val = pkt_buf[wr_bank];
+            next_bank_val[(HDR_FIELD_BYTES + frame_idx*PAYLOAD_BYTES)*8 +: PAYLOAD_BYTES*8]
+                = frame_bytes_msb_first;
 
             if (frame_idx == FRAMES_PER_PKT-1) begin
                 // batch complete: stamp seq_num/timestamp into this bank's first 12 bytes,
                 // hand it off to the tx_clk domain, and start filling the other bank.
-                pkt_buf[wr_bank][0  +: 8] <= pkt_seq[31:24];
-                pkt_buf[wr_bank][8  +: 8] <= pkt_seq[23:16];
-                pkt_buf[wr_bank][16 +: 8] <= pkt_seq[15:8];
-                pkt_buf[wr_bank][24 +: 8] <= pkt_seq[7:0];
-                pkt_buf[wr_bank][32 +: 8] <= batch_ts_r[63:56];
-                pkt_buf[wr_bank][40 +: 8] <= batch_ts_r[55:48];
-                pkt_buf[wr_bank][48 +: 8] <= batch_ts_r[47:40];
-                pkt_buf[wr_bank][56 +: 8] <= batch_ts_r[39:32];
-                pkt_buf[wr_bank][64 +: 8] <= batch_ts_r[31:24];
-                pkt_buf[wr_bank][72 +: 8] <= batch_ts_r[23:16];
-                pkt_buf[wr_bank][80 +: 8] <= batch_ts_r[15:8];
-                pkt_buf[wr_bank][88 +: 8] <= batch_ts_r[7:0];
+                next_bank_val[0  +: 8] = pkt_seq[31:24];
+                next_bank_val[8  +: 8] = pkt_seq[23:16];
+                next_bank_val[16 +: 8] = pkt_seq[15:8];
+                next_bank_val[24 +: 8] = pkt_seq[7:0];
+                next_bank_val[32 +: 8] = batch_ts_r[63:56];
+                next_bank_val[40 +: 8] = batch_ts_r[55:48];
+                next_bank_val[48 +: 8] = batch_ts_r[47:40];
+                next_bank_val[56 +: 8] = batch_ts_r[39:32];
+                next_bank_val[64 +: 8] = batch_ts_r[31:24];
+                next_bank_val[72 +: 8] = batch_ts_r[23:16];
+                next_bank_val[80 +: 8] = batch_ts_r[15:8];
+                next_bank_val[88 +: 8] = batch_ts_r[7:0];
 
                 pkt_seq          <= pkt_seq + 32'd1;
                 pkt_ready_toggle <= ~pkt_ready_toggle;
@@ -171,6 +184,8 @@ module gbe_packetizer #(
             end else begin
                 frame_idx <= frame_idx + 1'b1;
             end
+
+            pkt_buf[wr_bank] <= next_bank_val; // wr_bank here is still this cycle's (pre-toggle) value
         end
     end
 
