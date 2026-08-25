@@ -53,20 +53,29 @@ Real data sources (no invented numbers):
   placement.
 - Camera (Pi Camera Module 3 Wide) mechanical spec: Raspberry Pi's own
   official product brief (RP-008151-DS, "Physical specification" page,
-  Wide lens drawing), fetched and read directly this session -- PCB
-  25x24mm, lens height 12.4mm, front lens aperture dia 6.95mm, 4 mounting
-  holes on a real 14.4mm(X) x 14.5mm(Y) rectangle centred on the lens,
-  dia 2.2mm each (M2 clearance). CAMERA_CUTOUT_DIA_MM=12.0mm is sized to
-  clear the 6.95mm aperture with real margin while staying well inside that
-  14.4x14.5mm hole rectangle (hole radius 6mm vs mounting holes at
-  radius ~10.2mm -- ~4.2mm of solid board between the cutout edge and each
-  mounting hole, confirmed by direct calculation, not just eyeballed).
-  This also matches pcb/layout_multi_fpga.py's own CAMERA_CUTOUT_DIA_MM for
-  the multi-FPGA hub's camera opening (12.0mm) -- independent convergence
-  from real data on this board, not copied from that board's own value
-  (which that file flags as a placeholder chosen before this real
-  datasheet was in hand; its 2-hole CAMERA_MOUNT_HOLE_SPACING_MM=21.0mm
-  placeholder is superseded here by this board's real 4-hole pattern).
+  Wide lens drawing) -- PCB 25x24mm (23.862mm real), lens height 12.4mm,
+  front lens aperture dia 6.95mm, 4 mounting holes dia 2.2mm each (M2
+  clearance). CAMERA_CUTOUT_DIA_MM=12.0mm is sized to clear the 6.95mm
+  aperture with real margin.
+  Real hole pattern (re-verified directly against the product brief's own
+  vector drawing this session, at 600dpi, via pixel-precise measurement --
+  NOT the 14.4x14.5mm symmetric-rectangle figure this file used earlier,
+  which was a misread of that same drawing): the 4 holes are NOT symmetric
+  around the lens. Measured from the drawing's own real board edges
+  (25 x 23.862mm, confirmed independently via the product brief's own
+  printed board-size spec): holes sit 2.0mm in from the left/right/bottom
+  edges (X = 2.0mm and 23.0mm from the left edge -- a real 21.0mm X
+  spacing, not 14.4mm), but only the BOTTOM pair is 2.0mm from an edge --
+  the TOP pair sits 9.35mm down from the top edge, because the board's
+  FPC-connector notch eats into the top of the board asymmetrically. The
+  lens is confirmed (same drawing) to sit exactly level with the TOP hole
+  pair (same Y), not centred between top and bottom pairs, and horizontally
+  centred exactly on the board's own centreline (25/2 = 12.5mm) -- also
+  confirmed as the X midpoint of the 2.0/23.0mm hole columns. So, relative
+  to the lens/cutout centre: two holes at (+-10.5, 0)mm (level with the
+  lens), two more at (+-10.5, +12.5)mm (12.5mm further from the lens, on
+  whichever side the FPC connector notch is NOT on). CAMERA_MOUNT_HOLE_*
+  below reflect this real, asymmetric pattern.
   NOT modelled: exact standoff/board-thickness stack-up between the camera
   module and this board's front face -- the cutout is sized to the real
   lens aperture with real margin, but whether the 120-degree Wide FOV cone
@@ -118,8 +127,9 @@ BOARD_RADIUS_MM = 160.0
 
 # Camera cutout + real 4-hole mounting pattern -- see header for sourcing.
 CAMERA_CUTOUT_DIA_MM = 12.0
-CAMERA_MOUNT_HOLE_HALF_X_MM = 14.4 / 2.0   # 7.2
-CAMERA_MOUNT_HOLE_HALF_Y_MM = 14.5 / 2.0   # 7.25
+CAMERA_MOUNT_HOLE_HALF_X_MM = 10.5   # +-10.5mm, both hole rows (real 21.0mm X spacing)
+CAMERA_MOUNT_HOLE_NEAR_Y_MM = 0.0    # HCAM1/HCAM2: level with the lens (real, not +-symmetric)
+CAMERA_MOUNT_HOLE_FAR_Y_MM = 12.5    # HCAM3/HCAM4: 12.5mm further out
 
 
 def load_fp(lib_path, name, ref, x_mm, y_mm, rot_deg=0.0):
@@ -214,10 +224,10 @@ def main():
     add_circle(board, 0.0, 0.0, CAMERA_CUTOUT_DIA_MM / 2.0, n=32, width_mm=0.15)
 
     # ── camera mounting holes (real 4-hole pattern, see header) ─────────
-    add_mounting_hole(board, -CAMERA_MOUNT_HOLE_HALF_X_MM, -CAMERA_MOUNT_HOLE_HALF_Y_MM, "HCAM1")
-    add_mounting_hole(board, CAMERA_MOUNT_HOLE_HALF_X_MM, -CAMERA_MOUNT_HOLE_HALF_Y_MM, "HCAM2")
-    add_mounting_hole(board, -CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_HALF_Y_MM, "HCAM3")
-    add_mounting_hole(board, CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_HALF_Y_MM, "HCAM4")
+    add_mounting_hole(board, -CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_NEAR_Y_MM, "HCAM1")
+    add_mounting_hole(board, CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_NEAR_Y_MM, "HCAM2")
+    add_mounting_hole(board, -CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_FAR_Y_MM, "HCAM3")
+    add_mounting_hole(board, CAMERA_MOUNT_HOLE_HALF_X_MM, CAMERA_MOUNT_HOLE_FAR_Y_MM, "HCAM4")
 
     # ── 96 mics + 96 decoupling caps ─────────────────────────────────────
     placed = []  # (ref, courtyard_world_rect) for the overlap check below
