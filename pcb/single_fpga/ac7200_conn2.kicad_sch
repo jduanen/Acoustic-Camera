@@ -1,0 +1,6950 @@
+(kicad_sch
+	(version 20260306)
+	(generator "eeschema")
+	(generator_version "10.0")
+	(uuid "e597e3d6-d311-42b4-8f46-1e204bc83af4")
+	(paper "A4")
+	(lib_symbols
+		(symbol "single_fpga:AC7200"
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at 0 5 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Value" "ALINX AC7200 (XC7A200T-2FBG484I)"
+				(at 0 2 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Footprint" "single_fpga:AC7200"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Datasheet" "docs/AC7200_User_Manual.pdf"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "ALINX AC7200 XC7A200T-2FBG484I Artix-7 FPGA SOM, 45x55mm, 4x 80-pin/0.5mm B2B connectors (Unit A=CON1 VCCIN/GND+BANK34+BANK13+XADC, Unit B=CON2 BANK13+BANK14, Unit C=CON3 BANK15+BANK16+JTAG (TCK/TDI/TDO/TMS on pins 77-80 -- a SEPARATE on-module 6-pin JTAG header J1 also exists, not modeled here), Unit D=CON4 BANK16+GTP transceivers). Every pin cross-checked against ALINX's own real user manual (docs/AC7200_User_Manual.pdf) -- CON2/CON3/CON4 and CON1 pins 1-72 matched an earlier web-transcription exactly; CON1 pins 73-80 (previously unverified placeholder) now filled in from the real manual. ONE correction applied: CON1 pin 27 is printed as 'B13_L7_P' in ALINX's own manual (same as pin 25) -- a real duplicate/typo in their document (different FPGA balls AB11 vs AB12, and every other one of the 320 pins alternates P/N without exception) -- corrected here to B13_L7_N. Module standalone-power (J3, 2-pin +5V/GND) and JTAG (J1, 6-pin) headers exist on the module but are not part of this symbol (carrier-board-facing CON1-4 only)."
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(symbol "AC7200_1_1"
+				(rectangle
+					(start -15 52.07)
+					(end 15 -52.07)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "CON1"
+					(at 0 54.61 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 49.53 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 46.99 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 44.45 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 41.91 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 39.37 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 36.83 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 34.29 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 31.75 0)
+					(length 5.08)
+					(name "VCCIN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 29.21 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 26.67 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 24.13 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 21.59 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 19.05 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 16.51 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 13.97 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 11.43 0)
+					(length 5.08)
+					(name "B13_L4_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 8.89 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 6.35 0)
+					(length 5.08)
+					(name "B13_L4_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 3.81 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 1.27 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -1.27 0)
+					(length 5.08)
+					(name "B13_L5_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -3.81 0)
+					(length 5.08)
+					(name "B13_L1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -6.35 0)
+					(length 5.08)
+					(name "B13_L5_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -8.89 0)
+					(length 5.08)
+					(name "B13_L1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -11.43 0)
+					(length 5.08)
+					(name "B13_L7_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -13.97 0)
+					(length 5.08)
+					(name "B13_L2_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -16.51 0)
+					(length 5.08)
+					(name "B13_L7_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -19.05 0)
+					(length 5.08)
+					(name "B13_L2_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -21.59 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -24.13 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -26.67 0)
+					(length 5.08)
+					(name "B13_L3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -29.21 0)
+					(length 5.08)
+					(name "B13_L6_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -31.75 0)
+					(length 5.08)
+					(name "B13_L3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_33"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -34.29 0)
+					(length 5.08)
+					(name "B13_L6_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_34"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -36.83 0)
+					(length 5.08)
+					(name "B34_L23_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_35"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -39.37 0)
+					(length 5.08)
+					(name "B34_L20_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_36"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -41.91 0)
+					(length 5.08)
+					(name "B34_L23_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_37"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -44.45 0)
+					(length 5.08)
+					(name "B34_L20_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_38"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -46.99 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_39"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -49.53 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_40"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 49.53 180)
+					(length 5.08)
+					(name "B34_L18_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_41"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 46.99 180)
+					(length 5.08)
+					(name "B34_L21_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_42"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 44.45 180)
+					(length 5.08)
+					(name "B34_L18_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_43"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 41.91 180)
+					(length 5.08)
+					(name "B34_L21_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_44"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 39.37 180)
+					(length 5.08)
+					(name "B34_L19_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_45"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 36.83 180)
+					(length 5.08)
+					(name "B34_L22_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_46"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 34.29 180)
+					(length 5.08)
+					(name "B34_L19_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_47"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 31.75 180)
+					(length 5.08)
+					(name "B34_L22_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_48"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 29.21 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 26.67 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_50"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 24.13 180)
+					(length 5.08)
+					(name "XADC_VN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_51"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 21.59 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_52"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 19.05 180)
+					(length 5.08)
+					(name "XADC_VP"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_53"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 16.51 180)
+					(length 5.08)
+					(name "B34_L25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_54"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 13.97 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_55"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 11.43 180)
+					(length 5.08)
+					(name "B34_L24_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_56"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 8.89 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_57"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 6.35 180)
+					(length 5.08)
+					(name "B34_L24_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_58"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 3.81 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_59"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 1.27 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_60"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -1.27 180)
+					(length 5.08)
+					(name "B16_L1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_61"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -3.81 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_62"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -6.35 180)
+					(length 5.08)
+					(name "B16_L1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_63"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -8.89 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_64"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -11.43 180)
+					(length 5.08)
+					(name "B16_L4_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_65"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -13.97 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_66"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -16.51 180)
+					(length 5.08)
+					(name "B16_L4_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_67"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -19.05 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_68"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -21.59 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_69"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -24.13 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_70"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -26.67 180)
+					(length 5.08)
+					(name "B16_L6_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_71"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -29.21 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_72"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -31.75 180)
+					(length 5.08)
+					(name "B16_L6_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_73"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -34.29 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_74"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -36.83 180)
+					(length 5.08)
+					(name "B16_L8_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_75"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -39.37 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_76"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -41.91 180)
+					(length 5.08)
+					(name "B16_L8_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_77"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -44.45 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_78"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -46.99 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_79"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -49.53 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON1_80"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "AC7200_2_1"
+				(rectangle
+					(start -15 52.07)
+					(end 15 -52.07)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "CON2"
+					(at 0 54.61 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 49.53 0)
+					(length 5.08)
+					(name "B13_L16_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 46.99 0)
+					(length 5.08)
+					(name "B14_L16_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 44.45 0)
+					(length 5.08)
+					(name "B13_L16_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 41.91 0)
+					(length 5.08)
+					(name "B14_L16_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 39.37 0)
+					(length 5.08)
+					(name "B13_L15_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 36.83 0)
+					(length 5.08)
+					(name "B13_L14_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 34.29 0)
+					(length 5.08)
+					(name "B13_L15_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 31.75 0)
+					(length 5.08)
+					(name "B13_L14_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 29.21 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 26.67 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 24.13 0)
+					(length 5.08)
+					(name "B13_L13_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 21.59 0)
+					(length 5.08)
+					(name "B14_L10_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 19.05 0)
+					(length 5.08)
+					(name "B13_L13_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 16.51 0)
+					(length 5.08)
+					(name "B14_L10_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 13.97 0)
+					(length 5.08)
+					(name "B13_L12_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 11.43 0)
+					(length 5.08)
+					(name "B14_L8_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 8.89 0)
+					(length 5.08)
+					(name "B13_L12_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 6.35 0)
+					(length 5.08)
+					(name "B14_L8_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 3.81 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 1.27 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -1.27 0)
+					(length 5.08)
+					(name "B13_L11_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -3.81 0)
+					(length 5.08)
+					(name "B14_L15_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -6.35 0)
+					(length 5.08)
+					(name "B13_L11_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -8.89 0)
+					(length 5.08)
+					(name "B14_L15_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -11.43 0)
+					(length 5.08)
+					(name "B13_L10_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -13.97 0)
+					(length 5.08)
+					(name "B14_L17_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -16.51 0)
+					(length 5.08)
+					(name "B13_L10_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -19.05 0)
+					(length 5.08)
+					(name "B14_L17_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -21.59 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -24.13 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -26.67 0)
+					(length 5.08)
+					(name "B13_L9_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -29.21 0)
+					(length 5.08)
+					(name "B14_L6_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -31.75 0)
+					(length 5.08)
+					(name "B13_L9_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_33"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -34.29 0)
+					(length 5.08)
+					(name "B13_IO0"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_34"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -36.83 0)
+					(length 5.08)
+					(name "B13_L8_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_35"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -39.37 0)
+					(length 5.08)
+					(name "B14_L7_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_36"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -41.91 0)
+					(length 5.08)
+					(name "B13_L8_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_37"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -44.45 0)
+					(length 5.08)
+					(name "B14_L7_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_38"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -46.99 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_39"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -49.53 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_40"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 49.53 180)
+					(length 5.08)
+					(name "B14_L11_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_41"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 46.99 180)
+					(length 5.08)
+					(name "B14_L4_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_42"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 44.45 180)
+					(length 5.08)
+					(name "B14_L11_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_43"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 41.91 180)
+					(length 5.08)
+					(name "B14_L4_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_44"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 39.37 180)
+					(length 5.08)
+					(name "B14_L14_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_45"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 36.83 180)
+					(length 5.08)
+					(name "B14_L9_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_46"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 34.29 180)
+					(length 5.08)
+					(name "B14_L14_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_47"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 31.75 180)
+					(length 5.08)
+					(name "B14_L9_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_48"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 29.21 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 26.67 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_50"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 24.13 180)
+					(length 5.08)
+					(name "B14_L5_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_51"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 21.59 180)
+					(length 5.08)
+					(name "B14_L12_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_52"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 19.05 180)
+					(length 5.08)
+					(name "B14_L5_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_53"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 16.51 180)
+					(length 5.08)
+					(name "B14_L12_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_54"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 13.97 180)
+					(length 5.08)
+					(name "B14_L18_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_55"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 11.43 180)
+					(length 5.08)
+					(name "B14_L13_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_56"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 8.89 180)
+					(length 5.08)
+					(name "B14_L18_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_57"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 6.35 180)
+					(length 5.08)
+					(name "B14_L13_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_58"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 3.81 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_59"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 1.27 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_60"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -1.27 180)
+					(length 5.08)
+					(name "B13_L17_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_61"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -3.81 180)
+					(length 5.08)
+					(name "B14_L3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_62"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -6.35 180)
+					(length 5.08)
+					(name "B13_L17_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_63"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -8.89 180)
+					(length 5.08)
+					(name "B14_L3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_64"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -11.43 180)
+					(length 5.08)
+					(name "B14_L21_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_65"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -13.97 180)
+					(length 5.08)
+					(name "B14_L20_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_66"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -16.51 180)
+					(length 5.08)
+					(name "B14_L21_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_67"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -19.05 180)
+					(length 5.08)
+					(name "B14_L20_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_68"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -21.59 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_69"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -24.13 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_70"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -26.67 180)
+					(length 5.08)
+					(name "B14_L22_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_71"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -29.21 180)
+					(length 5.08)
+					(name "B14_L19_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_72"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -31.75 180)
+					(length 5.08)
+					(name "B14_L22_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_73"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -34.29 180)
+					(length 5.08)
+					(name "B14_L19_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_74"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -36.83 180)
+					(length 5.08)
+					(name "B14_L24_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_75"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -39.37 180)
+					(length 5.08)
+					(name "B14_L23_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_76"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -41.91 180)
+					(length 5.08)
+					(name "B14_L24_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_77"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -44.45 180)
+					(length 5.08)
+					(name "B14_L23_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_78"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -46.99 180)
+					(length 5.08)
+					(name "B14_IO0"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_79"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -49.53 180)
+					(length 5.08)
+					(name "B14_IO25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON2_80"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "AC7200_3_1"
+				(rectangle
+					(start -15 52.07)
+					(end 15 -52.07)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "CON3"
+					(at 0 54.61 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 49.53 0)
+					(length 5.08)
+					(name "B15_IO0"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 46.99 0)
+					(length 5.08)
+					(name "B15_IO25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 44.45 0)
+					(length 5.08)
+					(name "B16_IO0"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 41.91 0)
+					(length 5.08)
+					(name "B16_IO25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 39.37 0)
+					(length 5.08)
+					(name "B15_L4_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 36.83 0)
+					(length 5.08)
+					(name "B16_L21_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 34.29 0)
+					(length 5.08)
+					(name "B15_L4_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 31.75 0)
+					(length 5.08)
+					(name "B16_L21_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 29.21 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 26.67 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 24.13 0)
+					(length 5.08)
+					(name "B15_L2_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 21.59 0)
+					(length 5.08)
+					(name "B16_L23_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 19.05 0)
+					(length 5.08)
+					(name "B15_L2_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 16.51 0)
+					(length 5.08)
+					(name "B16_L23_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 13.97 0)
+					(length 5.08)
+					(name "B15_L12_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 11.43 0)
+					(length 5.08)
+					(name "B16_L22_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 8.89 0)
+					(length 5.08)
+					(name "B15_L12_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 6.35 0)
+					(length 5.08)
+					(name "B16_L22_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 3.81 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 1.27 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -1.27 0)
+					(length 5.08)
+					(name "B15_L11_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -3.81 0)
+					(length 5.08)
+					(name "B16_L24_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -6.35 0)
+					(length 5.08)
+					(name "B15_L11_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -8.89 0)
+					(length 5.08)
+					(name "B16_L24_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -11.43 0)
+					(length 5.08)
+					(name "B15_L1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -13.97 0)
+					(length 5.08)
+					(name "B15_L8_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -16.51 0)
+					(length 5.08)
+					(name "B15_L1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -19.05 0)
+					(length 5.08)
+					(name "B15_L8_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -21.59 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -24.13 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -26.67 0)
+					(length 5.08)
+					(name "B15_L5_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -29.21 0)
+					(length 5.08)
+					(name "B15_L7_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -31.75 0)
+					(length 5.08)
+					(name "B15_L5_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_33"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -34.29 0)
+					(length 5.08)
+					(name "B15_L7_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_34"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -36.83 0)
+					(length 5.08)
+					(name "B15_L3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_35"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -39.37 0)
+					(length 5.08)
+					(name "B15_L9_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_36"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -41.91 0)
+					(length 5.08)
+					(name "B15_L3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_37"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -44.45 0)
+					(length 5.08)
+					(name "B15_L9_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_38"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -46.99 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_39"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -49.53 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_40"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 49.53 180)
+					(length 5.08)
+					(name "B15_L19_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_41"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 46.99 180)
+					(length 5.08)
+					(name "B15_L15_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_42"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 44.45 180)
+					(length 5.08)
+					(name "B15_L19_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_43"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 41.91 180)
+					(length 5.08)
+					(name "B15_L15_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_44"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 39.37 180)
+					(length 5.08)
+					(name "B15_L20_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_45"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 36.83 180)
+					(length 5.08)
+					(name "B15_L6_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_46"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 34.29 180)
+					(length 5.08)
+					(name "B15_L20_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_47"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 31.75 180)
+					(length 5.08)
+					(name "B15_L6_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_48"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 29.21 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 26.67 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_50"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 24.13 180)
+					(length 5.08)
+					(name "B15_L14_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_51"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 21.59 180)
+					(length 5.08)
+					(name "B15_L13_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_52"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 19.05 180)
+					(length 5.08)
+					(name "B15_L14_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_53"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 16.51 180)
+					(length 5.08)
+					(name "B15_L13_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_54"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 13.97 180)
+					(length 5.08)
+					(name "B15_L21_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_55"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 11.43 180)
+					(length 5.08)
+					(name "B15_L10_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_56"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 8.89 180)
+					(length 5.08)
+					(name "B15_L21_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_57"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 6.35 180)
+					(length 5.08)
+					(name "B15_L10_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_58"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 3.81 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_59"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 1.27 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_60"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -1.27 180)
+					(length 5.08)
+					(name "B15_L23_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_61"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -3.81 180)
+					(length 5.08)
+					(name "B15_L18_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_62"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -6.35 180)
+					(length 5.08)
+					(name "B15_L23_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_63"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -8.89 180)
+					(length 5.08)
+					(name "B15_L18_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_64"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -11.43 180)
+					(length 5.08)
+					(name "B15_L22_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_65"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -13.97 180)
+					(length 5.08)
+					(name "B15_L17_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_66"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -16.51 180)
+					(length 5.08)
+					(name "B15_L22_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_67"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -19.05 180)
+					(length 5.08)
+					(name "B15_L17_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_68"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -21.59 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_69"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -24.13 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_70"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -26.67 180)
+					(length 5.08)
+					(name "B15_L24_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_71"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -29.21 180)
+					(length 5.08)
+					(name "B15_L16_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_72"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -31.75 180)
+					(length 5.08)
+					(name "B15_L24_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_73"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -34.29 180)
+					(length 5.08)
+					(name "B15_L16_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_74"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -36.83 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_75"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -39.37 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_76"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -41.91 180)
+					(length 5.08)
+					(name "FPGA_TCK"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_77"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -44.45 180)
+					(length 5.08)
+					(name "FPGA_TDI"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_78"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -46.99 180)
+					(length 5.08)
+					(name "FPGA_TDO"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_79"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -49.53 180)
+					(length 5.08)
+					(name "FPGA_TMS"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON3_80"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "AC7200_4_1"
+				(rectangle
+					(start -15 52.07)
+					(end 15 -52.07)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(text "CON4"
+					(at 0 54.61 0)
+					(effects
+						(font
+							(size 1.27 1.27)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 49.53 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 46.99 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 44.45 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 41.91 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 39.37 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 36.83 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 34.29 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_7"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 31.75 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_8"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 29.21 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_9"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 26.67 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_10"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 24.13 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_11"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 21.59 0)
+					(length 5.08)
+					(name "MGT_TX2_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_12"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 19.05 0)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_13"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 16.51 0)
+					(length 5.08)
+					(name "MGT_TX2_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_14"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 13.97 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_15"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 11.43 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_16"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 8.89 0)
+					(length 5.08)
+					(name "MGT_TX3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_17"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 6.35 0)
+					(length 5.08)
+					(name "MGT_RX2_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_18"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 3.81 0)
+					(length 5.08)
+					(name "MGT_TX3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_19"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 1.27 0)
+					(length 5.08)
+					(name "MGT_RX2_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_20"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -1.27 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_21"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -3.81 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_22"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -6.35 0)
+					(length 5.08)
+					(name "MGT_RX3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_23"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -8.89 0)
+					(length 5.08)
+					(name "MGT_TX0_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_24"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -11.43 0)
+					(length 5.08)
+					(name "MGT_RX3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_25"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -13.97 0)
+					(length 5.08)
+					(name "MGT_TX0_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_26"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -16.51 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_27"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -19.05 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_28"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -21.59 0)
+					(length 5.08)
+					(name "MGT_TX1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_29"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -24.13 0)
+					(length 5.08)
+					(name "MGT_RX0_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_30"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -26.67 0)
+					(length 5.08)
+					(name "MGT_TX1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_31"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -29.21 0)
+					(length 5.08)
+					(name "MGT_RX0_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_32"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -31.75 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_33"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -34.29 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_34"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -36.83 0)
+					(length 5.08)
+					(name "MGT_RX1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_35"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -39.37 0)
+					(length 5.08)
+					(name "MGT_CLK1_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_36"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -41.91 0)
+					(length 5.08)
+					(name "MGT_RX1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_37"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at -20.08 -44.45 0)
+					(length 5.08)
+					(name "MGT_CLK1_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_38"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -46.99 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_39"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -20.08 -49.53 0)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_40"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 49.53 180)
+					(length 5.08)
+					(name "B16_L5_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_41"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 46.99 180)
+					(length 5.08)
+					(name "B16_L2_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_42"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 44.45 180)
+					(length 5.08)
+					(name "B16_L5_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_43"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 41.91 180)
+					(length 5.08)
+					(name "B16_L2_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_44"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 39.37 180)
+					(length 5.08)
+					(name "B16_L7_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_45"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 36.83 180)
+					(length 5.08)
+					(name "B16_L3_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_46"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 34.29 180)
+					(length 5.08)
+					(name "B16_L7_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_47"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 31.75 180)
+					(length 5.08)
+					(name "B16_L3_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_48"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 29.21 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_49"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 26.67 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_50"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 24.13 180)
+					(length 5.08)
+					(name "B16_L9_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_51"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 21.59 180)
+					(length 5.08)
+					(name "B16_L10_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_52"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 19.05 180)
+					(length 5.08)
+					(name "B16_L9_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_53"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 16.51 180)
+					(length 5.08)
+					(name "B16_L10_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_54"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 13.97 180)
+					(length 5.08)
+					(name "B16_L11_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_55"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 11.43 180)
+					(length 5.08)
+					(name "B16_L12_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_56"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 8.89 180)
+					(length 5.08)
+					(name "B16_L11_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_57"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 6.35 180)
+					(length 5.08)
+					(name "B16_L12_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_58"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 3.81 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_59"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 1.27 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_60"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -1.27 180)
+					(length 5.08)
+					(name "B16_L13_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_61"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -3.81 180)
+					(length 5.08)
+					(name "B16_L14_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_62"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -6.35 180)
+					(length 5.08)
+					(name "B16_L13_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_63"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -8.89 180)
+					(length 5.08)
+					(name "B16_L14_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_64"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -11.43 180)
+					(length 5.08)
+					(name "B16_L15_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_65"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -13.97 180)
+					(length 5.08)
+					(name "B16_L16_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_66"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -16.51 180)
+					(length 5.08)
+					(name "B16_L15_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_67"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -19.05 180)
+					(length 5.08)
+					(name "B16_L16_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_68"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -21.59 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_69"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at 20.08 -24.13 180)
+					(length 5.08)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_70"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -26.67 180)
+					(length 5.08)
+					(name "B16_L17_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_71"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -29.21 180)
+					(length 5.08)
+					(name "B16_L18_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_72"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -31.75 180)
+					(length 5.08)
+					(name "B16_L17_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_73"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -34.29 180)
+					(length 5.08)
+					(name "B16_L18_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_74"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -36.83 180)
+					(length 5.08)
+					(name "B16_L19_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_75"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -39.37 180)
+					(length 5.08)
+					(name "B16_L20_P"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_76"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -41.91 180)
+					(length 5.08)
+					(name "B16_L19_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_77"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -44.45 180)
+					(length 5.08)
+					(name "B16_L20_N"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_78"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -46.99 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_79"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 20.08 -49.53 180)
+					(length 5.08)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "CON4_80"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
+	)
+	(symbol
+		(lib_id "single_fpga:AC7200")
+		(at 140.97 104.14 0)
+		(unit 2)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(fields_autoplaced yes)
+		(uuid "3fd3efde-8c96-4cc7-a629-c7ab1fc8720f")
+		(property "Reference" "U97"
+			(at 140.97 43.18 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "ALINX AC7200 (XC7A200T-2FBG484I)"
+			(at 140.97 45.72 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "single_fpga:AC7200"
+			(at 140.97 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "docs/AC7200_User_Manual.pdf"
+			(at 140.97 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "ALINX AC7200 XC7A200T-2FBG484I Artix-7 FPGA SOM, 45x55mm, 4x 80-pin/0.5mm B2B connectors (Unit A=CON1 VCCIN/GND+BANK34+BANK13+XADC, Unit B=CON2 BANK13+BANK14, Unit C=CON3 BANK15+BANK16+JTAG (TCK/TDI/TDO/TMS on pins 77-80 -- a SEPARATE on-module 6-pin JTAG header J1 also exists, not modeled here), Unit D=CON4 BANK16+GTP transceivers). Every pin cross-checked against ALINX's own real user manual (docs/AC7200_User_Manual.pdf) -- CON2/CON3/CON4 and CON1 pins 1-72 matched an earlier web-transcription exactly; CON1 pins 73-80 (previously unverified placeholder) now filled in from the real manual. ONE correction applied: CON1 pin 27 is printed as 'B13_L7_P' in ALINX's own manual (same as pin 25) -- a real duplicate/typo in their document (different FPGA balls AB11 vs AB12, and every other one of the 320 pins alternates P/N without exception) -- corrected here to B13_L7_N. Module standalone-power (J3, 2-pin +5V/GND) and JTAG (J1, 6-pin) headers exist on the module but are not part of this symbol (carrier-board-facing CON1-4 only)."
+			(at 140.97 104.14 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(justify left)
+			)
+		)
+		(pin "CON3_15"
+			(uuid "5ebc1cac-d52f-477b-8fd7-86a8ae534cbe")
+		)
+		(pin "CON1_35"
+			(uuid "ef3102ec-593f-4d95-a74a-f0c50e8b8a37")
+		)
+		(pin "CON4_18"
+			(uuid "ac773923-d858-4a19-937e-0de2a6a04292")
+		)
+		(pin "CON4_76"
+			(uuid "fca2f55b-d314-486b-8874-b4fdcac3144d")
+		)
+		(pin "CON4_63"
+			(uuid "f51ff1df-92cc-4239-b4ed-866b7a32fb58")
+		)
+		(pin "CON4_5"
+			(uuid "68bfbee0-1450-4b86-9d16-5a73ea2383ab")
+		)
+		(pin "CON4_23"
+			(uuid "a376d88b-4e69-4f00-a6c7-40becf177d83")
+		)
+		(pin "CON2_35"
+			(uuid "d4290c05-68f7-4b26-9818-fbdcdbf0297c")
+		)
+		(pin "CON1_36"
+			(uuid "5785b9f4-f3f8-46ef-95c2-d26a48cfbbaa")
+		)
+		(pin "CON2_55"
+			(uuid "15f3eb91-2d91-470b-be70-b43091a89ba5")
+		)
+		(pin "CON1_18"
+			(uuid "47149aa0-9b16-4510-9d92-104894e6f04f")
+		)
+		(pin "CON1_65"
+			(uuid "6fe77b52-8a28-4f2a-a035-ebdaf4e69d2e")
+		)
+		(pin "CON4_13"
+			(uuid "99192ca0-069d-49df-95d7-a8f5ce40e2d6")
+		)
+		(pin "CON3_3"
+			(uuid "e42d5019-3543-482d-add0-27742c97bfe2")
+		)
+		(pin "CON4_75"
+			(uuid "965bf19c-f016-4729-8599-f0046bef8cca")
+		)
+		(pin "CON2_62"
+			(uuid "294c7939-27c8-446d-9cdb-d91851ca2893")
+		)
+		(pin "CON3_35"
+			(uuid "0077660f-7e77-4900-a8c2-873bd7aa53fc")
+		)
+		(pin "CON1_56"
+			(uuid "66049fe1-62f9-41a6-a76e-940392e36efd")
+		)
+		(pin "CON4_77"
+			(uuid "b3465720-fc7b-4eca-8f4c-560de630f840")
+		)
+		(pin "CON4_66"
+			(uuid "3f829f08-66eb-4458-bbd9-d0970c335ebe")
+		)
+		(pin "CON2_71"
+			(uuid "959d17c5-88a8-4aff-8ece-516bbcacdb67")
+		)
+		(pin "CON2_6"
+			(uuid "a7f542f9-c2fd-40bf-9f3e-9487a025a15f")
+		)
+		(pin "CON4_11"
+			(uuid "22961003-3fff-4376-8b8f-01eb481f6032")
+		)
+		(pin "CON1_13"
+			(uuid "3a8606ad-6d88-443b-abf9-fb553bdd5155")
+		)
+		(pin "CON1_12"
+			(uuid "554d5b19-5fd8-4c88-ba15-a39be235f34c")
+		)
+		(pin "CON3_5"
+			(uuid "40bf0b9b-e186-4a68-bb2e-00c7504a6ecb")
+		)
+		(pin "CON3_79"
+			(uuid "4fe366b8-f7d3-4874-87c2-1db3f742f511")
+		)
+		(pin "CON4_43"
+			(uuid "a73d8171-b965-404a-8f93-357f64e2bce9")
+		)
+		(pin "CON3_49"
+			(uuid "71cacfe2-5386-4f1d-8ea8-a50ebf0cdf08")
+		)
+		(pin "CON4_20"
+			(uuid "9677b9ba-eb48-464e-b751-99546ffd1ab2")
+		)
+		(pin "CON3_56"
+			(uuid "84a8bca2-c0a1-41c1-8b23-852c3fc90bf3")
+		)
+		(pin "CON4_37"
+			(uuid "72d68e2c-9051-410b-b3f3-5d3a174f58e8")
+		)
+		(pin "CON4_80"
+			(uuid "2fe28674-a5e7-49bd-aac0-43d14981d36a")
+		)
+		(pin "CON1_14"
+			(uuid "b1c2ce26-4463-420e-b1d4-92cf8a919963")
+		)
+		(pin "CON2_34"
+			(uuid "cb97a2f2-2a2c-42ae-a2e6-59f94f26a030")
+		)
+		(pin "CON4_50"
+			(uuid "0fa51665-8932-4427-a7bc-b09cea2219c5")
+		)
+		(pin "CON1_49"
+			(uuid "c44468b5-cf90-408a-918e-fd70904ba3ab")
+		)
+		(pin "CON3_76"
+			(uuid "a2cd6453-1bc8-42e6-a025-1bd276372a4c")
+		)
+		(pin "CON2_70"
+			(uuid "eed7655c-681a-4093-b74c-e5ab2b1c3dff")
+		)
+		(pin "CON2_42"
+			(uuid "da2597ce-ba74-4605-b8eb-0cf0e32ab3f0")
+		)
+		(pin "CON2_73"
+			(uuid "b6362e5e-0ce6-4d77-92bc-145f4d546ca5")
+		)
+		(pin "CON3_74"
+			(uuid "9174097b-4b0c-4e42-bf79-ad24de917f31")
+		)
+		(pin "CON1_25"
+			(uuid "47e6d683-df85-4c3f-b05a-25707a43d301")
+		)
+		(pin "CON4_33"
+			(uuid "f81fa706-32d9-4d4b-8ccb-126b822c4cd3")
+		)
+		(pin "CON4_41"
+			(uuid "d765f882-76f2-494d-a654-6378f0d3593d")
+		)
+		(pin "CON4_48"
+			(uuid "973f3e2f-430d-4b21-a980-2ff3c6075ef2")
+		)
+		(pin "CON1_72"
+			(uuid "b355c9a6-ae75-49dd-8d98-730a49cc46e5")
+		)
+		(pin "CON4_27"
+			(uuid "a2c0ff3a-d5c9-4f17-af03-e8faf53d0d65")
+		)
+		(pin "CON2_50"
+			(uuid "b569d634-890e-4e4d-b2ca-a854fdd7f306")
+		)
+		(pin "CON3_19"
+			(uuid "a5a7cf10-d4d2-403d-8914-68971d2cb3ef")
+		)
+		(pin "CON3_38"
+			(uuid "937e4a0a-1d39-479a-b8e6-175f3738ab32")
+		)
+		(pin "CON2_2"
+			(uuid "252659a9-02a1-4f60-9113-10853bdb71b7")
+		)
+		(pin "CON3_6"
+			(uuid "b1103092-a014-471b-8a21-514bba390e05")
+		)
+		(pin "CON1_73"
+			(uuid "ed7a897b-3064-45ba-b267-0e5f02b3b707")
+		)
+		(pin "CON4_40"
+			(uuid "8f142a1b-7611-40f5-b047-3ebc618ac4a9")
+		)
+		(pin "CON2_45"
+			(uuid "685253b7-3470-4bb4-a8de-e4f3e5ff40e6")
+		)
+		(pin "CON2_76"
+			(uuid "ad534b40-89e9-4ce7-a372-201dcdd53d87")
+		)
+		(pin "CON1_58"
+			(uuid "0ddd945b-bc15-4564-8f99-90a28f139ce2")
+		)
+		(pin "CON1_34"
+			(uuid "aa5bbbc5-f052-4ded-bfa8-b32c9454a19d")
+		)
+		(pin "CON3_47"
+			(uuid "db6325c6-0c3f-4751-aa8b-e7b0a5aed91f")
+		)
+		(pin "CON3_39"
+			(uuid "10bdd0a3-02a1-4480-925b-92ced7d344b6")
+		)
+		(pin "CON2_52"
+			(uuid "b6cb2ed3-2dd0-4759-a84f-28afd8715860")
+		)
+		(pin "CON1_33"
+			(uuid "520a1fe0-a074-4d40-b65b-3742b8e60ade")
+		)
+		(pin "CON1_17"
+			(uuid "cc2d08eb-aaea-49a1-bdb0-c730d84304ac")
+		)
+		(pin "CON3_78"
+			(uuid "7c52e924-9770-4ca0-8c25-3702017675e7")
+		)
+		(pin "CON3_43"
+			(uuid "908d48b6-82ae-4687-b201-5790ab96cbcb")
+		)
+		(pin "CON2_46"
+			(uuid "d256f522-f59e-4e00-a1b2-069a776c1bd0")
+		)
+		(pin "CON3_33"
+			(uuid "6a4d5517-4376-431e-8249-d0d1804ae144")
+		)
+		(pin "CON3_34"
+			(uuid "a029c496-6997-49cb-801a-9c26059258d1")
+		)
+		(pin "CON1_77"
+			(uuid "745c456a-3feb-493a-ab4b-1105301765e2")
+		)
+		(pin "CON2_56"
+			(uuid "b8b7c74f-31f2-4205-b7b6-e387f46a0d0b")
+		)
+		(pin "CON2_60"
+			(uuid "a29b1402-2fab-45ea-a8a0-c2b75bf02649")
+		)
+		(pin "CON4_4"
+			(uuid "51048ece-8cb1-44c6-8e12-f59f9577b68d")
+		)
+		(pin "CON3_10"
+			(uuid "bde6dde9-903a-4a65-8581-19ca67946e4d")
+		)
+		(pin "CON4_54"
+			(uuid "18d014c9-2dc9-428f-9fee-13d6aee2266d")
+		)
+		(pin "CON1_55"
+			(uuid "2515054e-67a8-4cc6-9cb8-f282e8bf2a20")
+		)
+		(pin "CON1_62"
+			(uuid "440bba1a-809e-4948-a374-bb712f8df4a4")
+		)
+		(pin "CON4_34"
+			(uuid "dabdad25-99ae-450b-a724-c7ed61e3a98c")
+		)
+		(pin "CON3_54"
+			(uuid "38dabd67-5f82-4aa5-806c-c16be1c906ad")
+		)
+		(pin "CON4_72"
+			(uuid "a61e76b2-909f-4ac5-b2d1-947ce698fd73")
+		)
+		(pin "CON2_66"
+			(uuid "b01aaaa0-1d30-4b2a-8c8e-79772fe765ef")
+		)
+		(pin "CON4_14"
+			(uuid "75b9ce10-e4f2-42fc-96f0-9ab9ff23c1c8")
+		)
+		(pin "CON2_7"
+			(uuid "e05d22be-1fb5-485e-bde6-cfd7aefe9332")
+		)
+		(pin "CON2_38"
+			(uuid "10f4c14f-f5eb-4e9b-9471-081884bd47e9")
+		)
+		(pin "CON3_12"
+			(uuid "dcbce673-6ffe-4971-adc9-b2404501089d")
+		)
+		(pin "CON2_72"
+			(uuid "78bfc5b9-4dc6-4bcf-90ca-e85037d0be57")
+		)
+		(pin "CON3_62"
+			(uuid "27248b08-f451-449f-b008-6a07dba7e992")
+		)
+		(pin "CON1_47"
+			(uuid "f270bce4-5bde-4327-b330-93bef7cbebd1")
+		)
+		(pin "CON1_11"
+			(uuid "fb3804ed-2e63-4498-85cb-7aa2d309e92e")
+		)
+		(pin "CON2_11"
+			(uuid "de6d31b1-22bc-4e7b-b5ea-79e1ab1b6d7b")
+		)
+		(pin "CON2_51"
+			(uuid "aa92f8b5-d8f6-45e7-8712-7741aa9a31ac")
+		)
+		(pin "CON3_36"
+			(uuid "d2851015-d66b-4b55-b132-3b65964228c7")
+		)
+		(pin "CON2_61"
+			(uuid "19522e1b-a414-4b81-ba8c-80c53c1dba3f")
+		)
+		(pin "CON2_24"
+			(uuid "f7d0ef12-f612-4536-bf9f-316a1f0cc48e")
+		)
+		(pin "CON4_12"
+			(uuid "eecf9065-8aca-4cde-839f-48942893c3fd")
+		)
+		(pin "CON2_1"
+			(uuid "be30d5ba-a370-4586-b856-a025d075f301")
+		)
+		(pin "CON1_61"
+			(uuid "06f625c4-0a77-4b83-9d08-88fb5890280d")
+		)
+		(pin "CON1_32"
+			(uuid "6b2a81ef-a113-40c4-a9e7-582ce1d8bf82")
+		)
+		(pin "CON3_20"
+			(uuid "823505f4-0a35-4fe7-a4bf-77bf1e13b0e8")
+		)
+		(pin "CON4_39"
+			(uuid "c7bcf249-20fa-47e6-a88a-b81525ae1f98")
+		)
+		(pin "CON3_37"
+			(uuid "0f1f34b7-5fde-410b-b893-bc6d89ca388a")
+		)
+		(pin "CON1_44"
+			(uuid "3db6d77e-4abe-4a8e-a71b-8c0e72e004d6")
+		)
+		(pin "CON4_10"
+			(uuid "6d9ca060-e445-488b-9273-33c4f0020b00")
+		)
+		(pin "CON2_29"
+			(uuid "15fc1e82-3fe0-4669-9fcc-76d226783d5b")
+		)
+		(pin "CON4_45"
+			(uuid "943991ea-f77f-4f89-9819-637ba47fca86")
+		)
+		(pin "CON2_28"
+			(uuid "19a349d7-a39b-47fb-b155-07b0947fe6f6")
+		)
+		(pin "CON3_57"
+			(uuid "394a0620-7ba0-41fe-90a8-7a363d97737d")
+		)
+		(pin "CON3_66"
+			(uuid "b0d55a59-50a2-4af0-8de8-79976736ef28")
+		)
+		(pin "CON3_17"
+			(uuid "2a82c7d3-10d9-4a3f-915c-a0007a2dddc9")
+		)
+		(pin "CON1_7"
+			(uuid "72e0a395-f3f6-4ef5-a277-b168b9d29a7d")
+		)
+		(pin "CON1_6"
+			(uuid "e52ed4e4-6dfa-4671-8bd6-cb65793d1dfa")
+		)
+		(pin "CON3_28"
+			(uuid "93737963-d9c2-4755-8856-e0b050e9fee3")
+		)
+		(pin "CON1_15"
+			(uuid "2294c54e-038d-4507-aa0c-d595c16f7765")
+		)
+		(pin "CON2_4"
+			(uuid "9bd195f1-b801-4adb-89eb-003d0c0ab136")
+		)
+		(pin "CON2_26"
+			(uuid "3293e5e9-1230-441e-9379-a6f9eb086b74")
+		)
+		(pin "CON2_43"
+			(uuid "184ce673-d124-463b-a0f6-c1c1f85da8c2")
+		)
+		(pin "CON4_8"
+			(uuid "8e4a98cd-b55a-415c-9564-a0d6dd8d1ad5")
+		)
+		(pin "CON2_48"
+			(uuid "74a76231-e870-45e3-9056-414acf2cb0c9")
+		)
+		(pin "CON1_78"
+			(uuid "355bf54a-3625-45a6-a0eb-8bdf36c249de")
+		)
+		(pin "CON4_2"
+			(uuid "80dd35fa-a878-4fb1-9d2d-a75bc92bdd11")
+		)
+		(pin "CON3_48"
+			(uuid "34fba83e-7c7e-4ebb-8871-dc7f7f8e159d")
+		)
+		(pin "CON1_68"
+			(uuid "57013e76-982e-40ee-a285-748b75b377b0")
+		)
+		(pin "CON4_62"
+			(uuid "f63ccc0f-fd5d-43cc-a673-24f0f4721536")
+		)
+		(pin "CON1_31"
+			(uuid "05315273-3d30-46b3-bcfd-af39134599e7")
+		)
+		(pin "CON1_45"
+			(uuid "eebce17d-956b-4336-8fd8-5ca2d920fc6c")
+		)
+		(pin "CON3_46"
+			(uuid "296cdc11-2837-45af-bece-a198d01d30ae")
+		)
+		(pin "CON3_41"
+			(uuid "bf7251d5-55e0-4cb7-a528-3af5103c0908")
+		)
+		(pin "CON2_30"
+			(uuid "bf6fcbce-8122-4fdc-b8c6-61b57530663a")
+		)
+		(pin "CON4_24"
+			(uuid "ed0fa7b3-4b0b-4773-86ad-4903c4c80e24")
+		)
+		(pin "CON3_64"
+			(uuid "35efbdbc-fce0-4399-9d6f-4f4990f4fde4")
+		)
+		(pin "CON1_40"
+			(uuid "48b147cd-5d4f-4d43-ba48-471caf74389f")
+		)
+		(pin "CON3_69"
+			(uuid "9894f783-d629-462e-9dd0-2336d069417e")
+		)
+		(pin "CON2_65"
+			(uuid "d562c740-81ba-4317-b9fe-ee87149941a9")
+		)
+		(pin "CON3_16"
+			(uuid "4c6e8008-c30a-4ddf-b3e0-265ea8e3a53c")
+		)
+		(pin "CON4_7"
+			(uuid "b8af12a3-8b86-418e-b973-b7c00fcef26c")
+		)
+		(pin "CON1_39"
+			(uuid "8acae34b-7a96-44cb-871e-8d56b27b99bf")
+		)
+		(pin "CON4_19"
+			(uuid "2494a4b2-9b58-4c36-a446-2761c7642624")
+		)
+		(pin "CON2_16"
+			(uuid "20e85dff-1399-4cb8-964d-fdec651d4bdf")
+		)
+		(pin "CON1_8"
+			(uuid "271ab4da-cb90-42a3-83bc-a08436e11b1a")
+		)
+		(pin "CON1_75"
+			(uuid "41cfc21c-3089-4093-968d-e062f6238743")
+		)
+		(pin "CON4_58"
+			(uuid "bb01233f-c88a-4de2-9a1d-d2ed4c44054c")
+		)
+		(pin "CON4_47"
+			(uuid "c6c13ca2-b8a1-4307-a4ad-e29cd856d341")
+		)
+		(pin "CON1_41"
+			(uuid "6e659d87-d5ab-458f-ae63-a8e97e272f8c")
+		)
+		(pin "CON3_4"
+			(uuid "a667952d-7124-4b9f-a440-e73dc648157a")
+		)
+		(pin "CON3_32"
+			(uuid "42c75e61-cf66-48d4-b12e-fc6c5913ee3b")
+		)
+		(pin "CON2_77"
+			(uuid "398a07e3-4b4c-4253-a4c9-452ff742f69e")
+		)
+		(pin "CON2_15"
+			(uuid "ac6911a0-9670-4941-9b68-14f1f3e59181")
+		)
+		(pin "CON3_70"
+			(uuid "ab1b595a-cc8f-4594-ad4c-8835c102fcf5")
+		)
+		(pin "CON4_67"
+			(uuid "eed80989-4239-4365-a4b1-4aa857a18150")
+		)
+		(pin "CON3_18"
+			(uuid "8ae46e9f-94e0-458f-9f63-a2398a1e1166")
+		)
+		(pin "CON4_70"
+			(uuid "6f10aea5-f99e-406a-a637-a7b49205f5d3")
+		)
+		(pin "CON1_80"
+			(uuid "19bdd556-05ad-46a7-a04a-603dbc9fba71")
+		)
+		(pin "CON2_17"
+			(uuid "945ad699-ba1f-4b1c-aca5-da3986ff7723")
+		)
+		(pin "CON1_27"
+			(uuid "0dc57d05-c760-45e4-b524-a1d70b660737")
+		)
+		(pin "CON2_14"
+			(uuid "2b9ea626-9749-4cc7-8c4f-ba0ef6c1c1bf")
+		)
+		(pin "CON1_59"
+			(uuid "8e0b9746-f2dc-41d4-8952-4b5bcb57574f")
+		)
+		(pin "CON4_65"
+			(uuid "04f12ad9-1f6e-4f4e-9f62-a9b06ce34161")
+		)
+		(pin "CON3_30"
+			(uuid "216574d4-14fc-4a37-844a-f33653a38ee2")
+		)
+		(pin "CON3_52"
+			(uuid "dfaf69c7-6b68-49c8-b452-57759f6a6a52")
+		)
+		(pin "CON2_5"
+			(uuid "27a838d0-54c2-45e6-8142-d0a4479e638f")
+		)
+		(pin "CON1_48"
+			(uuid "6943b5c2-e23b-4f20-972f-565ff2d6a0cb")
+		)
+		(pin "CON4_78"
+			(uuid "2a72f09e-6c01-444c-8f5d-56498b9ea85c")
+		)
+		(pin "CON2_75"
+			(uuid "cbb82824-df2b-40ee-9c54-c372e4977844")
+		)
+		(pin "CON3_51"
+			(uuid "fd7377ab-8c8d-430f-b9f8-e618542a3827")
+		)
+		(pin "CON1_21"
+			(uuid "948f8df3-814b-4d5d-9f5a-e4e39829d334")
+		)
+		(pin "CON1_10"
+			(uuid "4e9c86b8-1dba-4366-81aa-dda1f5d27cc6")
+		)
+		(pin "CON2_40"
+			(uuid "e06d5d3a-aff3-42fd-931b-c585d966e207")
+		)
+		(pin "CON1_28"
+			(uuid "4d6cccf8-4632-4a21-9aa7-3599ecff84f6")
+		)
+		(pin "CON2_64"
+			(uuid "9e0939ed-9935-4b1c-ae66-cd14711eccd5")
+		)
+		(pin "CON4_15"
+			(uuid "e77c84e6-fcb6-4501-8b31-7d14269910dd")
+		)
+		(pin "CON4_32"
+			(uuid "0551f1e0-8aaa-4e39-bb16-fd3e752a147f")
+		)
+		(pin "CON1_60"
+			(uuid "32c04c7b-61e7-485b-b881-36cb19bc765e")
+		)
+		(pin "CON1_37"
+			(uuid "ebd7074d-dc01-4045-8f28-d628d9fbc5f1")
+		)
+		(pin "CON3_21"
+			(uuid "15bdc591-5c63-40d7-b2fb-37f6fbe3354d")
+		)
+		(pin "CON1_5"
+			(uuid "cacd8f13-a0f3-4385-b111-f8ac03ae1e8e")
+		)
+		(pin "CON1_4"
+			(uuid "9d2c54bd-8b7c-4fe8-8bfe-8806ed23208a")
+		)
+		(pin "CON1_3"
+			(uuid "d66f0ba4-6937-449d-837a-472952d3de7f")
+		)
+		(pin "CON1_2"
+			(uuid "2ee7cc19-98d0-4fa1-ad2c-cd313eae7055")
+		)
+		(pin "CON1_1"
+			(uuid "1d3d8633-95c0-4b63-9cf2-7341540ab17c")
+		)
+		(pin "CON2_63"
+			(uuid "8e059414-36ad-4e47-9f7d-41287134a226")
+		)
+		(pin "CON2_59"
+			(uuid "5e7cb332-f229-421c-9fcb-1546ba0fb601")
+		)
+		(pin "CON3_31"
+			(uuid "f9f50a64-65bb-42a3-8f03-b110b36218e7")
+		)
+		(pin "CON3_25"
+			(uuid "9551eacd-7f1f-45c3-b1a9-a272b691f85d")
+		)
+		(pin "CON1_67"
+			(uuid "a64be712-340a-4d30-ba79-b52d75be64ae")
+		)
+		(pin "CON2_25"
+			(uuid "81bce5b2-e3bd-473e-aa7c-2cc3cd2e72e0")
+		)
+		(pin "CON4_1"
+			(uuid "66920196-12ec-4e0b-95e4-9b5645490cd3")
+		)
+		(pin "CON3_11"
+			(uuid "f4afe473-66c3-4748-a854-e5f898b0a6a1")
+		)
+		(pin "CON2_37"
+			(uuid "3d7eda15-efd2-4aab-a408-14071d70d8bc")
+		)
+		(pin "CON3_63"
+			(uuid "fe12fe41-7b09-4e49-95cf-afa5b14b5271")
+		)
+		(pin "CON2_41"
+			(uuid "a7502deb-86c9-4ac2-b5e9-394a97542b56")
+		)
+		(pin "CON4_22"
+			(uuid "06b37bc0-0df2-4205-99e8-aea3a907e46c")
+		)
+		(pin "CON1_16"
+			(uuid "e32d7f44-7444-45a8-98f0-d0439f49af57")
+		)
+		(pin "CON2_39"
+			(uuid "00c6d81d-b90e-4d42-9f9e-dc9b024eefce")
+		)
+		(pin "CON4_68"
+			(uuid "ce902a82-247a-4c40-9f43-be85aec3adf2")
+		)
+		(pin "CON2_22"
+			(uuid "a983bf2b-f5ed-4e25-921d-7b2b534cbd0d")
+		)
+		(pin "CON4_44"
+			(uuid "8424e7ab-a8bf-4a54-bd42-abfd1369d727")
+		)
+		(pin "CON4_6"
+			(uuid "e31ac858-e070-42c1-8746-6e3b60abe993")
+		)
+		(pin "CON1_23"
+			(uuid "818ad81a-604d-468e-81d5-303016ba1b72")
+		)
+		(pin "CON2_44"
+			(uuid "7224ac61-91f3-438e-bf45-74daf7fc580c")
+		)
+		(pin "CON1_54"
+			(uuid "8a19d094-8458-41e7-96d9-08c14f37e105")
+		)
+		(pin "CON4_51"
+			(uuid "6a7c5068-e2e4-414d-8076-65c928fd45b0")
+		)
+		(pin "CON1_24"
+			(uuid "a65af3df-33e1-418b-b393-c0ca0cf9f603")
+		)
+		(pin "CON2_36"
+			(uuid "d5c44a24-a102-4267-9080-7e3a3a475646")
+		)
+		(pin "CON3_23"
+			(uuid "4085fd08-a7d8-4889-b8aa-f5161b199a19")
+		)
+		(pin "CON1_46"
+			(uuid "f4ce694d-35a9-4d1b-97fb-257cc965bbac")
+		)
+		(pin "CON2_12"
+			(uuid "293d045b-57e1-4219-b245-f49d0d2356ad")
+		)
+		(pin "CON4_35"
+			(uuid "5aef225e-06f7-4cbc-b890-e1208462c3d0")
+		)
+		(pin "CON1_71"
+			(uuid "940c55f0-251f-4226-b73f-8be628504f6a")
+		)
+		(pin "CON3_72"
+			(uuid "3225e076-d8b4-4d35-a650-04181e1bc485")
+		)
+		(pin "CON4_28"
+			(uuid "2cb06a12-1a8b-4113-b70b-6df0c027e63a")
+		)
+		(pin "CON4_73"
+			(uuid "ec7e96c2-def1-4670-9eca-568258bf37bd")
+		)
+		(pin "CON4_64"
+			(uuid "3bb81bb9-f3fa-431a-8da0-c4408b09d8ab")
+		)
+		(pin "CON1_20"
+			(uuid "28a796fd-66c4-445e-b3ab-b15540ddea1f")
+		)
+		(pin "CON3_68"
+			(uuid "0bdc8fbe-8a95-4eba-8762-9a471ef902b5")
+		)
+		(pin "CON1_9"
+			(uuid "5fd01c17-aae5-4ede-bea7-e4b5e73c2f7d")
+		)
+		(pin "CON3_42"
+			(uuid "666dc22a-7c22-47bc-be1f-6f52a9b5c969")
+		)
+		(pin "CON1_30"
+			(uuid "8ada0210-1162-4e02-b2c6-3a5699568d9e")
+		)
+		(pin "CON3_7"
+			(uuid "9ac4ec11-95d9-4dba-aa58-78b34838f553")
+		)
+		(pin "CON3_50"
+			(uuid "0d53b88e-e75c-44ff-a8ad-5102fdd7edb0")
+		)
+		(pin "CON3_58"
+			(uuid "e606134a-aaba-43b5-ab48-d3ef17a15010")
+		)
+		(pin "CON3_24"
+			(uuid "237bf8b1-b7cb-4a4a-b321-3a15aa0556cc")
+		)
+		(pin "CON1_66"
+			(uuid "3c675536-b251-49b6-a2f2-8ac059d6209e")
+		)
+		(pin "CON2_13"
+			(uuid "90dfd23f-59d8-4e21-ad7e-ff37c8c38024")
+		)
+		(pin "CON2_23"
+			(uuid "9ddb51bc-25a5-4524-be49-2be9b6a3271b")
+		)
+		(pin "CON3_22"
+			(uuid "cf6d6456-c2ee-4abd-b3b7-5c4ac473bdb9")
+		)
+		(pin "CON4_29"
+			(uuid "c1875b2f-a900-496a-a1d7-dc8f55b3df51")
+		)
+		(pin "CON3_55"
+			(uuid "e144fe8f-8c87-4d64-8d17-d1820a6d8081")
+		)
+		(pin "CON1_70"
+			(uuid "4a1a116f-063c-4adf-a760-7b8009796057")
+		)
+		(pin "CON2_32"
+			(uuid "c57c44c5-8a6a-48bf-9652-9ee889c83c1e")
+		)
+		(pin "CON2_8"
+			(uuid "2a5dbd93-df4a-4553-ad2a-48db3e3ef5d9")
+		)
+		(pin "CON2_21"
+			(uuid "2f277646-06a9-470f-b429-e2a578a12b5d")
+		)
+		(pin "CON2_20"
+			(uuid "ba136cb3-559d-4c1a-ad6e-4456817ff308")
+		)
+		(pin "CON2_78"
+			(uuid "9fb7c95f-dabe-41c6-8fbc-a9f93a9bd92f")
+		)
+		(pin "CON3_27"
+			(uuid "c0278ea6-2382-4ba3-96fe-7ddca7454743")
+		)
+		(pin "CON2_58"
+			(uuid "1ae6ad98-667f-46f4-822a-e4763b086930")
+		)
+		(pin "CON2_79"
+			(uuid "455dbbfe-1cbb-4e6d-aaf6-7b1547f1a265")
+		)
+		(pin "CON2_80"
+			(uuid "c237895a-4c38-4e5f-9926-c8755e5d3f8a")
+		)
+		(pin "CON3_2"
+			(uuid "4ff99b64-3751-41f5-b30e-28346fc6832e")
+		)
+		(pin "CON2_3"
+			(uuid "443061be-e3be-4f87-988a-a1a11fde02dc")
+		)
+		(pin "CON1_29"
+			(uuid "14e1dbc7-0e05-44ee-b9da-497c641aa5b0")
+		)
+		(pin "CON3_67"
+			(uuid "48d38d00-a453-4ef6-af76-2610f30e3fd8")
+		)
+		(pin "CON3_53"
+			(uuid "7125bab4-3c31-4269-99e3-b6d97ff94aa6")
+		)
+		(pin "CON3_26"
+			(uuid "c7349664-3db7-4c69-a6cc-40226e031252")
+		)
+		(pin "CON3_60"
+			(uuid "3e5972bd-666e-446c-872b-c03533f8b3ed")
+		)
+		(pin "CON2_47"
+			(uuid "c44c87af-bdcd-4291-b2ea-b432e6239dc1")
+		)
+		(pin "CON3_1"
+			(uuid "4a7a40a5-b713-43d2-896f-77cdd99e592c")
+		)
+		(pin "CON2_19"
+			(uuid "cc99fced-6965-4eec-ba34-f546140b39e2")
+		)
+		(pin "CON3_14"
+			(uuid "209b9289-54da-431d-a77e-65387af89b3c")
+		)
+		(pin "CON2_18"
+			(uuid "f6397684-1033-4173-929e-19a8bbd789e2")
+		)
+		(pin "CON2_49"
+			(uuid "b81bfa9e-f3cf-4f30-bfe0-61d8870c3d89")
+		)
+		(pin "CON3_59"
+			(uuid "c4838bb9-df0b-4cc0-911a-e29e0cd4189f")
+		)
+		(pin "CON2_10"
+			(uuid "f2287491-47b4-4a76-91a0-edf0b3580307")
+		)
+		(pin "CON4_71"
+			(uuid "ebb55047-6aa3-4df7-a66d-2703cce26098")
+		)
+		(pin "CON1_42"
+			(uuid "15946153-662c-453f-8089-d2f974fe2f8e")
+		)
+		(pin "CON3_73"
+			(uuid "cec136f0-dc32-473d-a40f-9291e2659b09")
+		)
+		(pin "CON2_69"
+			(uuid "cabd0b74-7d7e-43ef-b1f8-227abfe8a5a2")
+		)
+		(pin "CON3_65"
+			(uuid "1051901e-f749-4691-9165-961bfe3736c0")
+		)
+		(pin "CON4_53"
+			(uuid "8c3f249a-9f92-4778-84da-13f430dd0559")
+		)
+		(pin "CON4_57"
+			(uuid "384ed79a-4d2a-44bf-a589-9063ecbf8be3")
+		)
+		(pin "CON4_3"
+			(uuid "6fa0083f-43f7-4755-8919-6dd48b6cb199")
+		)
+		(pin "CON3_80"
+			(uuid "f53a882f-1a7d-4c87-bc33-281904e71ad1")
+		)
+		(pin "CON2_74"
+			(uuid "9c351745-8414-48c2-a153-4155103193df")
+		)
+		(pin "CON4_74"
+			(uuid "17a02a21-4ca6-474b-910c-c2b630e2460a")
+		)
+		(pin "CON2_9"
+			(uuid "14a8239e-ab2e-4b12-94c8-3b579e03eda7")
+		)
+		(pin "CON3_13"
+			(uuid "709fd40d-dc1b-453c-bf40-2dc5748ccd4b")
+		)
+		(pin "CON1_74"
+			(uuid "02babd2d-cf93-4f08-99e6-41e911f83ccd")
+		)
+		(pin "CON4_69"
+			(uuid "ad1279dc-f57c-4116-8d21-0a870b44b66f")
+		)
+		(pin "CON2_27"
+			(uuid "bf8f16c3-fdec-489d-a855-8ec4d7c4aa03")
+		)
+		(pin "CON3_8"
+			(uuid "49d9f12e-a184-4e03-82ac-c645342a1be4")
+		)
+		(pin "CON3_9"
+			(uuid "4b814c52-31fe-498a-a4d6-1dc8e2829801")
+		)
+		(pin "CON4_52"
+			(uuid "753dd320-b9d0-42e5-aed0-041d9303c8cd")
+		)
+		(pin "CON1_53"
+			(uuid "e2f04fdf-ed5f-480b-a2b1-ba97a9382c6e")
+		)
+		(pin "CON1_52"
+			(uuid "0738870e-b9a5-4db8-9a2a-152398de1072")
+		)
+		(pin "CON1_43"
+			(uuid "25ffa763-904a-422f-8a87-a091a4cf237b")
+		)
+		(pin "CON2_54"
+			(uuid "16736c2e-0872-40f7-939e-d08669291471")
+		)
+		(pin "CON1_69"
+			(uuid "8ddb422c-096b-4d99-a8cf-e36dc1979524")
+		)
+		(pin "CON2_31"
+			(uuid "846b8b06-d04a-420f-9fdb-23cd65795151")
+		)
+		(pin "CON3_45"
+			(uuid "78b9af9f-7d23-4da4-b88b-cfa9efdd3773")
+		)
+		(pin "CON3_71"
+			(uuid "8d19816f-e362-442d-a21f-2cb7b9bbd5a5")
+		)
+		(pin "CON1_76"
+			(uuid "6ae31a20-06cc-4d4c-a0a6-ec68fd5afc68")
+		)
+		(pin "CON3_40"
+			(uuid "e0c9ce9b-5824-416e-aa18-bd310c6ed5df")
+		)
+		(pin "CON2_53"
+			(uuid "5d62d6e7-1f55-43c5-af48-a86f6cb21c40")
+		)
+		(pin "CON1_22"
+			(uuid "3dc6c338-0b94-41ca-a0e0-0a24b2388f16")
+		)
+		(pin "CON1_26"
+			(uuid "3152e7af-ffb7-4bf7-b0a6-9763dce743db")
+		)
+		(pin "CON2_57"
+			(uuid "1cc5ec82-0f01-47de-9d57-be2ac28b6e8b")
+		)
+		(pin "CON3_61"
+			(uuid "b9755b8f-6e50-45cb-9777-195d6395aa27")
+		)
+		(pin "CON3_29"
+			(uuid "eaa88cd2-ceda-41a6-85b9-fed64dc13452")
+		)
+		(pin "CON4_55"
+			(uuid "9991dc4a-5165-4b2d-b8ee-8c9aba8ea6c6")
+		)
+		(pin "CON4_38"
+			(uuid "bb08b7f2-4da7-461b-af25-e514d36605f3")
+		)
+		(pin "CON2_67"
+			(uuid "558b6a3f-8bac-4e24-86b3-0e037526a2da")
+		)
+		(pin "CON4_79"
+			(uuid "3b3a2f9a-6d0f-4b8b-9957-da13221caab2")
+		)
+		(pin "CON1_50"
+			(uuid "67dd9363-efc2-4925-a597-b8b139ea7502")
+		)
+		(pin "CON3_77"
+			(uuid "d4df4c44-7a48-43f4-9c8b-5292a95aed62")
+		)
+		(pin "CON1_64"
+			(uuid "61f19f40-7298-4681-95ec-7d2e80c3b354")
+		)
+		(pin "CON2_68"
+			(uuid "6c3b9aaf-cedf-4d3c-bb9b-957321b23183")
+		)
+		(pin "CON4_21"
+			(uuid "1360aa12-e59f-4839-bfea-8baa7e7f9451")
+		)
+		(pin "CON4_30"
+			(uuid "77d11608-8acc-498d-ae2d-315221efb9e2")
+		)
+		(pin "CON4_31"
+			(uuid "fc5d919e-5431-400c-b5b8-7f2b0a8744b5")
+		)
+		(pin "CON3_75"
+			(uuid "f11a0897-8498-4940-8b8f-57d5264db14c")
+		)
+		(pin "CON4_42"
+			(uuid "7e658514-99cb-4361-b37a-c78e9a9dedd1")
+		)
+		(pin "CON4_36"
+			(uuid "4f37f9ea-6189-4085-8d4b-29ec915b0732")
+		)
+		(pin "CON4_56"
+			(uuid "8a19ce06-2920-4368-8780-a990b845ff2c")
+		)
+		(pin "CON1_57"
+			(uuid "d94c15cf-d148-48ad-b730-cc0a30ae50c8")
+		)
+		(pin "CON2_33"
+			(uuid "0eb752a1-72a4-4f55-8796-2f0bd77c1547")
+		)
+		(pin "CON4_16"
+			(uuid "c54d4b25-6c64-4711-a2a6-318c9a2565a2")
+		)
+		(pin "CON4_26"
+			(uuid "7f73c870-6c22-48e3-ae31-c07043b3391e")
+		)
+		(pin "CON1_79"
+			(uuid "ae5cdcf1-ba95-4e6b-9aeb-9690628d6d23")
+		)
+		(pin "CON1_19"
+			(uuid "55995932-8a6d-4e39-8b3b-86a1d61825c9")
+		)
+		(pin "CON3_44"
+			(uuid "98d93205-5e45-41b6-89fa-5cb25c9b0d72")
+		)
+		(pin "CON4_49"
+			(uuid "5349d42a-b769-4df3-b339-09e2987d750d")
+		)
+		(pin "CON1_38"
+			(uuid "06cb4277-dc68-4291-912d-b418bd6dafd6")
+		)
+		(pin "CON4_17"
+			(uuid "34b86137-f36f-4c9f-9c20-7ad636ab67e7")
+		)
+		(pin "CON4_46"
+			(uuid "1b8f1a61-3f61-4135-866f-3a7ce9b5284c")
+		)
+		(pin "CON4_25"
+			(uuid "62a1c057-d85e-441f-b215-e78d831734d6")
+		)
+		(pin "CON1_51"
+			(uuid "2829a0c7-32e8-4d56-b320-2483e713f974")
+		)
+		(pin "CON4_9"
+			(uuid "a38735ba-6807-482e-bc2f-f5ccff83e4c7")
+		)
+		(pin "CON1_63"
+			(uuid "9a0750b0-b2d7-434b-ad15-1da7795a9590")
+		)
+		(pin "CON4_61"
+			(uuid "448d68d2-4c42-4d12-af16-d370bb350b67")
+		)
+		(pin "CON4_60"
+			(uuid "7d06f86a-8b0d-440c-b775-fb32cf490b14")
+		)
+		(pin "CON4_59"
+			(uuid "6162a913-c1ad-441a-a957-315eaff00738")
+		)
+		(instances
+			(project "top"
+				(path "/12638caa-1907-413e-8e98-06abbbf6ccbc/d4107e22-3cf2-453c-a22c-8e2acaca2e5b/b8c40ea9-0d6a-4a7f-8d5e-85c23412f0d2"
+					(reference "U97")
+					(unit 2)
+				)
+			)
+		)
+	)
+)
