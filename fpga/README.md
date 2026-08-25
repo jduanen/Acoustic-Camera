@@ -1,7 +1,8 @@
 # fpga/
 
-Verilog for the acoustic camera's FPGA front-end. Two independent hub architectures for the
-same 96-mic array (see `DESIGN.md`'s "FPGA Choice" section for the full tradeoff writeup and
+This directory contains the Verilog for the acoustic camera's FPGA front-end.
+There are currently two independent implementations of the same 96-mic array
+(see `DESIGN.md`'s "FPGA Choice" section for the full tradeoff writeup and
 `PHASE4.md` for the current phase's hardware decisions):
 
 ## Multiple FPGA (`multi_fpga/`) — primary design
@@ -14,20 +15,20 @@ both with timing margin). Breadboard bring-up (hub + one cluster + one mic) is i
 reset/LED handshake and the audio path confirmed on real hardware, USB streaming to a host is
 next. See `multi_fpga/README.md` for the full breakdown.
 
-## Single FPGA (`single_fpga/`) — documented alternate
+## Single FPGA (`single_fpga/`) — alternate design being explored
 
 One larger FPGA (Xilinx Artix-7 XC7A200T, on an ALINX AC7200 module) handling all 96
-channels directly and bridging to the host over Gigabit Ethernet/UDP instead of USB — no
-inter-chip spoke bus, so no cross-board sample-alignment problem to solve. Evaluated at
-roughly $240/unit cheaper in BOM cost than the multi-FPGA design, but not the currently-chosen
-design — kept and developed as a real, working alternate, staged in three parts:
+channels directly and bridging to the host over Gigabit Ethernet/UDP instead of USB.
+There is no inter-chip spoke bus, so no cross-board sample-alignment problem to solve.
+This has been evaluated at roughly $240/unit cheaper in BOM cost than the multi-FPGA
+design, but not the currently-chosen design; it's being kept and developed as a real,
+working alternate, staged in three parts:
 
 - **Stage 1** (96-channel CIC+FIR pipeline alone, `rtl/single_fpga_top_spike.v`): real placed
-  result **43.52% Slice LUTs** on `xc7a200tfbg484-1`.
-- **Stage 2** (+ UDP packetizer + vendored open-source 1G RGMII MAC,
-  `rtl/gbe_packetizer.v` + `rtl/third_party/verilog-ethernet/`): real placed result
+  result **43.52% Slice LUTs** on `xc7a200tfbg484-1`
+- **Stage 2** (+ UDP packetizer + vendored open-source 1G RGMII MAC, `rtl/gbe_packetizer.v` + `rtl/third_party/verilog-ethernet/`): real placed result
   **48.14% Slice LUTs**, 12.97% DSP48E1, 20.70% Bonded IOB, control sets a clean 1.54% (down
-  from 27.59%/"required reduction" before a payload-memory redesign — see
+  from 27.59%/"required reduction" before a payload-memory redesign; see
   `rtl/gbe_packetizer.v`'s header comment for what changed and why). Protocol documented in
   `GBE_FRAMING.md`; golden model + two bit-exact testbenches in `golden/`/`sim/`
   (`sim-gbe-packetizer`, `sim-gbe-pipeline`).
