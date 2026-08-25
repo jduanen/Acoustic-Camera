@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """spoke_framer_golden.py -- bit-exact reference for spoke_framer.v's v1
-framing protocol. See fpga/cluster/SPOKE_FRAMING.md for the protocol spec
-this implements; both that doc and fpga/cluster/rtl/spoke_framer.v must stay
+framing protocol. See fpga/multi_fpga/cluster/SPOKE_FRAMING.md for the protocol spec
+this implements; both that doc and fpga/multi_fpga/cluster/rtl/spoke_framer.v must stay
 in sync with this file (source of truth for testbench comparison)."""
 
 N_CH = 24

@@ -4,7 +4,7 @@
 // divider, needs Xilinx's unisim simulation models + glbl -- see the
 // Makefile's sim-clk target), its power-on-reset timing, the
 // fpga_reset_n/spoke_alive handshake with the hub (see
-// fpga/hub/rtl/reset_seq.v -- spoke_alive is checked as a tri-state signal:
+// fpga/multi_fpga/hub/rtl/reset_seq.v -- spoke_alive is checked as a tri-state signal:
 // 1'bz when "ready", not 1'b1, since it's now a wired-AND drive; an
 // external pull-up, not modeled here, is what resolves that to a real
 // logic 1 on the shared bus), and the led_r_n/led_g_n/led_b_n health

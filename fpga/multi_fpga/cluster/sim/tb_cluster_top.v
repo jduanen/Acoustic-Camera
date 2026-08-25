@@ -3,8 +3,8 @@
 // End-to-end integration test: drives a synthetic multi-tone PDM stream on
 // all 24 channels (12 physical PDM_Dxx lines, L/R interleaved per line) into
 // cluster_top.v, captures the framed SPOKE_D0-5/SPOKE_STROBE output, deframes
-// it per fpga/cluster/SPOKE_FRAMING.md, and compares against
-// fpga/cluster/golden/gen_pdm_stimulus.py's golden_channel_pipeline() output
+// it per fpga/multi_fpga/cluster/SPOKE_FRAMING.md, and compares against
+// fpga/multi_fpga/cluster/golden/gen_pdm_stimulus.py's golden_channel_pipeline() output
 // (itself built from the already-independently-verified cic_bitexact() and
 // fir_bitexact() golden models) -- bit-exact. This is the "done" criterion
 // for the whole cluster pipeline: every module already has its own
@@ -132,7 +132,7 @@ module tb_cluster_top;
 
     // Capture + deframe: wait for each SPOKE_STROBE, sample both DDR halves
     // for BUSY_CYCLES busy cycles, reconstruct N_CH channel values per
-    // fpga/cluster/SPOKE_FRAMING.md's protocol, compare against golden.
+    // fpga/multi_fpga/cluster/SPOKE_FRAMING.md's protocol, compare against golden.
     localparam integer BUSY_CYCLES = N_CH * (DATA_WIDTH/6) / 2; // matches spoke_framer_golden.py
 
     reg [DATA_WIDTH-1:0] got [0:N_CH-1];

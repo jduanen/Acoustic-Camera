@@ -77,7 +77,7 @@ mics each, doing local PDM capture + CIC/FIR — plus 1 hub FPGA that aggregates
 over a parallel single-ended bus (not true LVDS — the Cmod A7-35T's exposed I/O has no
 differential-capable pins). Both tiers use the same part, Xilinx Artix-7 XC7A35T: the cluster
 tier originally targeted a smaller Spartan-7 XC7S25, but that part couldn't fit the CIC/FIR
-pipeline even after sharing optimizations (see `fpga/cluster/rtl/cluster_top.v`'s header
+pipeline even after sharing optimizations (see `fpga/multi_fpga/cluster/rtl/cluster_top.v`'s header
 comment), so it moved to the same XC7A35T the hub already used — landing on one part number
 for all 5 modules instead of two. The hub never speaks Ethernet: it bridges the aggregated
 stream over USB (FTDI FT232H sync FIFO) to a co-located Raspberry Pi 5, which either runs

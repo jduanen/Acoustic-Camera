@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 // N-stage CIC decimator (differential delay M=1), decimating an IN_WIDTH-bit
-// input stream by R. Mirrors fpga/cluster/golden/cic_golden.py's
+// input stream by R. Mirrors fpga/multi_fpga/cluster/golden/cic_golden.py's
 // cic_bitexact() exactly -- see that file's docstring and Hogenauer (1981)
 // for the register-growth bound WIDTH implements.
 module cic_decimator #(

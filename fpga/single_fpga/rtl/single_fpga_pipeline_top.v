@@ -2,7 +2,7 @@
 
 // Real (non-spike) 96-channel CIC+FIR pipeline + GbE packetizer top-level.
 // Combines single_fpga_top_spike.v's already-passed Stage 1 pipeline wiring
-// (unmodified fpga/cluster/rtl/pdm_line_demux.v, cic_decimator.v,
+// (unmodified fpga/multi_fpga/cluster/rtl/pdm_line_demux.v, cic_decimator.v,
 // fir_compensator.v, reused by relative path, same as the spike) with
 // gbe_packetizer.v's tx_axis_* output -- the real, buildable checkpoint this
 // project's Stage 2 work stands on. single_fpga_top_spike.v itself is left
@@ -10,7 +10,7 @@
 // historical record -- see the plan file).
 //
 // Still NOT a complete board top: no clock generation (PDM_CLK divider/POR,
-// see fpga/cluster/rtl/clk_reset.v for the pattern this will eventually
+// see fpga/multi_fpga/cluster/rtl/clk_reset.v for the pattern this will eventually
 // follow), no eth_mac_1g_rgmii.v instantiation (tx_clk/tx_rst are inputs
 // here, meant to be driven by that MAC's own outputs once it's wired in),
 // no RGMII PHY interface. That real board-top integration is later work;
@@ -62,7 +62,7 @@ module single_fpga_pipeline_top #(
         for (c = 0; c < N_LINES; c = c + 1) begin : g_cic
             // channel 2*c = L (even), channel 2*c+1 = R (odd) -- same
             // "line*2 + {L=0,R=1}" convention as single_fpga_top_spike.v /
-            // fpga/cluster/rtl/cluster_top.v.
+            // fpga/multi_fpga/cluster/rtl/cluster_top.v.
             cic_decimator #(.STAGES(5), .R(64), .IN_WIDTH(1)) u_cic_l (
                 .clk(clk), .rst(rst),
                 .data_in(ch_l[c]),
@@ -84,7 +84,7 @@ module single_fpga_pipeline_top #(
     generate
         for (c = 0; c < N_CH; c = c + 1) begin : g_fir
             fir_compensator #(
-                .COEFF_MEM_FILE("../../cluster/vectors/fir_coeffs.mem")
+                .COEFF_MEM_FILE("../../multi_fpga/cluster/vectors/fir_coeffs.mem")
             ) u_fir (
                 .clk(clk), .rst(rst),
                 .valid_in(cic_valid[c]),

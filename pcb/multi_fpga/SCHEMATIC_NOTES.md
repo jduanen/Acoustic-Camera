@@ -21,7 +21,7 @@ used, not Digilent's own internal board schematic.
 > **Cluster FPGA note**: the cluster tier originally targeted a Digilent Cmod
 > S7 (XC7S25) and this document (like `make_schematic_multi_fpga.py`) was
 > written against that part throughout. Real HDL synthesis later showed the
-> CIC/FIR pipeline didn't fit the XC7S25 (see `fpga/cluster/rtl/cluster_top.v`'s
+> CIC/FIR pipeline didn't fit the XC7S25 (see `fpga/multi_fpga/cluster/rtl/cluster_top.v`'s
 > header comment and `PHASE4.md`'s "Superseded by real synthesis" note), so
 > the cluster tier moved to the same Cmod A7-35T the hub already used. This
 > document has been updated to describe that target state throughout, and
@@ -99,8 +99,8 @@ confirmed against a plain-GPIO-mode example the way the other 44 have.
 Real FPGA pin names for both ends come from Digilent's own reference
 material, both now the same Cmod A7-35T module: Digilent's published
 `CmodA7_Master.xdc` (`Cmod-A7-35T-GPIO` reference project, same as
-`fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc`, which the RTL side's own
-`fpga/cluster/xdc/cluster_top.xdc`/`fpga/hub/xdc/hub_top.xdc` already source
+`fpga/multi_fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc`, which the RTL side's own
+`fpga/multi_fpga/cluster/xdc/cluster_top.xdc`/`fpga/multi_fpga/hub/xdc/hub_top.xdc` already source
 pin names from) — a real constraint file, not reference-manual prose, for
 both tiers now (originally the cluster side, still on Cmod S7 at the time,
 was sourced from that part's RM §8 text table instead, less reliable than a
@@ -422,7 +422,7 @@ cluster's 3 arms use a cluster-specific label (`C0_PDM_CLK`, `C1_PDM_CLK`,
 etc.) instead of the shared `PDM_CLK` name `make_arm()` uses by default.
 
 DIP pin numbers used on the cluster's Cmod A7-35T side (1-13 of the header's
-44 available GPIO — see `fpga/cluster/xdc/cluster_top.xdc`'s header comment
+44 available GPIO — see `fpga/multi_fpga/cluster/xdc/cluster_top.xdc`'s header comment
 for the real, already place-and-routed pin count) are representative — cross-
 check the generator's assignments against that XDC (same ground-truth source
 `route_arm_board.py` should use) before wiring.
@@ -570,8 +570,8 @@ label lands on-grid by construction.
   `place_hub()` comments for each.
 - FPGA pin names here are meant to come from Digilent's own published `.xdc`
   for both tiers now (both are Cmod A7-35T) — cross-check the generator's
-  actual pin assignments against `fpga/cluster/xdc/cluster_top.xdc`/
-  `fpga/hub/xdc/hub_top.xdc` (the RTL side's already-real, already
+  actual pin assignments against `fpga/multi_fpga/cluster/xdc/cluster_top.xdc`/
+  `fpga/multi_fpga/hub/xdc/hub_top.xdc` (the RTL side's already-real, already
   place-and-routed pin constraints) before ordering connectors.
 - No HDL exists yet for either FPGA (see PHASE4.md) — this schematic is the
   physical interconnect only. The spoke connector's signal-integrity flag

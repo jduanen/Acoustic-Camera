@@ -21,8 +21,8 @@
 // N_LINES x pdm_line_sync -> N_LINES x cic_decimator_shared (each one line's
 // L+R channels, time-multiplexed on one shared arithmetic path -- see that
 // module's header comment) -> N_CH x fir_compensator -> spoke_framer ->
-// SPOKE_D0-5/SPOKE_STROBE. See fpga/cluster/SPOKE_FRAMING.md for the output
-// protocol and fpga/cluster/golden/fir_design.py for the CIC->FIR
+// SPOKE_D0-5/SPOKE_STROBE. See fpga/multi_fpga/cluster/SPOKE_FRAMING.md for the output
+// protocol and fpga/multi_fpga/cluster/golden/fir_design.py for the CIC->FIR
 // fixed-point convention (top 24 of the CIC's 31 output bits feed the FIR).
 //
 // This replaces the original 24x fully-parallel pdm_line_demux/cic_decimator
@@ -57,8 +57,8 @@
 // clk_reset.v). No schematic net -- like the hub, LD0 is wired directly to
 // dedicated FPGA pins inside the Cmod A7-35T module itself, not brought out
 // through any connector -- so these follow Digilent's own out-of-box-demo
-// naming (fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc), same convention
-// fpga/hub/rtl/hub_top.v already uses for its identical on-board LED.
+// naming (fpga/multi_fpga/demo/CmodA735tDemo/Src/CmodA735tDemo.xdc), same convention
+// fpga/multi_fpga/hub/rtl/hub_top.v already uses for its identical on-board LED.
 module cluster_top (
     input  wire SPOKE_CLK,
     input  wire FPGA_RESET_N,

@@ -10,9 +10,9 @@
 // interface (that's Stage 2, gated on this result), no spoke framing
 // (this is a single chip, no inter-chip hop exists in this architecture).
 //
-// Directly reuses fpga/cluster/rtl/pdm_line_demux.v, cic_decimator.v, and
+// Directly reuses fpga/multi_fpga/cluster/rtl/pdm_line_demux.v, cic_decimator.v, and
 // fir_compensator.v UNMODIFIED (confirmed standalone/chip-agnostic, already
-// individually tested in fpga/cluster/sim/) -- referenced by relative path
+// individually tested in fpga/multi_fpga/cluster/sim/) -- referenced by relative path
 // from build_spike.tcl's source list, not copied, so there's only one copy
 // of each to maintain.
 //
@@ -66,7 +66,7 @@ module single_fpga_top_spike (
     generate
         for (c = 0; c < N_LINES; c = c + 1) begin : g_cic
             // channel 2*c = L (even), channel 2*c+1 = R (odd) -- same
-            // "line*2 + {L=0,R=1}" convention as fpga/cluster/rtl/cluster_top.v.
+            // "line*2 + {L=0,R=1}" convention as fpga/multi_fpga/cluster/rtl/cluster_top.v.
             cic_decimator #(.STAGES(5), .R(64), .IN_WIDTH(1)) u_cic_l (
                 .clk(clk), .rst(rst),
                 .data_in(ch_l[c]),
@@ -88,7 +88,7 @@ module single_fpga_top_spike (
     generate
         for (c = 0; c < N_CH; c = c + 1) begin : g_fir
             fir_compensator #(
-                .COEFF_MEM_FILE("../../cluster/vectors/fir_coeffs.mem")
+                .COEFF_MEM_FILE("../../multi_fpga/cluster/vectors/fir_coeffs.mem")
             ) u_fir (
                 .clk(clk), .rst(rst),
                 .valid_in(cic_valid[c]),

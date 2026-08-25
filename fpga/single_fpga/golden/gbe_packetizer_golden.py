@@ -84,7 +84,7 @@ def pack_packet(fixed_hdr, seq_num, timestamp, frames):
 
 def gen_packets(per_channel_frames, dst_mac, src_mac, src_ip, dst_ip, src_port, dst_port):
     """per_channel_frames: list of frames (frame-major), each a list of N_CH
-    samples -- same shape as fpga/cluster/golden's per-channel pipeline
+    samples -- same shape as fpga/multi_fpga/cluster/golden's per-channel pipeline
     output, just frame-major instead of channel-major (see
     gen_vectors.py's gen_gbe_vectors() for the transpose). Mirrors
     gbe_packetizer.v's frame collector exactly: sample_counter increments

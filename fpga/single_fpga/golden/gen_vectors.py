@@ -2,11 +2,11 @@
 """gen_vectors.py -- generates checked-in .mem stimulus/expected-output
 fixtures (fpga/single_fpga/vectors/) for tb_gbe_pipeline.v, the end-to-end
 integration test covering the real 96-channel CIC+FIR pipeline
-(single_fpga_pipeline_top.v, reusing fpga/cluster/rtl's pdm_line_demux.v/
+(single_fpga_pipeline_top.v, reusing fpga/multi_fpga/cluster/rtl's pdm_line_demux.v/
 cic_decimator.v/fir_compensator.v unmodified) feeding the real
 gbe_packetizer.v.
 
-Reuses fpga/cluster/golden's already-independently-verified CIC/FIR golden
+Reuses fpga/multi_fpga/cluster/golden's already-independently-verified CIC/FIR golden
 models and multi-tone PDM stimulus generator via a path insert below, rather
 than duplicating that math -- this pipeline is built from the exact same,
 unmodified RTL modules (see single_fpga_pipeline_top.v's header comment), so
@@ -20,7 +20,7 @@ keep them in sync if this config changes.
 import os
 import sys
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "cluster", "golden"))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "..", "multi_fpga", "cluster", "golden"))
 from fir_design import DATA_WIDTH as FIR_DATA_WIDTH, design_compensation_fir, quantize_coeffs  # noqa: E402
 from gen_pdm_stimulus import gen_multitone_pdm  # noqa: E402
 from cic_golden import cic_bitexact  # noqa: E402

@@ -36,7 +36,7 @@ Cmod A7-35T DIP header, power connector, LDO) pad-for-pad:
     column, standard IC DIP numbering) -- pad1->C0_PDM_CLK, pads2-13->
     DATA_00..DATA_11, pad24 (VU)->+5V, pad25 (GND)->GND, pads20-23/26-28/18->
     SPOKE0_D0-D5/STROBE/CLK (see SPOKE_SIGNAL_SUFFIX below -- taken directly
-    from fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
+    from fpga/multi_fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
     pin constraints, cross-checked against Digilent's own CmodA7_Master.xdc;
     fixes the KNOWN GAP this used to describe, see below). All other DIP
     pins (excl. spoke pins) are real DIP pins with no net in this design
@@ -137,7 +137,7 @@ CLUSTER_PAD_NETS[25] = "GND"
 
 # Spoke bus, DIP pins 20, 21, 22, 23, 26, 27, 28, 18 (in D0..CLK order --
 # not contiguous, unlike the PDM pins above) -- taken directly from
-# fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
+# fpga/multi_fpga/cluster/xdc/cluster_top.xdc's real, already place-and-routed
 # SPOKE_D0-5/SPOKE_STROBE/SPOKE_CLK pin constraints (same source
 # pcb/make_schematic_multi_fpga.py's CLUSTER_SPOKE_DIP_PINS uses), not
 # shared with anything else in this design; see cluster_00..03.kicad_sch's

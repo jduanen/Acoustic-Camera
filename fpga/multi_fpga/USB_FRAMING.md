@@ -5,9 +5,9 @@ the synchronous FT245 FIFO link to the FT232H bridge (component A6 on `hub.kicad
 the Pi 5 to read over USB. Mirrors `SPOKE_FRAMING.md`'s style/precision -- written so the
 Pi 5-side reader can be built against this doc alone, without reading `usb_framer.v`.
 
-Implementation: `fpga/hub/rtl/usb_framer.v`, instantiated once in `hub_top.v`, fed by the 4
+Implementation: `fpga/multi_fpga/hub/rtl/usb_framer.v`, instantiated once in `hub_top.v`, fed by the 4
 `spoke_deframer.v` instances' `chN_data_flat`/`chN_valid` outputs. Golden reference (source
-of truth for testbench comparison): `fpga/hub/golden/usb_framer_golden.py`.
+of truth for testbench comparison): `fpga/multi_fpga/hub/golden/usb_framer_golden.py`.
 
 ## Why per-spoke records, not one unified 96-channel frame
 
@@ -95,6 +95,6 @@ that -- the host can detect the gap via `seq_num`'s skip.
 - Cross-spoke alignment / cable-skew calibration -- not attempted anywhere in this project
   yet (see `SPOKE_FRAMING.md`).
 
-`fpga/host/usb_stream_test.py` is a reference implementation of the first two (sync recovery
+`fpga/multi_fpga/host/usb_stream_test.py` is a reference implementation of the first two (sync recovery
 + gap detection), plus per-channel WAV dump -- written as a breadboard bring-up diagnostic,
 not the production Pi 5 reader.

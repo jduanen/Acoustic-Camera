@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 // Frames N_CH channels' 24-bit PCM samples onto the 6-bit DDR spoke bus, per
-// the v1 protocol in fpga/cluster/SPOKE_FRAMING.md (N_CH=24 there; a bigger
+// the v1 protocol in fpga/multi_fpga/cluster/SPOKE_FRAMING.md (N_CH=24 there; a bigger
 // N_CH is a Mark II exploration, see the project's plan file). On
 // frame_start, latches all N_CH channels (must be valid that same cycle) and
 // begins transmitting: channel c's 24-bit sample as 4 MSB-first 6-bit

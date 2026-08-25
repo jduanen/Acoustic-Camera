@@ -80,7 +80,7 @@ further connector reduction.
 > **Superseded by real synthesis**: the table above (and the XC7S25-based reasoning through
 > this whole section) reflects pre-HDL, pre-synthesis estimates. Once the CIC/FIR pipeline
 > was actually built, the chosen 3-arm/24ch grouping's *real* placed cost came back at
-> **14,768 LUT** (see `fpga/cluster/rtl/cluster_top.v`'s header comment) — 1.9× the ~7,750
+> **14,768 LUT** (see `fpga/multi_fpga/cluster/rtl/cluster_top.v`'s header comment) — 1.9× the ~7,750
 > estimated above, driven by control-set packing overhead a pre-place estimate doesn't see.
 > That's too big for the XC7S25 (14,600 LUT) this section chose, so the cluster tier moved to
 > the same XC7A35T (20,800 LUT) the hub already used — landing on **71.00%** utilization
@@ -625,7 +625,7 @@ Split across the cluster and hub tiers in the primary Multi-FPGA design:
 | **Master clock generation** | 12.288 MHz TCXO → PLL → 3.072 MHz; forwarded to all 4 clusters over their spoke links |
 | **Spoke bus deframing** | Reassemble the 4× 24-channel streams into 96 channels total |
 | **Sample alignment** | All 96 PCM channels locked to the same 48 kHz word-select boundary |
-| **USB FIFO framing** | Per-spoke tagged 76-byte records (sync + spoke_id + seq_num + 24 channels), sent independently over the synchronous FIFO to the FT232H bridge -- not a unified 96-channel frame; see `fpga/USB_FRAMING.md` |
+| **USB FIFO framing** | Per-spoke tagged 76-byte records (sync + spoke_id + seq_num + 24 channels), sent independently over the synchronous FIFO to the FT232H bridge -- not a unified 96-channel frame; see `fpga/multi_fpga/USB_FRAMING.md` |
 | **PPS input** (optional) | 1 Hz GPIO for absolute time-tagging; enables future multi-unit synchronization |
 
 > **Single-FPGA alternate**: one FPGA does the entire pipeline above end-to-end — PDM clock

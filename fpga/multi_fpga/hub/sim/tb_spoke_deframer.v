@@ -1,9 +1,9 @@
 `timescale 1ns / 1ps
 
-// Bit-exact check of spoke_deframer.v against fpga/cluster/golden/
+// Bit-exact check of spoke_deframer.v against fpga/multi_fpga/cluster/golden/
 // spoke_framer_golden.py's spoke_frame()/deframe() round trip, reusing the
 // SAME vectors tb_spoke_framer.v checks the transmit side against
-// (fpga/cluster/vectors/framer_channels.mem / framer_expected.mem) -- this
+// (fpga/multi_fpga/cluster/vectors/framer_channels.mem / framer_expected.mem) -- this
 // testbench plays the cluster's role (driving spoke_d/spoke_strobe exactly
 // as a real spoke_framer would, per the {strobe,fall,rise} packed vectors)
 // and checks spoke_deframer.v correctly reconstructs the original channel

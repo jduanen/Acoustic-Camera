@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
-// Hub-side deframer for one spoke -- inverse of fpga/cluster/rtl/spoke_framer.v.
-// One instance per spoke (4x in hub_top.v). See fpga/SPOKE_FRAMING.md for the
+// Hub-side deframer for one spoke -- inverse of fpga/multi_fpga/cluster/rtl/spoke_framer.v.
+// One instance per spoke (4x in hub_top.v). See fpga/multi_fpga/SPOKE_FRAMING.md for the
 // protocol this implements.
 //
 // DDR capture: spoke_framer.v drives `assign spoke_d = clk ? d_rise : d_fall`

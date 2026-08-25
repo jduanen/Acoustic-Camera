@@ -2,13 +2,13 @@
 
 // End-to-end integration test: drives a synthetic multi-tone PDM stream on
 // all 96 channels (48 physical PDM_Dxx lines, L/R interleaved per line,
-// same convention as fpga/cluster/sim/tb_cluster_top.v) into
+// same convention as fpga/multi_fpga/cluster/sim/tb_cluster_top.v) into
 // single_fpga_pipeline_top.v, captures the tx_axis_* byte stream it produces
 // (real pdm_line_demux.v/cic_decimator.v/fir_compensator.v -> real
 // gbe_packetizer.v, no synthetic fir_valid_in/fir_data_in stimulus like the
 // standalone gbe_packetizer.v check done earlier), and compares against
 // fpga/single_fpga/golden/gen_vectors.py's expected packet bytes (built from
-// fpga/cluster/golden's already-independently-verified CIC/FIR golden models
+// fpga/multi_fpga/cluster/golden's already-independently-verified CIC/FIR golden models
 // + gbe_packetizer_golden.py) -- bit-exact. This is the integration check
 // flagged as still needed after the standalone FSM check: confirms the
 // "all 96 fir_valid pulses land on the same cycle" assumption

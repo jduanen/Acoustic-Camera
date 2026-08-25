@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 // Dedicated per-channel FIR compensation MAC engine. One instance per audio
-// channel (24 total in cluster_top.v) -- see fpga/cluster/golden/fir_design.py
+// channel (24 total in cluster_top.v) -- see fpga/multi_fpga/cluster/golden/fir_design.py
 // for the fixed-point convention (24-bit unsigned data, 18-bit signed Q1.17
 // coefficients, 48-bit accumulator matching a DSP48E1's native width) and
 // fir_bitexact() for the bit-exact reference this mirrors.

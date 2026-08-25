@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """gen_pdm_stimulus.py -- synthetic multi-tone PDM stimulus + the full
-CIC->FIR golden reference per channel, used by fpga/cluster/sim/tb_cluster_top.v
+CIC->FIR golden reference per channel, used by fpga/multi_fpga/cluster/sim/tb_cluster_top.v
 (the end-to-end integration test) via gen_vectors.py's gen_cluster_top_vectors().
 
 This is a functional/structural test, not an audio-quality one: what matters

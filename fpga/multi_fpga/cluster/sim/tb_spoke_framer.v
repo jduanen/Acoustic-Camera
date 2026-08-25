@@ -1,8 +1,8 @@
 `timescale 1ns / 1ps
 
-// Bit-exact check of spoke_framer.v against fpga/cluster/golden/spoke_framer_golden.py's
+// Bit-exact check of spoke_framer.v against fpga/multi_fpga/cluster/golden/spoke_framer_golden.py's
 // spoke_frame(), across several test frames (all-zero, all-max, ramp, random)
-// from fpga/cluster/golden/gen_vectors.py's gen_framer_vectors(). Checks both
+// from fpga/multi_fpga/cluster/golden/gen_vectors.py's gen_framer_vectors(). Checks both
 // DDR halves (rising/falling edge) of spoke_d and spoke_strobe every cycle.
 module tb_spoke_framer;
     localparam integer N_FRAMES     = 6;

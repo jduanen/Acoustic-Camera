@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """gen_usb_vectors.py -- generates checked-in .mem stimulus/expected-output fixtures
-(fpga/hub/vectors/) from usb_framer_golden.py, used by tb_usb_framer.v.
+(fpga/multi_fpga/hub/vectors/) from usb_framer_golden.py, used by tb_usb_framer.v.
 
-Own fpga/hub/vectors/ directory, separate from fpga/cluster/vectors/, since this protocol
-isn't derived from anything in fpga/cluster/ -- mirrors fpga/cluster/golden/gen_vectors.py's
+Own fpga/multi_fpga/hub/vectors/ directory, separate from fpga/multi_fpga/cluster/vectors/, since this protocol
+isn't derived from anything in fpga/multi_fpga/cluster/ -- mirrors fpga/multi_fpga/cluster/golden/gen_vectors.py's
 approach (source of truth is the golden model; re-run and re-check-in whenever it changes).
 
 8 records, spoke_id cycling 0,1,2,3,0,1,2,3 (seq_num 0,0,0,0,1,1,1,1 respectively) --

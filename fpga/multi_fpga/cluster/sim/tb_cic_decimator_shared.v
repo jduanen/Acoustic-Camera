@@ -1,7 +1,7 @@
 `timescale 1ns / 1ps
 
 // Bit-exact check of cic_decimator_shared.v against the same
-// fpga/cluster/golden/cic_golden.py cic_bitexact() used by tb_cic_decimator.v
+// fpga/multi_fpga/cluster/golden/cic_golden.py cic_bitexact() used by tb_cic_decimator.v
 // -- the shared engine's math is unchanged (see cic_decimator_shared.v's
 // header comment), so this drives two independent bit streams through the
 // L/R-multiplexed interface (phase toggling every clk cycle) and checks each

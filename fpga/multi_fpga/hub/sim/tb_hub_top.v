@@ -1,10 +1,10 @@
 `timescale 1ns / 1ps
 
 // Integration test: hub_top.v driving all 4 spokes with independently
-// distinct frames (a different fpga/cluster/vectors frame per spoke) to
+// distinct frames (a different fpga/multi_fpga/cluster/vectors frame per spoke) to
 // catch cross-spoke channel mixups a single shared tone would hide -- same
 // reasoning gen_pdm_stimulus.py documents for the cluster's per-channel
-// tones. Reuses fpga/cluster/vectors/framer_channels.mem /
+// tones. Reuses fpga/multi_fpga/cluster/vectors/framer_channels.mem /
 // framer_expected.mem (the same vectors tb_spoke_deframer.v checks a single
 // spoke against) -- spoke_deframer.v's correctness doesn't depend on the
 // golden vectors' FRAME_CYCLES=64 idle-cycle count (it re-syncs from every
@@ -23,7 +23,7 @@
 // asynchronous to tcxo_clk -- no attempt made here to phase-lock them,
 // proving the CDC doesn't need it) and USB_TXE_N held low (FIFO always
 // ready), then checks the first spoke's full 76-byte record against
-// fpga/USB_FRAMING.md's format -- spoke0 is served first since all 4
+// fpga/multi_fpga/USB_FRAMING.md's format -- spoke0 is served first since all 4
 // spokes' valid pulses land at effectively the same time here and
 // usb_framer.v's arbiter starts at spoke0 after reset (see its own header
 // comment). Byte-level framing itself is already checked bit-exactly by

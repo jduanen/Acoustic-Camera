@@ -5,11 +5,11 @@ PCM data onto the 6-wire spoke bus back to the hub FPGA (Cmod A7-35T). This
 did not exist anywhere before this pass -- `pcb/multi_fpga/SCHEMATIC_NOTES.md`
 and `PHASE4.md` both flagged the exact framing semantics as undesigned. It's
 written precisely enough that a future hub-side deframer (out of scope for
-`fpga/cluster/`) can be built against it independently, without needing to
+`fpga/multi_fpga/cluster/`) can be built against it independently, without needing to
 read `spoke_framer.v`.
 
-Implementation: `fpga/cluster/rtl/spoke_framer.v`. Golden reference (source of
-truth for testbench comparison): `fpga/cluster/golden/spoke_framer_golden.py`.
+Implementation: `fpga/multi_fpga/cluster/rtl/spoke_framer.v`. Golden reference (source of
+truth for testbench comparison): `fpga/multi_fpga/cluster/golden/spoke_framer_golden.py`.
 
 ## Why DDR is mandatory, not a design choice
 
@@ -119,13 +119,13 @@ at cycles 10 and 11 (`2*5`, `2*5+1`) and nowhere else -- cycle 10 carries
 `0x2B` (rising) / `0x0F` (falling) [top 12 bits of `0xABCDEF`], cycle 11
 carries `0x33` (rising) / `0x2F` (falling) [bottom 12 bits]. See
 `test_channel_order_is_ascending` in
-`fpga/cluster/golden/test_spoke_framer_golden.py` for the exact bit values.
+`fpga/multi_fpga/cluster/golden/test_spoke_framer_golden.py` for the exact bit values.
 
 ## Hub-side deframer
 
-Implementation: `fpga/hub/rtl/spoke_deframer.v`, one instance per spoke.
+Implementation: `fpga/multi_fpga/hub/rtl/spoke_deframer.v`, one instance per spoke.
 Golden reference: reuses `spoke_framer_golden.py`'s existing `deframe()`
-directly (see `fpga/cluster/golden/spoke_framer_golden.py`) -- it only
+directly (see `fpga/multi_fpga/cluster/golden/spoke_framer_golden.py`) -- it only
 depends on `BUSY_CYCLES`, which never changed.
 
 1. Detect `SPOKE_STROBE`'s rising edge to establish cycle-0 alignment.

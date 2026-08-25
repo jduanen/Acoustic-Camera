@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-// Bit-exact check of fir_compensator.v against fpga/cluster/golden/fir_design.py's
+// Bit-exact check of fir_compensator.v against fpga/multi_fpga/cluster/golden/fir_design.py's
 // fir_bitexact(), driven at the real 64-cycle sample period (matching the
 // CIC's decimation rate) so the 32-cycle MAC completion budget is exercised
 // for real, not just claimed. Vectors from gen_vectors.py's

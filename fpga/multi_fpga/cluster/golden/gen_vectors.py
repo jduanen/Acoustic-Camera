@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """gen_vectors.py -- generates checked-in .mem stimulus/expected-output
-fixtures (fpga/cluster/vectors/) from the golden Python models, used by the
-RTL testbenches in fpga/cluster/sim/.
+fixtures (fpga/multi_fpga/cluster/vectors/) from the golden Python models, used by the
+RTL testbenches in fpga/multi_fpga/cluster/sim/.
 
 Source of truth is the golden/*.py models -- re-run this script and re-check-in
 the vectors/ output whenever a golden model changes. Testbenches hardcode the
@@ -126,9 +126,9 @@ def gen_fir_test_vectors():
 
 def gen_framer_vectors():
     """Several test frames (edge cases + random) for tb_spoke_framer.v:
-    fpga/cluster/vectors/framer_channels.mem -- N_FRAMES*N_CH lines, one
+    fpga/multi_fpga/cluster/vectors/framer_channels.mem -- N_FRAMES*N_CH lines, one
       DATA_WIDTH-bit hex channel value per line, frames concatenated.
-    fpga/cluster/vectors/framer_expected.mem -- N_FRAMES*FRAME_CYCLES lines,
+    fpga/multi_fpga/cluster/vectors/framer_expected.mem -- N_FRAMES*FRAME_CYCLES lines,
       one packed hex value per cycle: {strobe[12], fall[11:6], rise[5:0]}.
     """
     os.makedirs(VEC_DIR, exist_ok=True)
@@ -163,9 +163,9 @@ def gen_framer_vectors():
 
 def gen_cluster_top_vectors():
     """End-to-end stimulus + expected output for tb_cluster_top.v:
-    fpga/cluster/vectors/top_pdm_bits.mem -- N_CH*n_samples lines, one bit
+    fpga/multi_fpga/cluster/vectors/top_pdm_bits.mem -- N_CH*n_samples lines, one bit
       (0/1) per line, channel-major (channel c's n_samples bits, then c+1's).
-    fpga/cluster/vectors/top_expected.mem -- TOP_N_FRAMES*N_CH lines, one
+    fpga/multi_fpga/cluster/vectors/top_expected.mem -- TOP_N_FRAMES*N_CH lines, one
       24-bit hex PCM value per line, frame-major (frame f's N_CH channel
       values, in ascending channel order, then frame f+1's).
     """

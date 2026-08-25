@@ -4,11 +4,11 @@
 // handshake + RGB LED status (reset_seq.v), SPOKE_CLK generation, per-spoke
 // deframing (spoke_deframer.v x4), and USB FIFO framing to the Pi 5
 // (usb_framer.v) over the FT232H bridge's synchronous 245 FIFO interface.
-// See fpga/USB_FRAMING.md for the USB-side protocol.
+// See fpga/multi_fpga/USB_FRAMING.md for the USB-side protocol.
 //
 // Port names match pcb/multi_fpga/hub.kicad_sch's global-label net names
 // exactly (TCXO_CLK, FPGA_RESET_N, SPOKES_ALIVE, SPOKE_CLK, SPOKEn_D0-5,
-// SPOKEn_STROBE, USB_*), same convention as fpga/cluster/rtl/cluster_top.v
+// SPOKEn_STROBE, USB_*), same convention as fpga/multi_fpga/cluster/rtl/cluster_top.v
 // -- do not rename without updating the schematic. SPOKES_ALIVE is a single
 // wired-AND net shared by all 4 clusters (see reset_seq.v), not 4
 // independent SPOKEn_ALIVE signals. led0_r/g/b have no
@@ -27,7 +27,7 @@
 // aren't ports here -- this design only ever writes to the FIFO, so those
 // two FT232H control lines are tied permanently deasserted with pull-ups on
 // the hub PCB instead of spending FPGA pins on constants that never toggle
-// (see fpga/USB_FRAMING.md and the plan file's Context section).
+// (see fpga/multi_fpga/USB_FRAMING.md and the plan file's Context section).
 module hub_top (
     input  wire TCXO_CLK,       // 12.288 MHz HCMOS TCXO (Y1)
     output wire FPGA_RESET_N,   // -> all 4 SpokeBus connectors' pin 11

@@ -9,7 +9,7 @@ Two independent computation paths are provided so one can self-check the other
                      combs (M=1) running at the decimated rate. All arithmetic is
                      unsigned modulo 2**width, matching how plain adders/subtractors
                      wrap in hardware -- this is the same computation
-                     fpga/cluster/rtl/cic_decimator.v performs, and is what its
+                     fpga/multi_fpga/cluster/rtl/cic_decimator.v performs, and is what its
                      testbench (tb_cic_decimator.v) compares against.
 
   cic_reference_fir() an independent, structurally different computation: an

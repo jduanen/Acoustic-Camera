@@ -1,14 +1,14 @@
 `timescale 1ns / 1ps
 
-// Checks usb_framer.v against fpga/hub/golden/usb_framer_golden.py's pack_record() and
-// against the arbitration/drop behavior documented in fpga/USB_FRAMING.md.
+// Checks usb_framer.v against fpga/multi_fpga/hub/golden/usb_framer_golden.py's pack_record() and
+// against the arbitration/drop behavior documented in fpga/multi_fpga/USB_FRAMING.md.
 //
 // Drives sclk and usb_clk at their real, genuinely different, non-commensurate frequencies
 // (6.144 MHz / 60 MHz) -- proving the CDC survives real asynchrony, not just same-domain
 // timing coincidences a simpler testbench clock choice might accidentally hide.
 //
 // Phase A (bit-exact): one spoke's frame at a time, sequentially, against the checked-in
-// fpga/hub/vectors/usb_channels.mem / usb_expected.mem (8 records, spoke_id cycling
+// fpga/multi_fpga/hub/vectors/usb_channels.mem / usb_expected.mem (8 records, spoke_id cycling
 // 0,1,2,3,0,1,2,3 -- see gen_usb_vectors.py). Toggles usb_txe_n mid-record on record 3 to
 // exercise backpressure stalling; the byte-capture logic below only samples on active write
 // cycles, so a correct pass here also proves stalling doesn't corrupt or skip bytes.

@@ -6,7 +6,7 @@ ${UNIT_ID}, resolved per-run via kicad-cli's --define-var). See
 pcb/multi_fpga/Readme.txt and SCHEMATIC_NOTES.md: this is the one physical
 board design, fabricated 4x -- there is intentionally no cluster_01/02/03
 .kicad_pcb any more (they were stale hand-copied duplicates; net names were
-already generic/unit-agnostic in all 4, and fpga/cluster/rtl/cluster_top.v's
+already generic/unit-agnostic in all 4, and fpga/multi_fpga/cluster/rtl/cluster_top.v's
 port list confirms the bitstream is identical regardless of which spoke slot
 a given physical unit ends up in).
 

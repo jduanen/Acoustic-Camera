@@ -10,7 +10,7 @@
 // reset. Reset is held while either the local POR counter hasn't finished
 // or the hub-driven FPGA_RESET_N (schematic net, active-low) is asserted --
 // see hub.kicad_sch/cluster_0N.kicad_sch's FPGA_RESET_N/SPOKE_ALIVE nets and
-// fpga/hub/rtl/reset_seq.v for the other end of this handshake. spoke_alive
+// fpga/multi_fpga/hub/rtl/reset_seq.v for the other end of this handshake. spoke_alive
 // tells the hub "POR is done and I'm safely parked in reset" so it knows
 // it's safe to release fpga_reset_n.
 //
@@ -19,7 +19,7 @@
 // once ready. All 4 clusters' SPOKE_ALIVE pins tie into one wired-AND net on
 // the PCB (one external pull-up on the hub board) -- the net reads high only
 // once all 4 release it, so reset_seq.v's `&`-of-4 reduction is now done for
-// free by the wire itself (see fpga/hub/rtl/reset_seq.v). Must stay
+// free by the wire itself (see fpga/multi_fpga/hub/rtl/reset_seq.v). Must stay
 // tri-state, not push-pull: wiring 4 push-pull outputs together directly
 // would risk output-driver contention.
 //
@@ -41,7 +41,7 @@
 //
 // led_r_n/led_g_n/led_b_n: on-board RGB LED (LD0) health indicator, same
 // YELLOW(resetting)/GREEN(running) convention as the hub's own
-// fpga/hub/rtl/reset_seq.v -- driven straight off rst (level, not latched,
+// fpga/multi_fpga/hub/rtl/reset_seq.v -- driven straight off rst (level, not latched,
 // matching how rst itself already behaves; see tb_clk_reset.v). No "error"
 // state yet -- nothing in the pipeline detects a real fault to key one off.
 module clk_reset #(

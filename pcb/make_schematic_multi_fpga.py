@@ -25,7 +25,7 @@ only the physical header pins actually used, labeled with their real FPGA
 pin names (from Digilent's Cmod A7-35T reference material — both the cluster
 and hub tiers use this same module; the cluster tier originally targeted a
 Cmod S7 but moved after real HDL synthesis, see
-fpga/cluster/rtl/cluster_top.v's header comment) — not a redraw of
+fpga/multi_fpga/cluster/rtl/cluster_top.v's header comment) — not a redraw of
 Digilent's own internal board schematic.
 
 Outputs (in pcb/multi_fpga/):
@@ -64,7 +64,7 @@ KI_VER  = "20260306"   # KiCad 10.0 schematic format version
 # Cluster's own Cmod A7-35T: spoke bus (D0..CLK, matching SPOKE_SIGNAL_SUFFIX
 # order below) lands on DIP pins 20, 21, 22, 23, 26, 27, 28, 18 -- not a
 # contiguous run, unlike the cluster's PDM pins (1-13, see cmod_pins below).
-# Taken directly from fpga/cluster/xdc/cluster_top.xdc's real, already
+# Taken directly from fpga/multi_fpga/cluster/xdc/cluster_top.xdc's real, already
 # place-and-routed SPOKE_D0-5/SPOKE_STROBE/SPOKE_CLK constraints (SPOKE_D0=
 # M2=pio20, D1=N1=pio21, D2=N2=pio22, D3=P1=pio23, D4=R3=pio26, D5=T3=pio27,
 # STROBE=R2=pio28, CLK=N3=pio18 -- cross-checked against CMOD_A7_35T_DIP

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """usb_framer_golden.py -- bit-exact reference for usb_framer.v's per-spoke USB record
-format. See fpga/USB_FRAMING.md for the protocol spec this implements; both that doc and
-fpga/hub/rtl/usb_framer.v must stay in sync with this file (source of truth for testbench
+format. See fpga/multi_fpga/USB_FRAMING.md for the protocol spec this implements; both that doc and
+fpga/multi_fpga/hub/rtl/usb_framer.v must stay in sync with this file (source of truth for testbench
 comparison)."""
 
 N_CH = 24

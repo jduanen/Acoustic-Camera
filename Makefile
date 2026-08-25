@@ -1,4 +1,4 @@
-# fpga/cluster simulation targets (Vivado xsim). See fpga/README.md.
+# fpga/multi_fpga/cluster simulation targets (Vivado xsim). See fpga/multi_fpga/README.md.
 #
 # Requires Vivado; VIVADO_SETTINGS points at its settings64.sh so xvlog/xelab/xsim
 # land on PATH without needing the user's shell to already have sourced it.
@@ -13,10 +13,10 @@ SHELL := /bin/bash
 .ONESHELL:
 .SHELLFLAGS := -e -c
 
-RTL := fpga/cluster/rtl
-SIM := fpga/cluster/sim
-HUB_RTL := fpga/hub/rtl
-HUB_SIM := fpga/hub/sim
+RTL := fpga/multi_fpga/cluster/rtl
+SIM := fpga/multi_fpga/cluster/sim
+HUB_RTL := fpga/multi_fpga/hub/rtl
+HUB_SIM := fpga/multi_fpga/hub/sim
 SINGLE_FPGA_SIM := fpga/single_fpga/sim
 
 # $(1) = space-separated source files (relative to $(SIM)), $(2) = top testbench module name
@@ -51,7 +51,7 @@ define XSIM_RUN_UNISIM
 	fi
 endef
 
-# Same as XSIM_RUN, but for fpga/hub's own rtl/sim tree ($(1)'s paths are
+# Same as XSIM_RUN, but for fpga/multi_fpga/hub's own rtl/sim tree ($(1)'s paths are
 # relative to $(HUB_SIM)). reset_seq.v has no unisim primitives, so no glbl.
 define XSIM_RUN_HUB
 	source $(VIVADO_SETTINGS) >/dev/null
@@ -135,10 +135,10 @@ sim-gbe-packetizer:
 	$(call XSIM_RUN_SINGLE_FPGA,../rtl/gbe_packetizer.v tb_gbe_packetizer.v,tb_gbe_packetizer)
 
 sim-gbe-pipeline:
-	$(call XSIM_RUN_SINGLE_FPGA,../../cluster/rtl/pdm_line_demux.v ../../cluster/rtl/cic_decimator.v ../../cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v tb_gbe_pipeline.v,tb_gbe_pipeline)
+	$(call XSIM_RUN_SINGLE_FPGA,../../multi_fpga/cluster/rtl/pdm_line_demux.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v tb_gbe_pipeline.v,tb_gbe_pipeline)
 
 golden-test:
-	python3 -m pytest fpga/cluster/golden fpga/hub/golden fpga/single_fpga/golden -q
+	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
 
 sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline
 	@echo "=================================================="

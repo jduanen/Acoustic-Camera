@@ -14,7 +14,7 @@
 // issue, since ch_l has already been stable for half a cycle by the time
 // cic_decimator's posedge reads it). This is ordinary flip-flop-to-flip-flop
 // timing, not a simulation artifact -- real hardware behaves identically.
-// See fpga/cluster/golden/gen_pdm_stimulus.py's golden_channel_pipeline()
+// See fpga/multi_fpga/cluster/golden/gen_pdm_stimulus.py's golden_channel_pipeline()
 // for how the golden model accounts for it.
 module pdm_line_demux (
     input  wire clk,
