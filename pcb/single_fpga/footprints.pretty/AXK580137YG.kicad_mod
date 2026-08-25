@@ -1,16 +1,16 @@
-(footprint "AXK680137YG"
+(footprint "AXK580137YG"
 	(version 20260206)
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "Panasonic AXK680137YG -- P5K series 0.5mm-pitch 80-pin board-to-board SOCKET, module side (confirmed on the ALINX AC7200 module; mates with the carrier board's own AXK680337YG header -- see ../../AC7200/AC7200_README.md). Real dimensions from Panasonic/Mouser's own P5K/P5KS catalog PDF (mouser.com/catalog/specsheets/AXK.pdf), read directly: body 23.20 x 19.50mm (A x B, same as the header), 0.5mm pitch, 40 pins/row x 2 rows staggered by 0.25mm (half pitch), pad 0.25 x 0.75mm, total footprint span 6.80mm (wider than the header's 5.60mm -- read directly off the Socket's own land-pattern drawing, not assumed equal to the header). CAVEAT, not silently resolved: the exact string 'AXK680137YG' (from the AC7200 module's own STEP model, AC7200.3.0.stp) does not decode cleanly against Panasonic's real P5K part-number table -- leading digit 6 is the Header selector, but mated-height digit 1 is documented as Socket-only. The catalog's real 80-contact/3.0mm bossed socket is AXK580137YG (one digit off, likely a typo in the STEP model's component name). Filed under the STEP file's literal name per the module's own reference data and the user's identification of it as the socket; dimensions above are real P5K Socket data either way, since both candidate part numbers are the same 80-contact/3.0mm-mated-height P5K socket. Pin numbering (1-80 sequential by row) is an ASSUMED convention, matching the header's own same assumption, not independently verified against a real pin-1 diagram.")
-	(tags "Panasonic AXK680137YG P5K board-to-board 80pin 0.5mm socket")
+	(descr "Panasonic AXK580137YG -- P5K series 0.5mm-pitch 80-pin board-to-board SOCKET, module side (confirmed on the ALINX AC7200 module; mates with the carrier board's own AXK680337YG header -- see ../../AC7200/AC7200_README.md). Real dimensions from Panasonic/Mouser's own P5K/P5KS catalog PDF (mouser.com/catalog/specsheets/AXK.pdf), read directly: body 23.20 x 19.50mm (A x B, same as the header), 0.5mm pitch, 40 pins/row x 2 rows staggered by 0.25mm (half pitch), pad 0.25 x 0.75mm, total footprint span 6.80mm (wider than the header's 5.60mm -- read directly off the Socket's own land-pattern drawing, not assumed equal to the header). Part number CONFIRMED, not assumed: the AC7200 module's own STEP model (AC7200.3.0.stp) names this connector 'AXK680137YG', which doesn't decode against Panasonic's real P5K part-number table (leading digit 6 = Header selector, but mated-height digit 1 is documented Socket-only) -- flagged as a likely STEP-model typo when this part was first built. ALINX's own real schematic (docs/AC7200_Schematic.pdf, page 12 'AC7200 CONNECTOR') settles it: all 4 connector reference labels explicitly read 'AXK580137YG', confirming the STEP model's name was wrong and this (leading digit 5) is the real part. All 320 CON1-4 signal-pin assignments in ../AC7200/KiCad/AC7200.kicad_sym were also cross-checked pin-by-pin against that same real schematic -- exact match, no discrepancies. Pin numbering on THIS standalone connector footprint (1-80 sequential by row) is still an ASSUMED convention, matching the header's own same assumption -- the real schematic only labels FPGA bank/ball nets on CON1-4, not this connector's own physical pin-to-number layout, so it wasn't independently verifiable against a real pin-1 diagram in the catalog either.")
+	(tags "Panasonic AXK580137YG P5K board-to-board 80pin 0.5mm socket")
 	(property "Reference" "REF**"
 		(at 0 -4.9 0)
 		(layer "F.SilkS")
 		(effects (font (size 1 1) (thickness 0.15)))
 	)
-	(property "Value" "AXK680137YG"
+	(property "Value" "AXK580137YG"
 		(at 0 4.9 0)
 		(layer "F.Fab")
 		(effects (font (size 1 1) (thickness 0.15)))
