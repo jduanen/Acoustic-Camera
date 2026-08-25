@@ -28,6 +28,21 @@ matches Vivado's own real part table; an earlier secondary source had this as "F
 doesn't exist in Vivado's part list and was flagged as a likely transcription artifact at the
 time -- now confirmed wrong, FBG is correct).
 
+## Pin data: re-verified against ALINX's real schematic (all 320 pins, exact match)
+
+`docs/AC7200_Schematic.pdf` (ALINX's own real schematic, page 12 "AC7200 CONNECTOR") gives an
+even stronger source than the manual above: the actual net name wired to every one of CON1-4's
+80 pins each, read directly off the schematic at 400dpi (`pdftoppm`), cropped per-connector and
+transcribed pin-by-pin, then diffed programmatically against every pin already in
+`KiCad/AC7200.kicad_sym`. **Result: 320/320 exact match, zero discrepancies** -- including the
+pin 27 typo-correction and the previously-uncertain CON1 73-80 fill-in above, both independently
+confirmed correct by this second, more authoritative source. No changes were needed to the
+pinout itself.
+
+One real, useful finding did come out of it: the schematic's own connector reference labels
+(printed under all 4 of CON1-4) read **`AXK580137YG`**, not the `AXK680137YG` string in the
+STEP model's component name -- see the "connector part number" note below, now resolved.
+
 **Not modeled here** (real, and worth knowing about, but out of scope for a carrier-facing
 symbol/footprint): the module also has its own on-board 6-pin 2.54mm JTAG header (J1: TMS,
 TDI, TDO, TCK, GND, +3.3V -- a second, on-module-only path to the same JTAG signals CON3
@@ -56,20 +71,23 @@ Allegro 16.6+, which isn't available here. If you have access to Allegro, it's a
 better source than anything above for double-checking exact connector pad geometry
 specifically.)
 
-The connector part number is real: the STEP model's own component names are `AXK680137YG`
-(Panasonic AXK6/P5K series, 0.5mm pitch, 80-pin -- the part *on the module*). ALINX's manual
-states the module's B2B connectors have 0.5mm pin spacing and mate with the carrier board;
-the carrier-side part is the complementary `AXK680337YG` (same family), matching what an
-earlier web search independently found as "the recommended connector for designing a base
-board." This is what the footprint's pads are built around. Standalone symbols/footprints for
-both mating connectors now exist: `../AXK680137YG/` (module-side socket) and
-`../AXK680337YG/` (carrier-side header) -- see `../AXK680137YG/KiCad/AXK680137YG.kicad_sym`'s
-own `Description` for a caveat on the exact `AXK680137YG` string: it doesn't cleanly decode
+The connector part number is real and now **confirmed, not just decoded from a catalog
+scheme**: the STEP model's own component names are `AXK680137YG` (Panasonic AXK6/P5K series,
+0.5mm pitch, 80-pin -- the part *on the module*), but that string doesn't cleanly decode
 against Panasonic's real P5K part-number scheme (leading digit 6 = Header selector, combined
-with a mated-height digit that's documented Socket-only) -- the catalog-valid bossed 80-pin
-socket at 3.0mm mated height is `AXK580137YG`, one digit off, most likely a typo in the STEP
-model's own component name. Filed under the STEP file's literal name regardless, since the
-real dimensional data used is the same P5K socket either way.
+with a mated-height digit that's documented Socket-only) -- a likely typo in the STEP model's
+own component name. **ALINX's real schematic (`docs/AC7200_Schematic.pdf`, page 12) settles
+it**: all 4 connector reference labels explicitly read `AXK580137YG` (leading digit 5), exactly
+matching the catalog-valid bossed 80-pin/3.0mm socket part number worked out independently from
+Panasonic's own ordering-information scheme before this schematic was available. ALINX's manual
+states the module's B2B connectors have 0.5mm pin spacing and mate with the carrier board; the
+carrier-side part is the complementary `AXK680337YG` (same family), matching what an earlier web
+search independently found as "the recommended connector for designing a base board." This is
+what the footprint's pads are built around. Standalone symbols/footprints for both mating
+connectors now exist: `../AXK580137YG/` (module-side socket, filed under its now-confirmed real
+part number) and `../AXK680337YG/` (carrier-side header) -- see
+`../AXK580137YG/KiCad/AXK580137YG.kicad_sym`'s own `Description` for the full resolution
+history (STEP model's typo'd name -> catalog-decoded correction -> real-schematic confirmation).
 
 ## What's still estimated, not verified
 
@@ -86,10 +104,15 @@ real dimensional data used is the same P5K socket either way.
 
 ## Bottom line
 
-The pinout is now fully real, cross-checked against ALINX's own manual, pin-by-pin. The
-mechanical placement is real, cross-validated two independent ways. The only remaining gaps
-are connector *pad-level* geometry (size/pitch estimated from partial specs) and mounting
-hole diameter (assumed) -- both flagged inline above and in both parts' own `Description`
-fields. Still worth a final pad-geometry check against Panasonic's real datasheet before
-sending this to fabrication, but the signal-level correctness that would matter for a
-schematic (which pin is which net) is now solid.
+The pinout is now fully real, cross-checked pin-by-pin against **two independent real ALINX
+sources** (the user manual, then the schematic) -- 320/320 exact match against the schematic,
+with zero remaining discrepancies. The mechanical placement is real, cross-validated two
+independent ways. The connector part number (`AXK580137YG`, module side) is now confirmed by
+the schematic itself, not just decoded from a catalog scheme. The only remaining gaps are
+connector *pad-level* geometry (size/pitch estimated from partial specs, though now backed by
+a real Panasonic Socket-specific land-pattern drawing rather than assumed equal to the header --
+see `../AXK580137YG/KiCad/AXK580137YG.kicad_sym`) and mounting hole diameter (assumed) -- both
+flagged inline above and in both parts' own `Description` fields. Still worth a final
+pad-geometry check against Panasonic's real datasheet before sending this to fabrication, but
+the signal-level correctness that matters for a schematic (which pin is which net) is now
+about as solid as it can get without the physical board in hand.
