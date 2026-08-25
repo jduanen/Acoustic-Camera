@@ -1,8 +1,9 @@
 # AC7200 KiCad symbol + footprint -- provenance and caveats
 
-`AC7200.kicad_sym` (this directory) + `footprints.pretty/AC7200.kicad_mod` for the ALINX
-AC7200 XC7A200T-2FBG484I FPGA SOM. Both parse and export cleanly via `kicad-cli sym export
-svg` / `kicad-cli fp export svg` (real tool check, not just eyeballed).
+`KiCad/AC7200.kicad_sym` (this directory's `KiCad/` subfolder) + `../footprints.pretty/
+AC7200.kicad_mod` (the `pcb/single_fpga/footprints.pretty/` library, one level up) for the
+ALINX AC7200 XC7A200T-2FBG484I FPGA SOM. Both parse and export cleanly via `kicad-cli sym
+export svg` / `kicad-cli fp export svg` (real tool check, not just eyeballed).
 
 ## Pin data: cross-checked against ALINX's real manual
 
@@ -37,8 +38,8 @@ supply power via J3 and the carrier board at the same time").
 ## Mechanical placement: real, cross-validated two independent ways
 
 The board outline, 4x mounting holes, and all 4 connectors' real center position + rotation
-were extracted directly from `cad/AC7200.3.0.stp` -- the user's own reference 3D model
-already in this directory -- by hand-tracing its real STEP AP214 assembly structure
+were extracted directly from `../cad/AC7200.3.0.stp` -- the user's own reference 3D model, one
+level up in `pcb/single_fpga/cad/` -- by hand-tracing its real STEP AP214 assembly structure
 (`PRODUCT` -> `NEXT_ASSEMBLY_USAGE_OCCURRENCE` -> `PRODUCT_DEFINITION_SHAPE` ->
 `CONTEXT_DEPENDENT_SHAPE_REPRESENTATION` -> `REPRESENTATION_RELATIONSHIP_WITH_TRANSFORMATION`
 -> `ITEM_DEFINED_TRANSFORMATION` -> `AXIS2_PLACEMENT_3D` -> `CARTESIAN_POINT`/`DIRECTION`,
@@ -49,10 +50,11 @@ matches ALINX's manual's own dimensioned Part 12 "Structure Diagram" drawing exa
 addition to matching the symmetry of the STEP-derived connector/hole positions. High
 confidence.
 
-(`AC7200_PCB_Reference/AC7200.brd` in this directory is ALINX's own reference carrier board,
-but it's a Cadence Allegro binary file -- not parseable without Allegro 16.6+, which isn't
-available here. If you have access to Allegro, it's a strictly better source than anything
-above for double-checking exact connector pad geometry specifically.)
+(`../AC7200_PCB_Reference/AC7200.brd`, also one level up in `pcb/single_fpga/`, is ALINX's own
+reference carrier board, but it's a Cadence Allegro binary file -- not parseable without
+Allegro 16.6+, which isn't available here. If you have access to Allegro, it's a strictly
+better source than anything above for double-checking exact connector pad geometry
+specifically.)
 
 The connector part number is real: the STEP model's own component names are `AXK680137YG`
 (Panasonic AXK6/P5K series, 0.5mm pitch, 80-pin -- the part *on the module*). ALINX's manual
