@@ -61,7 +61,15 @@ The connector part number is real: the STEP model's own component names are `AXK
 states the module's B2B connectors have 0.5mm pin spacing and mate with the carrier board;
 the carrier-side part is the complementary `AXK680337YG` (same family), matching what an
 earlier web search independently found as "the recommended connector for designing a base
-board." This is what the footprint's pads are built around.
+board." This is what the footprint's pads are built around. Standalone symbols/footprints for
+both mating connectors now exist: `../AXK680137YG/` (module-side socket) and
+`../AXK680337YG/` (carrier-side header) -- see `../AXK680137YG/KiCad/AXK680137YG.kicad_sym`'s
+own `Description` for a caveat on the exact `AXK680137YG` string: it doesn't cleanly decode
+against Panasonic's real P5K part-number scheme (leading digit 6 = Header selector, combined
+with a mated-height digit that's documented Socket-only) -- the catalog-valid bossed 80-pin
+socket at 3.0mm mated height is `AXK580137YG`, one digit off, most likely a typo in the STEP
+model's own component name. Filed under the STEP file's literal name regardless, since the
+real dimensional data used is the same P5K socket either way.
 
 ## What's still estimated, not verified
 
