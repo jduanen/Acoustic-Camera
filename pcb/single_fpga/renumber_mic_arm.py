@@ -7,7 +7,7 @@ every other arm sheet was found this session to still carry mic_arm_00's
 own literal labels/references, unrenamed).
 
 N is read from the numeric part of the file's own name (e.g. "03" from
-"mic_arm_03.kicad_sch"). Six plain regex substitutions, run against the
+"mic_arm_03.kicad_sch"). Seven plain regex substitutions, run against the
 file's raw text -- no pcbnew/eeschema API involved, this is intentionally
 just a text transform:
 
@@ -17,8 +17,17 @@ just a text transform:
                                                           CDCLVC1108 buffer)
   C18 .. C25               -> C(n + 8*N)                (decoupling caps,
                                                           n=18..25)
+  R1                      -> R(5 + N)                  (this arm's own
+                                                          CDCLVC1108 1G
+                                                          pull-up)
   DATA_00 .. DATA_03      -> DATA_{n + 4*N:02d}         (n=0..3)
   MIC_CLK_00 .. MIC_CLK_07 -> MIC_CLK_{n + 8*N:02d}      (n=0..7)
+
+R1 -> R(5+N), not R(1+N): R1..R4 are already used project-wide by
+power_clock.kicad_sch's own buck-regulator/enable resistors (confirmed
+by grepping every R-reference in the project before picking this base --
+R5..R16 were free), so this base is chosen to avoid colliding with those,
+not derived from any per-mic/per-arm index formula the other rules use.
 
 The U1-U8/C18-25/DATA_00-03/MIC_00-07_CLK formulas exactly reproduce this
 project's own established numbering (mic U{mic_idx+1}, decoupling cap
@@ -28,7 +37,7 @@ Line Assignment table), so running this against a fresh mic_arm_00.kicad_sch
 copy for a given arm N reproduces exactly the reference/net numbering that
 arm should have.
 
-All 6 patterns use \\b-anchored regexes (not plain substring replace), so
+All 7 patterns use \\b-anchored regexes (not plain substring replace), so
 e.g. U1 cannot match inside U10/U18, C18 cannot match inside C180, and
 DATA_00 cannot match inside a longer token -- safe to run against the
 literal, unrenamed template content this script expects, not safe to
@@ -61,6 +70,9 @@ RULES = [
     ("C18..C25",
      re.compile(r"\bC(18|19|20|21|22|23|24|25)\b"),
      lambda m, n: f"C{int(m.group(1)) + 8 * n}"),
+    ("R1",
+     re.compile(r"\bR1\b"),
+     lambda m, n: f"R{5 + n}"),
     ("DATA_00..DATA_03",
      re.compile(r"\bDATA_(0[0-3])\b"),
      lambda m, n: f"DATA_{int(m.group(1)) + 4 * n:02d}"),
