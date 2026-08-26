@@ -21,11 +21,23 @@ Real data sources (no invented numbers):
   fixed radius/angle formula -- the array is an Underbrink spiral, not a
   straight radial line: mic_idx 0's own polar angle is 0deg but mic_idx 7's
   is ~41.5deg on the same arm, confirmed directly from the CSV, so "radial
-  line" isn't a real description of an arm's shape). Real mic4-mic5 gap:
-  19.254mm on every arm (confirmed identical across all 12 by the 12-fold
-  rotational symmetry the whole array is built from), comfortably clear of
-  the CDCLVC1108 footprint's own real F.CrtYd extent (7.8 x 5.6mm, read
-  directly from pcb/libraries/CDCLVC1108/footprints.pretty/PW0016A_N.kicad_mod).
+  line" isn't a real description of an arm's shape), PLUS the board's real
+  origin offset (see below) -- NOT the raw CSV midpoint on its own. Real
+  mic4-mic5 gap: 19.254mm on every arm (confirmed identical across all 12
+  by the 12-fold rotational symmetry the whole array is built from),
+  comfortably clear of the CDCLVC1108 footprint's own real F.CrtYd extent
+  (7.8 x 5.6mm, read directly from
+  pcb/libraries/CDCLVC1108/footprints.pretty/PW0016A_N.kicad_mod).
+- Board origin offset: array_xy.csv's coordinates are centred on the
+  array's own local origin (0,0), but this board's real disc centre on the
+  page is (268.863, 205.363)mm -- confirmed directly from the real
+  Edge.Cuts bounding box, and independently cross-checked against U1's own
+  real placed position (293.863, 205.363 = disc centre + CSV-local
+  (25.0, 0.0)). Derived at runtime from U1's real position rather than
+  hardcoded (see main() below), so this stays correct even if the board is
+  recentred again later -- a hardcoded (0,0) assumption is exactly what
+  put every driver in the wrong place (clustered near the page origin
+  instead of on the disc) the first time this script ran for real.
 - Driver rotation: aligned to the real mic4->mic5 segment direction (not a
   fixed 0deg like place_mic_array.py's own MIC_ROT_DEG convention -- that
   convention was chosen there because IM72D128's pinout doesn't care about
@@ -128,13 +140,35 @@ def main():
     # uses for its own 192-footprint placement pass).
     existing_boxes = [(fp.GetReference(), footprint_bbox_mm(fp)) for fp in board.GetFootprints()]
 
+    # Real board-origin offset, derived from U1's own real placed position on
+    # THIS board vs its known CSV-local position (mic_idx=0, arm_idx=0 ->
+    # (25.0, 0.0)mm) -- NOT assumed to be (0,0). array_xy.csv's own
+    # coordinates are centred on the array's own local origin, but this
+    # board's actual disc was recentred on the page after place_mic_array.py
+    # first generated it (confirmed: real Edge.Cuts bounding-box centre is
+    # (268.863, 205.363)mm, not (0,0) -- the same real centre already
+    # established independently via HCAM1-4's own recovered position, see
+    # fix_camera_mount_holes.py). A prior version of this script placed
+    # drivers at raw CSV-local coordinates directly and put all 12 in the
+    # wrong place (clustered near the page origin instead of on the disc) --
+    # deriving the offset from the board's own live state instead of a
+    # hardcoded constant means this stays correct even if the board is
+    # recentred again later.
+    existing_fps = {fp.GetReference(): fp for fp in board.GetFootprints()}
+    if "U1" not in existing_fps:
+        raise RuntimeError("U1 not found on board -- can't derive the real board-origin offset")
+    u1_pos = existing_fps["U1"].GetPosition()
+    offset_x = u1_pos.x / 1e6 - 25.0
+    offset_y = u1_pos.y / 1e6 - 0.0
+    print(f"real board-origin offset (from U1): ({offset_x:.6f}, {offset_y:.6f})mm")
+
     placed = []
     for arm in range(12):
         arm_rows = sorted(by_arm[arm], key=lambda r: int(r["mic_idx"]))
         assert len(arm_rows) == 8
         x4, y4 = float(arm_rows[3]["x_mm"]), float(arm_rows[3]["y_mm"])  # 4th mic (1-indexed)
         x5, y5 = float(arm_rows[4]["x_mm"]), float(arm_rows[4]["y_mm"])  # 5th mic (1-indexed)
-        mx, my = (x4 + x5) / 2.0, (y4 + y5) / 2.0
+        mx, my = (x4 + x5) / 2.0 + offset_x, (y4 + y5) / 2.0 + offset_y
         rot_deg = math.degrees(math.atan2(y5 - y4, x5 - x4))
 
         ref = f"U{99 + arm}"
