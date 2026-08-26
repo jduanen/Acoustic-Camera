@@ -7,7 +7,7 @@ every other arm sheet was found this session to still carry mic_arm_00's
 own literal labels/references, unrenamed).
 
 N is read from the numeric part of the file's own name (e.g. "03" from
-"mic_arm_03.kicad_sch"). Five plain regex substitutions, run against the
+"mic_arm_03.kicad_sch"). Six plain regex substitutions, run against the
 file's raw text -- no pcbnew/eeschema API involved, this is intentionally
 just a text transform:
 
@@ -15,21 +15,24 @@ just a text transform:
   U1 .. U8                -> U(n + 8*N)                (mic refs, n=1..8)
   U99                     -> U(99 + N)                 (this arm's own
                                                           CDCLVC1108 buffer)
+  C18 .. C25               -> C(n + 8*N)                (decoupling caps,
+                                                          n=18..25)
   DATA_00 .. DATA_03      -> DATA_{n + 4*N:02d}         (n=0..3)
   MIC_CLK_00 .. MIC_CLK_07 -> MIC_CLK_{n + 8*N:02d}      (n=0..7)
 
-The U1-U8/DATA_00-03/MIC_00-07_CLK formulas exactly reproduce this
-project's own established numbering (mic U{mic_idx+1}, DATA index =
-arm*4 + pair, mic_idx = arm*8 + position -- see place_mic_array.py's own
-docstring and pcb/SCHEMATIC_NOTES.md's Data Line Assignment table), so
-running this against a fresh mic_arm_00.kicad_sch copy for a given arm N
-reproduces exactly the reference/net numbering that arm should have.
+The U1-U8/C18-25/DATA_00-03/MIC_00-07_CLK formulas exactly reproduce this
+project's own established numbering (mic U{mic_idx+1}, decoupling cap
+C{mic_idx+18}, DATA index = arm*4 + pair, mic_idx = arm*8 + position --
+see place_mic_array.py's own docstring and pcb/SCHEMATIC_NOTES.md's Data
+Line Assignment table), so running this against a fresh mic_arm_00.kicad_sch
+copy for a given arm N reproduces exactly the reference/net numbering that
+arm should have.
 
-All 5 patterns use \\b-anchored regexes (not plain substring replace), so
-e.g. U1 cannot match inside U10/U18, and DATA_00 cannot match inside a
-longer token -- safe to run against the literal, unrenamed template
-content this script expects, not safe to assume idempotent against
-arbitrary other content.
+All 6 patterns use \\b-anchored regexes (not plain substring replace), so
+e.g. U1 cannot match inside U10/U18, C18 cannot match inside C180, and
+DATA_00 cannot match inside a longer token -- safe to run against the
+literal, unrenamed template content this script expects, not safe to
+assume idempotent against arbitrary other content.
 
 Usage (plain python3, no pcbnew needed -- this never touches KiCad's
 Python API, just file text):
@@ -55,6 +58,9 @@ RULES = [
     ("U99",
      re.compile(r"\bU99\b"),
      lambda m, n: f"U{99 + n}"),
+    ("C18..C25",
+     re.compile(r"\bC(18|19|20|21|22|23|24|25)\b"),
+     lambda m, n: f"C{int(m.group(1)) + 8 * n}"),
     ("DATA_00..DATA_03",
      re.compile(r"\bDATA_(0[0-3])\b"),
      lambda m, n: f"DATA_{int(m.group(1)) + 4 * n:02d}"),
