@@ -11,16 +11,16 @@ positions, plus a centre cutout + real mounting-hole pattern for a Pi Camera
 Module 3 Wide mounted on this board, lens facing out through the cutout.
 
 Scope: board outline + footprint placement only, no routing -- mirrors the
-established precedent in this project (pcb/layout_multi_fpga.py's own header
-comment, pcb/place_mics.py's docstring). The AC7200 module, TCXO, and 3.3V
+established precedent in this project (pcb/multi_fpga/tools/layout_multi_fpga.py's own header
+comment, pcb/mic_array/tools/place_mics.py's docstring). The AC7200 module, TCXO, and 3.3V
 regulator are already in the schematic (per the user) but are NOT placed
 here -- out of scope for this pass, left for the user to place.
 
 Real data sources (no invented numbers):
 - Mic positions: test/phase4/array_xy.csv (96 rows, mic_idx 0-95, arm_idx
   0-11), the output of notebooks/make_nb18.py's underbrink_array(12, 8) --
-  the SAME real acoustic-array geometry pcb/layout_multi_fpga.py's cluster
-  boards and pcb/place_mics.py both build from. The array's physical mic
+  the SAME real acoustic-array geometry pcb/multi_fpga/tools/layout_multi_fpga.py's cluster
+  boards and pcb/mic_array/tools/place_mics.py both build from. The array's physical mic
   layout is a property of the acoustic design (beamforming geometry), not
   of which FPGA board the mics happen to be wired to -- reused verbatim,
   not re-derived.
@@ -34,11 +34,11 @@ Real data sources (no invented numbers):
   mic gets its own nearby decoupling cap. This index pairing is used anyway
   for a clean, unambiguous ref-to-position mapping.
 - Cap-to-mic offset (CAP_TO_MIC_DX/DY_MM below): reused from
-  pcb/layout_multi_fpga.py's own CAP_TO_MIC_DX_MM/CAP_TO_MIC_DY_MM --
+  pcb/multi_fpga/tools/layout_multi_fpga.py's own CAP_TO_MIC_DX_MM/CAP_TO_MIC_DY_MM --
   expressed as a fixed absolute-frame offset from a 0-deg-oriented mic
   footprint, and both this board and that one place every mic at a fixed
   0-deg orientation regardless of its angular position on the spiral (this
-  file's own choice, confirmed here to match pcb/place_mics.py's identical
+  file's own choice, confirmed here to match pcb/mic_array/tools/place_mics.py's identical
   convention -- see MIC_ROT_DEG below), so the same offset applies whichever
   spiral position the mic sits at. NOT reusing that file's
   CAP_TO_MIC_DY_MM_EXCEPTIONS dict -- those exceptions were for specific
@@ -84,7 +84,7 @@ Real data sources (no invented numbers):
   session). Verify against the physical module/enclosure before fab.
 
 Usage (from project root, plain python3 -- no KiCad Scripting Console
-needed, same as pcb/layout_multi_fpga.py):
+needed, same as pcb/multi_fpga/tools/layout_multi_fpga.py):
   python3 pcb/single_fpga/place_mic_array.py
 """
 
@@ -108,7 +108,7 @@ CAMERA_HOLE_NAME = "MountingHole_2.2mm_M2"  # real dia from RPi's own datasheet,
 
 # ── mic array geometry (real, from array_xy.csv -- see header) ─────────────
 MIC_ROT_DEG = 0.0  # every mic at a fixed orientation regardless of spiral
-                    # angle, matching pcb/place_mics.py's own convention
+                    # angle, matching pcb/mic_array/tools/place_mics.py's own convention
                     # exactly (fp.SetOrientationDegrees(0.0) for every ref)
 
 CAP_TO_MIC_DX_MM = -0.49
@@ -160,7 +160,7 @@ def add_circle(board, cx_mm, cy_mm, radius_mm, n=32, width_mm=0.15, layer=pcbnew
     Edge.Cuts loop, it reads as a cutout/hole in KiCad; on its own (this
     board's own outer boundary) it's the board shape itself -- same
     add_outline() polygon technique either way, mirroring
-    pcb/layout_multi_fpga.py's add_circle_cutout()."""
+    pcb/multi_fpga/tools/layout_multi_fpga.py's add_circle_cutout()."""
     pts = []
     for i in range(n):
         ang = 2 * math.pi * i / n
@@ -175,7 +175,7 @@ def add_mounting_hole(board, x_mm, y_mm, ref):
 def _local_courtyard_corners(lib_path, name):
     """Real local (unrotated, at origin) F.CrtYd bounding-box corners of a
     footprint, loaded fresh so this stays correct if the footprint file
-    ever changes -- mirrors pcb/layout_multi_fpga.py's own helper."""
+    ever changes -- mirrors pcb/multi_fpga/tools/layout_multi_fpga.py's own helper."""
     fp = pcbnew.FootprintLoad(lib_path, name)
     fp.SetPosition(pcbnew.VECTOR2I_MM(0, 0))
     fp.SetOrientationDegrees(0)

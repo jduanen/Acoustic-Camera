@@ -7,17 +7,17 @@ grouped together as one movable KiCad PCB_GROUP ("AC7200_MOUNT").
 
 Real data sources (no invented numbers):
 - Connector centers + rotations, and mounting-hole positions: computed
-  directly from pcb/single_fpga/footprints.pretty/AC7200.kicad_mod's own
-  real pad data (bounding-box centre of each connector's 80 real SMD pads;
-  the 4 real NPTH mounting-hole pads) -- that footprint's own positions
-  are themselves real, STEP-model-derived data (see its own `descr` field
-  and pcb/single_fpga/AC7200/AC7200_README.md for full provenance), not
-  re-derived or guessed here.
-- Header connector footprint: pcb/single_fpga/footprints.pretty/
+  directly from pcb/libraries/single_fpga/footprints.pretty/AC7200.kicad_mod's
+  own real pad data (bounding-box centre of each connector's 80 real SMD
+  pads; the 4 real NPTH mounting-hole pads) -- that footprint's own
+  positions are themselves real, STEP-model-derived data (see its own
+  `descr` field and pcb/libraries/AC7200/AC7200_README.md for full
+  provenance), not re-derived or guessed here.
+- Header connector footprint: pcb/libraries/single_fpga/footprints.pretty/
   AXK680337YG.kicad_mod (real Panasonic P5K catalog geometry, built and
   kicad-cli-validated earlier this session -- see that file's own descr).
 - Mounting hole size: 2.7mm, matching AC7200.kicad_mod's own 4 real NPTH
-  pads exactly (same STANDOFF_HOLE_NAME convention pcb/layout_multi_fpga.py
+  pads exactly (same STANDOFF_HOLE_NAME convention pcb/multi_fpga/tools/layout_multi_fpga.py
   already uses elsewhere in this project for M2.5 clearance holes).
 
 Placement choice (NOT derived from any real spec -- a real, but provisional,
@@ -56,7 +56,7 @@ the placement-only precedent established elsewhere in this project).
 Usage (from project root, plain python3 -- must use /usr/bin/python3, not
 a venv's python3; pcbnew is a system dist-package, confirmed not importable
 from this project's venv):
-  /usr/bin/python3 pcb/single_fpga/place_ac7200_connectors.py
+  /usr/bin/python3 pcb/single_fpga/tools/place_ac7200_connectors.py
 """
 
 import os
@@ -64,11 +64,13 @@ import re
 
 import pcbnew
 
-ROOT = os.path.dirname(os.path.abspath(__file__))  # pcb/single_fpga
+TOOLS_DIR = os.path.dirname(os.path.abspath(__file__))  # pcb/single_fpga/tools
+ROOT = os.path.dirname(TOOLS_DIR)  # pcb/single_fpga
+LIB_ROOT = os.path.join(ROOT, "..", "libraries")  # pcb/libraries
 BOARD_PATH = os.path.join(ROOT, "top.kicad_pcb")
-AC7200_FP_PATH = os.path.join(ROOT, "footprints.pretty", "AC7200.kicad_mod")
+AC7200_FP_PATH = os.path.join(LIB_ROOT, "single_fpga", "footprints.pretty", "AC7200.kicad_mod")
 
-HEADER_FP_LIB = os.path.join(ROOT, "footprints.pretty")
+HEADER_FP_LIB = os.path.join(LIB_ROOT, "single_fpga", "footprints.pretty")
 HEADER_FP_NAME = "AXK680337YG"
 MOUNTHOLE_LIB = "/usr/share/kicad/footprints/MountingHole.pretty"
 MOUNTHOLE_NAME = "MountingHole_2.7mm_M2.5"  # matches AC7200's own real 2.7mm NPTH holes

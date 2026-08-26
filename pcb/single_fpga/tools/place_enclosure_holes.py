@@ -3,7 +3,7 @@
 place_enclosure_holes.py -- adds 4 real M4 mounting holes to
 pcb/single_fpga/top.kicad_pcb at the vertices of a 100x100mm square
 centred on the disc's own centre (i.e. (+-50, +-50)mm) -- enclosure
-mounting points, mirroring pcb/layout_multi_fpga.py's own
+mounting points, mirroring pcb/multi_fpga/tools/layout_multi_fpga.py's own
 ENCLOSURE_HOLE_NAME convention (that one uses 3.2mm/M3 for the smaller
 multi-FPGA cluster boards; this disc uses the larger 4.3mm/M4 real
 clearance size the user asked for).
