@@ -38,21 +38,17 @@ Real data sources (no invented numbers):
   recentred again later -- a hardcoded (0,0) assumption is exactly what
   put every driver in the wrong place (clustered near the page origin
   instead of on the disc) the first time this script ran for real.
-- Driver rotation: aligned to the real mic4->mic5 segment direction (not a
-  fixed 0deg like place_mic_array.py's own MIC_ROT_DEG convention -- that
-  convention was chosen there because IM72D128's pinout doesn't care about
-  in-plane rotation for routing; CDCLVC1108 is a 16-pin TSSOP with its two
-  8-pin rows on opposite sides of its long axis, so orientation is exactly
-  what determines whether "routing from here to the mics" is a consistent,
-  repeatable pattern across all 12 arms or a different puzzle on each one).
-  Rotating by the real local mic4->mic5 direction (not each arm's own base
-  angle, which the spiral shape makes ill-defined as a single number) makes
-  all 12 placements geometrically identical modulo the 30deg/arm global
-  rotation the whole array already has -- one pin row ends up facing back
-  toward mic4/the inner mics, the other facing forward toward mic5/the
-  outer mics, on every arm alike. FLAG: this is a real design choice, not a
-  spec -- easy to change (just drop the rotation term below) if a fixed
-  orientation is preferred instead.
+- Driver rotation: fixed 0deg (DRIVER_ROT_DEG below) for every driver,
+  matching place_mic_array.py's own MIC_ROT_DEG convention -- same "facing
+  up" orientation on all 12, confirmed with the user. An earlier version of
+  this script instead aligned each driver to its own local mic4->mic5
+  segment direction (a per-arm angle, for consistent routing geometry
+  arm-to-arm); the user asked for a fixed orientation instead, so that
+  choice was dropped. Re-verified via kicad-cli DRC after the change (no
+  new courtyard/silkscreen violations from the rotation itself -- see the
+  ref-des repositioning below, needed because the previous per-arm-rotation
+  fixes for a few instances' Reference text no longer applied once every
+  driver rotated to the same fixed angle).
 - Driver reference designators: U(99+arm_idx), confirmed against each
   mic_arm_NN.kicad_sch's own already-placed CDCLVC1108 symbol (arm 0 ->
   U99 ... arm 11 -> U110) -- see renumber_mic_arm.py's docstring for how
@@ -69,7 +65,6 @@ from this project's venv):
 """
 
 import csv
-import math
 import os
 
 import pcbnew
@@ -83,6 +78,7 @@ BOARD_PATH = os.path.join(ROOT, "top.kicad_pcb")
 LIB_ROOT = os.path.join(ROOT, "..", "libraries")
 DRIVER_FP_LIB = os.path.join(LIB_ROOT, "CDCLVC1108", "footprints.pretty")
 DRIVER_FP_NAME = "PW0016A_N"
+DRIVER_ROT_DEG = 0.0  # every driver "facing up", same orientation on all 12 -- confirmed with the user
 
 
 def load_fp(lib_path, name, ref, x_mm, y_mm, rot_deg=0.0, lib_nickname=None):
@@ -169,7 +165,7 @@ def main():
         x4, y4 = float(arm_rows[3]["x_mm"]), float(arm_rows[3]["y_mm"])  # 4th mic (1-indexed)
         x5, y5 = float(arm_rows[4]["x_mm"]), float(arm_rows[4]["y_mm"])  # 5th mic (1-indexed)
         mx, my = (x4 + x5) / 2.0 + offset_x, (y4 + y5) / 2.0 + offset_y
-        rot_deg = math.degrees(math.atan2(y5 - y4, x5 - x4))
+        rot_deg = DRIVER_ROT_DEG
 
         ref = f"U{99 + arm}"
         fp = load_fp(DRIVER_FP_LIB, DRIVER_FP_NAME, ref, mx, my, rot_deg=rot_deg,
@@ -193,8 +189,8 @@ def main():
     board.Save(BOARD_PATH)
 
     print(f"Placed {len(placed)} CDCLVC1108 drivers (U99-U110), one per arm, "
-          f"centred between each arm's 4th and 5th mic, oriented along the "
-          f"real mic4->mic5 direction. {n_checks} courtyard-overlap checks, "
+          f"centred between each arm's 4th and 5th mic, all facing up "
+          f"(rot={DRIVER_ROT_DEG}deg). {n_checks} courtyard-overlap checks, "
           f"all clear. Board saved to {BOARD_PATH}.")
     for ref, (x0, y0, x1, y1) in placed:
         cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
