@@ -73,13 +73,20 @@ DRIVER_FP_LIB = os.path.join(LIB_ROOT, "CDCLVC1108", "footprints.pretty")
 DRIVER_FP_NAME = "PW0016A_N"
 
 
-def load_fp(lib_path, name, ref, x_mm, y_mm, rot_deg=0.0):
+def load_fp(lib_path, name, ref, x_mm, y_mm, rot_deg=0.0, lib_nickname=None):
     fp = pcbnew.FootprintLoad(lib_path, name)
     if fp is None:
         raise RuntimeError(f"footprint not found: {lib_path} / {name}")
     fp.SetReference(ref)
     fp.SetPosition(pcbnew.VECTOR2I_MM(x_mm, y_mm))
     fp.SetOrientationDegrees(rot_deg)
+    if lib_nickname:
+        # FootprintLoad() by raw path (not by project fp-lib-table nickname)
+        # leaves FPID's library nickname empty -- same "footprint_link_issues:
+        # library ''" gap already found and fixed on the schematic side
+        # earlier this session. Set it explicitly so the placed footprint
+        # stays linked to its real fp-lib-table entry.
+        fp.SetFPID(pcbnew.LIB_ID(lib_nickname, name))
     return fp
 
 
@@ -131,7 +138,8 @@ def main():
         rot_deg = math.degrees(math.atan2(y5 - y4, x5 - x4))
 
         ref = f"U{99 + arm}"
-        fp = load_fp(DRIVER_FP_LIB, DRIVER_FP_NAME, ref, mx, my, rot_deg=rot_deg)
+        fp = load_fp(DRIVER_FP_LIB, DRIVER_FP_NAME, ref, mx, my, rot_deg=rot_deg,
+                     lib_nickname="CDCLVC1108")
         board.Add(fp)
         placed.append((ref, footprint_bbox_mm(fp)))
 
