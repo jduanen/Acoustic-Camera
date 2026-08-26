@@ -427,6 +427,65 @@ The 12.288 MHz frequency divides cleanly to all required audio clocks:
 
 Recommended: any 12.288 MHz TCXO in ±2.5 ppm or better (e.g., NDK NZ2520SD, TXC 7M series).
 
+#### PDM Clock Distribution (single-FPGA mic array board)
+
+96 mics is too much fan-out for a bare TCXO output or a single 1:10-class buffer, and driving
+it directly would exceed the TCXO's own rated output load. Two-tier real fan-out tree, TI
+CDCLVC11xx family throughout (same low-skew family, pin-compatible members):
+
+```
+TCXO (12.288 MHz) -> 1x CDCLVC1112 (1:12) -> 12x CDCLVC1108 (1:8, one per mic arm) -> 96 mics
+```
+
+- **Tier 0**: a single CDCLVC1112 (1:12 LVCMOS buffer) takes the TCXO output directly — its
+  only load, well inside the TCXO's rated drive. One output per arm, so all 12 second-tier
+  buffers see the identical upstream edge (no device-to-device skew at this hop at all, since
+  there's only one Tier-0 chip).
+- **Tier 1**: one CDCLVC1108 (1:8) per arm, driven by its own Tier-0 output, driving that
+  arm's 8 mic CLK pins directly (star topology, not daisy-chained).
+- **Real skew budget** (from the CDCLVC11xx datasheet, not estimated): same-device output
+  skew 50ps max (mics sharing one arm's buffer) vs. part-to-part skew 0.5ns max (mics on
+  different arms) — the cross-arm figure dominates by 10x and is a fixed silicon
+  characteristic, not fixable by trace-length matching. If beamforming coherence ever needs
+  tighter than 0.5ns across arms, the fix is a one-time per-channel calibration measurement,
+  not tighter routing.
+- 13 buffer ICs total (1 + 12), all one part family — single BOM line, easy sourcing.
+
+#### Power Supply (single-FPGA mic array board)
+
+Real combined 3.3V load, computed from actual datasheet current figures (not estimated):
+
+| Load | Per-unit | Count | Total |
+|---|---|---|---|
+| IM72D128 mics @ 3.072 MHz PDM clock | 980µA typ / 1120µA max | 96 | 94–108mA |
+| CDCLVC1112 + 12x CDCLVC1108 (static, near 3.3V) | ~6mA typ / ~10mA max each | 13 | 78–130mA |
+| Clock-tree dynamic (C_PD x VDD x f, ~108 active outputs) | ~61µA/output | — | ~7mA |
+| ECS-TXO-5032 TCXO | 6.0mA | 1 | 6mA |
+| **Total** | | | **~185mA typ, ~250mA worst-case** |
+
+(AC7200 module power is separate — it takes +5V directly and generates its own onboard rails.)
+
+A single small linear regulator off +5V (originally an MCP1700T-3302E/TT, 250mA max) is not
+adequate: the worst-case load sits right at that part's current ceiling with no margin, and
+at a 1.7V dropout (5V in, 3.3V out) it would dissipate up to ~425mW in a SOT-23 package — a
+real thermal problem, not just a current-margin one. Real fix, buck pre-regulator + split
+linear post-regulation:
+
+```
++5V -> TLV62569DBV (buck, adjustable, 2A) -> ~3.6V -> 2x MCP1700T-3302E/TT -> clean 3.3V
+                                                        (VR5: mics, VR6: clock tree + TCXO)
+```
+
+- Buck output set to ~3.6V (R1=499k / R2=100k feedback divider, VOUT = 0.6V x (1 + R1/R2)) —
+  enough headroom for clean LDO dropout without wasting buck efficiency.
+- Splitting the two LDOs by load *type* (quiet analog mic rail vs. noisy digital clock-tree
+  rail), not by mic arm — per-arm splitting buys nothing once the buck removes the thermal/
+  current problem, since every mic already has its own local decoupling cap; digital/analog
+  separation is the split that actually reduces correlated-noise risk on a 96-channel
+  coherent beamformer.
+- Each LDO now sees ≤143mA against a 250mA rating (43–57% of max) with a ~0.3V dropout instead
+  of 1.7V — comfortable current and thermal margin on both rails.
+
 ---
 
 ## Array Geometry
