@@ -612,18 +612,18 @@ Key CLI options: `--audio`, `--freq`, `--snap`, `--iters`, `--algos`, `--clean_i
 Custom 96-mic Underbrink spiral array (12 arms × 8 mics) with on-FPGA PDM→CIC/FIR
 decimation. Two hardware architectures are being pursued in parallel:
 
-- **Multi-FPGA (primary)** — 4 cluster boards (Cmod A7-35T, 24 mics each) feed a hub board
-  (Cmod A7-35T) over a shared-clock spoke bus; the hub relays the stream to a Raspberry Pi 5
-  over USB. RTL (per-channel CIC/FIR, spoke framing, USB framing) is fully implemented,
-  verified bit-exact against golden models, and synthesizes/places/routes clean on real
-  hardware (`xc7a35tcpg236-1`). PCB layout for both board types is in progress.
-- **Single-FPGA alternate (ALINX AC7200 module)** — one XC7A200T SOM runs all 96 channels'
+- **Single-FPGA (primary, ALINX AC7200 module)** — one XC7A200T SOM runs all 96 channels'
   CIC/FIR in parallel plus a GbE/UDP host link, instead of splitting the work across 5
   FPGAs. RTL feasibility is confirmed on real placed/routed numbers (43.5% LUT utilization
   for the pipeline alone, 48.1% combined with the GbE MAC and packetizer). The physical
   design splits into two mating boards — `mic_array` (the 96-mic disc) and `front_end`
   (FPGA module, buck regulator, GbE PHY) — joined by board-to-board connectors; currently
   in active PCB layout, not yet fabricated.
+- **Multi-FPGA alternate** — 4 cluster boards (Cmod A7-35T, 24 mics each) feed a hub board
+  (Cmod A7-35T) over a shared-clock spoke bus; the hub relays the stream to a Raspberry Pi 5
+  over USB. RTL (per-channel CIC/FIR, spoke framing, USB framing) is fully implemented,
+  verified bit-exact against golden models, and synthesizes/places/routes clean on real
+  hardware (`xc7a35tcpg236-1`). PCB layout for both board types is in progress.
 
 A co-located video camera (Pi Camera Module 3 Wide) mounts through the mic array's centre.
 

@@ -1,8 +1,13 @@
 # Phase 4 — Full Custom Array
 
-96-mic Underbrink-spiral PCB + Multi-FPGA (Clustered) front-end (4× Spartan-7 cluster FPGAs +
-1× Artix-7 hub) + USB bridge to a Raspberry Pi 5 (standalone, or relaying to a GbE-attached GPU
-workstation when tethered). A single-FPGA (XC7A200T) design is kept as a documented alternate.
+96-mic Underbrink-spiral array + single-FPGA front-end (one ALINX AC7200 module, Xilinx
+XC7A200T) doing the entire 96-channel CIC/FIR pipeline plus direct GbE/UDP packetization to
+the host — no cluster/hub split, no USB bridge. Physically two mating boards: `mic_array`
+(the 96-mic disc) and `front_end` (FPGA module, buck regulator, GbE PHY). RTL feasibility is
+confirmed on real placed/routed numbers; PCB layout is in progress. The original Multi-FPGA
+(Clustered) design (5× Xilinx 7-series FPGAs, USB bridge to a Raspberry Pi 5) is kept as a
+proven, already-working alternate — its RTL is fully implemented and verified, and it
+synthesizes/places/routes clean on real hardware.
 Goal: full-performance acoustic camera meeting system requirements (200 Hz – 8 kHz, ±45° FoV,
 ~5° resolution @ 1 kHz).
 
@@ -36,14 +41,152 @@ TDK, STMicro, and Vesper PDM mics in this range do not publish comparable phase 
 
 ---
 
-### FPGA — Multi-FPGA (Clustered)
+### FPGA — Single-FPGA (ALINX AC7200 Module)
+
+One Xilinx XC7A200T does the entire 96-channel CIC + FIR pipeline plus direct GbE/UDP
+packetization to the host, instead of splitting the front end across 5 smaller FPGAs (the
+alternate Multi-FPGA design, described below). This was originally deferred behind two
+structural costs: the XC7A200T ships only in a 484-pin BGA (bare-chip prototyping would need
+a dev board, and custom-PCB assembly would need BGA rework), and all 48 direct PDM lines
+would need routing the full ~300mm array span on one monolithic PCB. Both costs are resolved
+by using the **ALINX AC7200** — a real, currently-sold XC7A200T System-on-Module (FPGA + 1GB
+DDR3 + QSPI flash + clocks + full power delivery, fully assembled) — as the FPGA subsystem,
+carried on a custom carrier board, rather than designing around the bare chip: no BGA
+soldering or rework at any build stage, and the module's own 4× 80-pin/0.5mm board-to-board
+connectors (195 usable GPIO across FPGA banks 13/14/15/16/34) comfortably cover the 48 PDM
+DATA lines + PDM_CLK + RGMII/MDIO + JTAG this design needs.
+
+Real quoted price (Aug 2026, CodeRobin/eBay): ~$299 — only ~$23 over the bare
+XC7A200T-1FBG484C chip's own $275.99 DigiKey price for a complete, working, BGA-assembled
+module. Compared to the alternate Multi-FPGA design's 5× Digilent Cmod A7-35T modules (~$520
+for the FPGAs alone), this comes out roughly **$240/unit cheaper** at the component level,
+with the real engineering risk of custom BGA power delivery and prototyping removed entirely.
+
+#### Physical design: two mating boards
+
+Unlike the original single-monolithic-PCB plan, the physical design splits into two boards
+that stack together via board-to-board connectors:
+
+- **`mic_array`** — the 96-mic disc itself: all 96 IM72D128 mics + decoupling caps, the
+  2-tier PDM clock fan-out tree (see Supporting ICs below), and local power regulation.
+- **`front_end`** — the ALINX AC7200 module, a buck pre-regulator (TLV62569DBV) feeding the
+  module's own +5V input, and the GbE PHY (see Supporting ICs below).
+
+Both boards are managed as independent KiCad projects (`mic_array.kicad_pro`,
+`front_end.kicad_pro`) sharing one common project-local symbol/footprint library
+(`pcb/libraries/`). PCB layout is in progress; not yet fabricated.
+
+#### Device comparison
+
+| Device | LUTs | DSP | BRAM | 96-ch headroom | 128-ch headroom | Notes |
+|---|---|---|---|---|---|---|
+| XC7A35T | 20,800 | 90 | 1.8 Mb | No | No | Too small |
+| ECP5-25F | 25,500 | 56 | 1.67 Mb | No | No | Too small |
+| ECP5-45F | 44,500 | 90 | 1.93 Mb | Tight (5%) | No | Open toolchain; no 128-ch path |
+| XC7A100T | 63,400 | 240 | 4.86 Mb | 35% | 16% | Considered; rejected (tight at 128-ch) |
+| **XC7A200T** | **134,600** | **740** | **13.1 Mb** | **~75%** | **~60%** | **Chosen** |
+
+#### Why XC7A200T over XC7A100T
+
+The XC7A100T has 35% LUT headroom for 96 channels but only 16% for 128 channels — tight for
+a first build where HDL synthesis estimates are uncertain. The XC7A200T gives 75% headroom
+at 96 channels and 60% at 128 channels, with room for future FPGA-side additions (octave-band
+parallel beamforming, hardware PSF, etc.).
+
+Its 740 DSP48E1 blocks cover all 96 FIR compensation chains in dedicated DSPs with zero LUT
+cost for MAC operations. The XC7A100T's 240 DSPs could handle this too but leaves little
+margin for any additional DSP-heavy logic.
+
+Both use the same Artix-7 family: same Vivado flow, same ILA/VIO in-circuit debug tools.
+(The GbE MAC is not Xilinx's own TEMAC IP — see below.)
+
+#### RTL feasibility: real placed/routed numbers, not estimates
+
+Confirmed on `xc7a200tfbg484-1` — the exact part the ALINX AC7200 carries — via full
+`synth_design → opt_design → place_design → route_design`, never trusting a synth-stage or
+naively-extrapolated LUT number (this project has been burned by that twice already, see the
+alternate Multi-FPGA design's own "Superseded by real synthesis" note below):
+
+| Stage | Slice LUTs | Utilization | Registers | DSP48E1 | Notes |
+|---|---|---|---|---|---|
+| Pipeline only (96ch CIC+FIR) | 58,232 / 133,800 | **43.52%** | 13.39% | 96/740 (12.97%) | Route clean, 0 errors |
+| + GbE MAC + UDP packetizer | 64,406 / 133,800 | **48.14%** | 22.12% | 96/740 (12.97%) | Route clean, 0 errors |
+
+Comfortable margin either way — the fully-parallel (no CIC-sharing) architecture fits with
+real margin to spare. GbE MAC is `alexforencich/verilog-ethernet` (MIT license), not
+Xilinx's TEMAC IP core — TEMAC requires a separate license Xilinx doesn't bundle by default,
+so the design switched to this open-source RGMII MAC instead, verified to elaborate cleanly
+against the real Xilinx IODDR/BUFR primitives. Full protocol (fixed-source/dest UDP,
+transmit-only, no ARP/DHCP/ICMP, checksum disabled per RFC 768) is in
+`fpga/single_fpga/GBE_FRAMING.md`; end-to-end RTL is bit-exact against a golden model,
+including the real multi-tone PDM pipeline feeding the packetizer.
+
+#### Build strategy
+
+No dev board, no bare-chip BGA rework, no deferred-to-rev-2 custom hub PCB — the ALINX AC7200
+module *is* the finished FPGA subsystem from day one, carried on the `front_end` carrier
+board described above. Real connector part numbers for the module's own 4× 80-pin headers
+still need sourcing from ALINX's manual before the carrier board's connector footprints are
+finalized.
+
+#### Alternate: Lattice ECP5-45F
+
+Only if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement.
+Fits 96 channels with ~5% margin; does not fit 128 channels. GbE SerDes integration is
+harder (~4–6 extra weeks). Suitable for a rev-2 board after the HDL is proven on Artix-7.
+
+#### Considered and rejected: Zynq-7020
+
+85,000 LUTs + dual-core ARM Cortex-A9. Potentially interesting for Config A (standalone)
+because the ARM could replace the Pi 5, but rejected:
+- Cortex-A9 @ 1 GHz is 4–5× slower than Pi 5's Cortex-A76 for NumPy/BLAS
+- 96-ch D&S at 3°/pt: ~80–100 ms on Zynq ARM vs ~20 ms on Pi 5 (~5–10 fps vs 15–20 fps)
+- 85k LUT fabric gives less headroom than XC7A200T
+- PS+PL integration adds toolchain complexity (Vivado + Vitis)
+- Pi 5 + XC7A200T is better performance at comparable total cost
+- Worth revisiting for a future rev-2 if a single-board integrated design is desired
+
+#### Considered and rejected: 128-mic array
+
+Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
+- Benefits: +1.3 dB array gain, ~1 dB sidelobe improvement — marginal
+- Costs: FPGA headroom drops from 60% to ~45% on XC7A200T (still fine, but closer);
+  ECP5-45F no longer fits; Pi 5 D&S grows from ~20 ms to ~36 ms at 3°/pt
+- HPBW is aperture-limited, not mic-count-limited — adding mics does not change resolution
+- Verdict: not worth it for the first board; revisit if Phase 4 data shows sidelobe-limited
+  performance in a specific measured scenario
+
+> Note: this tradeoff is specific to this design's fixed LUT budget. The alternate Multi-FPGA
+> (Clustered) design (below) scales past 96 mics by adding a 5th cluster (each cluster tile's
+> own per-FPGA cost stays fixed at 24ch/71% LUT regardless of cluster count, confirmed by real
+> synthesis — see `fpga/README.md`) rather than upsizing one chip — this LUT-headroom squeeze
+> is itself a reason to prefer that design if the mic count is likely to grow.
+
+#### Considered and rejected: 350 mm aperture
+
+Increasing aperture from 300 mm to 350 mm was evaluated:
+- HPBW improvement: ~14% across all frequencies (e.g., 22° → 19° at 3 kHz) — modest
+- Far-field distance increases: 4.2 m → 5.7 m at 8 kHz; at a typical 5 m working range the
+  system would be operating in near-field at 8 kHz, introducing systematic DoA error
+- Spatial Nyquist drops: scaling 96 mics over a larger aperture increases min spacing from
+  ~21 mm to ~24.5 mm, dropping Nyquist from 8.2 kHz to ~7.0 kHz; restoring Nyquist requires
+  ~131 mics → rounds to 128
+- PCB is 17% larger; harder to mount at array center
+- Verdict: the far-field regression outweighs the HPBW gain for the first board; revisit with
+  a larger mic count after Phase 4 field data is available
+
+---
+
+### FPGA — Alternate: Multi-FPGA (Clustered)
 
 Splits the front-end across **5 small Xilinx 7-series FPGAs**: 4 "cluster" FPGAs, each
 handling one quadrant of the array, plus 1 "hub" FPGA that aggregates their output and
 bridges it to a Raspberry Pi 5 over USB (see Host interface below) — the hub never speaks
 Ethernet itself.
 
-Motivation: a single-FPGA design (documented below as an alternate) needs the XC7A200T,
+Kept as a proven, already-working alternate to the primary single-FPGA design (above).
+Motivation (historical, i.e. why this was originally the primary design before the AC7200
+module made the single-FPGA path practical): a single-FPGA design needs the XC7A200T,
 which ships only in a 484-pin FBGA (`XC7A200T-1FBG484C`) — forcing a dev board at prototype
 stage and BGA rework at custom-PCB stage — and routes all 48 direct PDM lines the full
 ~300mm span of the array on one monolithic PCB. Splitting the front end across several much
@@ -145,7 +288,7 @@ see "Why all-DIP, no Pmod" below.
 #### Host interface: USB bridge to Raspberry Pi 5
 
 This hub always talks to a co-located **Raspberry Pi 5** over USB, and the Pi 5 decides what
-to do with the stream (unlike the single-FPGA alternate, whose hub drives GbE directly to a
+to do with the stream (unlike the primary single-FPGA design, whose hub drives GbE directly to a
 network switch, received by either host in Configuration A or B — see Host Configurations,
 below):
 
@@ -160,7 +303,7 @@ below):
   (Configuration A — see Host Configurations, below).
 - **Tethered**: Pi 5 relays the same stream out its own on-board Gigabit Ethernet port to an
   external GPU workstation (Configuration B — see Host Configurations, below). Unlike the
-  single-FPGA alternate's direct hub→switch→workstation link, this path is
+  primary single-FPGA design's direct hub→switch→workstation link, this path is
   hub→USB→Pi 5→GbE→workstation. The Pi 5's native GbE, otherwise idle in standalone mode, is
   reused for this rather than adding a second Ethernet interface.
 
@@ -181,7 +324,7 @@ LUT need well below the earlier GbE-hub estimate — the hub's ~1,800-2,100 LUT 
 stronger case for one single part number (5× identical Cmod S7 modules) than before.
 
 Chosen instead: **XC7A35T for the hub** (~90-91% headroom at this LUT count),
-matching the single-FPGA alternate's reasoning for picking the bigger XC7A200T over XC7A100T —
+matching the primary single-FPGA design's reasoning for picking the bigger XC7A200T over XC7A100T —
 headroom for future FPGA-side additions (octave-band parallel beamforming, hardware PSF
 correction) — while still being a small, cheap part relative to the XC7A200T it replaces.
 With GbE gone, LUT budget no longer drove this choice in either direction; it was purely a
@@ -228,7 +371,7 @@ cost is one additional DIP pin: 4 full spokes + FT232H + TCXO = 45 signals, one 
 the 44 confirmed-digital DIP pins. Filled by DIP pin 16 — documented as an XADC auxiliary
 analog input (`vaux12`) rather than plain GPIO, but 7-series aux-analog pins are ordinary
 fabric I/O when not driven into analog mode (the same reasoning already applied to unused
-analog-capable FMC pins on the single-FPGA alternate's mic-array connector, and this design
+analog-capable FMC pins on the primary single-FPGA design's mic-array connector, and this design
 has no use for the XADC at all). This specific pin hasn't been confirmed against a
 plain-GPIO-mode example from Digilent, unlike the other 44 — flag for verification before
 ordering hardware.
@@ -253,15 +396,15 @@ ordering hardware.
 
 #### Honest tradeoffs
 
-- New engineering work not needed for the single-FPGA alternate: the cluster-to-hub
+- New engineering work not needed for the primary single-FPGA design: the cluster-to-hub
   synchronous link protocol (clock forwarding, framing, per-spoke cable-skew calibration) has
   to be designed from scratch — it replaces what would otherwise be an internal parallel bus.
 - PDM routing within a cluster reaches 3 arms per board, not 1 — a modest but real routing
   exercise, worth a first-pass floorplan sketch during detailed design.
-- More BOM line items and connector points than the single-FPGA alternate (5 FPGAs instead of
+- More BOM line items and connector points than the primary single-FPGA design (5 FPGAs instead of
   1, plus 4 cluster-to-hub cables) — each individually simpler/cheaper and independently
   testable, but more total assembly points to design connector keying/strain-relief for.
-- Cost comparison here is directional, not quoted, matching how the single-FPGA alternate
+- Cost comparison here is directional, not quoted, matching how the primary single-FPGA design
   hedges its own $ figures — confirm with current distributor quotes once package/qty are
   picked.
 
@@ -277,7 +420,7 @@ ordering hardware.
   TEMAC MAC logic costs strictly more silicon/parts than one shared hub MAC+PHY, for no
   benefit given the array needs one coherent clock domain regardless.
 - **Hub drives GbE directly (own RGMII PHY, no Pi 5 relay)**: the first version of this
-  design gave the hub its own GbE MAC + PHY, mirroring the single-FPGA alternate's approach
+  design gave the hub its own GbE MAC + PHY, mirroring the primary single-FPGA design's approach
   exactly. Rejected in favor of the USB-to-Pi-5 bridge above: it removes an entire PHY
   part-selection problem and ~3,000 LUT of TEMAC/UDP gateware from the hub, at the cost of
   making the Pi 5 mandatory in every deployment (including tethered/GPU-host mode) rather
@@ -287,115 +430,8 @@ ordering hardware.
   the ECP5 alternate's GbE-SerDes objection (above) wouldn't apply here either. Rejected:
   its 5,280 LUT ceiling doesn't fit the chosen 24ch/cluster load (~7,750 LUT estimate; even
   16ch would leave near-zero margin), and its few small hard multipliers make DSP-based FIR
-  compensation (the same approach used here and in the single-FPGA alternate) unreliable at
+  compensation (the same approach used here and in the primary single-FPGA design) unreliable at
   this channel count. Would also reintroduce a second toolchain alongside the hub's Vivado flow.
-
----
-
-### FPGA — Alternate: Single-FPGA (XC7A200T)
-
-The primary design (above) splits the front-end across 5 small FPGAs specifically to avoid
-this design's two structural costs: the XC7A200T ships only in a 484-pin BGA (forcing a dev
-board at prototype stage, and BGA rework at custom-PCB stage), and every one of its 48 direct
-PDM lines has to be routed the full ~300mm span of the array on one monolithic PCB. This
-single-chip design remains documented here as the simpler alternative if those two costs are
-judged acceptable — one FPGA, one PCB, no cluster-to-hub link protocol to design, and a
-direct GbE connection to the host rather than a USB bridge through a Raspberry Pi 5.
-
-#### Pipeline resource estimate
-
-| Block | LUT estimate |
-|---|---|
-| CIC decimation, 96 ch × ~250 LUTs | ~24,000 |
-| FIR compensation, 96 ch (DSP48, minimal LUTs) | ~2,400 |
-| GbE MAC + UDP stack | ~3,000 |
-| PDM capture, L/R demux, control | ~2,000 |
-| **Total** | **~31,400** (with DSP-based FIR) |
-
-#### Device comparison
-
-| Device | LUTs | DSP | BRAM | 96-ch headroom | 128-ch headroom | Notes |
-|---|---|---|---|---|---|---|
-| XC7A35T | 20,800 | 90 | 1.8 Mb | No | No | Too small |
-| ECP5-25F | 25,500 | 56 | 1.67 Mb | No | No | Too small |
-| ECP5-45F | 44,500 | 90 | 1.93 Mb | Tight (5%) | No | Open toolchain; no 128-ch path |
-| XC7A100T | 63,400 | 240 | 4.86 Mb | 35% | 16% | Considered; rejected (tight at 128-ch) |
-| **XC7A200T** | **134,600** | **740** | **13.1 Mb** | **~75%** | **~60%** | **Chosen** |
-
-#### Why XC7A200T over XC7A100T
-
-The XC7A100T has 35% LUT headroom for 96 channels but only 16% for 128 channels — tight for
-a first build where HDL synthesis estimates are uncertain. The XC7A200T gives 75% headroom
-at 96 channels and 60% at 128 channels, with room for future FPGA-side additions (octave-band
-parallel beamforming, hardware PSF, etc.).
-
-Its 740 DSP48E1 blocks cover all 96 FIR compensation chains in dedicated DSPs with zero LUT
-cost for MAC operations. The XC7A100T's 240 DSPs could handle this too but leaves little
-margin for any additional DSP-heavy logic.
-
-Both use the same Artix-7 family: same Vivado flow, same TEMAC GbE IP, same ILA/VIO
-in-circuit debug tools. The price difference is ~$90–120 at single-unit quantities.
-
-**Part number**: XC7A200T-1FBG484C (484-pin FBGA)
-
-**Build strategy**: Use a **Nexys Video dev board** (~$500, Digilent) as the FPGA
-hub. The Nexys Video uses the same XC7A200T and adds an FMC LPC connector exposing 68 I/O —
-enough for all 48 PDM DATA lines + 1 CLK. The mic array is a separate custom PCB that
-connects via an FMC LPC cable. No BGA soldering required until rev-2.
-
-> **Why not Nexys A7-200T ($350)?**  The Nexys A7-200T only exposes 32 I/O pins (4× Pmod) —
-> 17 short of the 49 needed for the full 96-channel array. The Nexys Video adds FMC LPC
-> (68 I/O) for $25 less, making it the better choice for this application.
-
-The custom FPGA hub PCB (bare XC7A200T) remains deferred to rev-2 until the full pipeline
-is validated end-to-end on the dev board.
-
-#### Alternate: Lattice ECP5-45F
-
-Only if a fully open-source toolchain (Yosys + nextpnr, no Vivado) is a hard requirement.
-Fits 96 channels with ~5% margin; does not fit 128 channels. GbE SerDes integration is
-harder (~4–6 extra weeks). Suitable for a rev-2 board after the HDL is proven on Artix-7.
-
-#### Considered and rejected: Zynq-7020
-
-85,000 LUTs + dual-core ARM Cortex-A9. Potentially interesting for Config A (standalone)
-because the ARM could replace the Pi 5, but rejected:
-- Cortex-A9 @ 1 GHz is 4–5× slower than Pi 5's Cortex-A76 for NumPy/BLAS
-- 96-ch D&S at 3°/pt: ~80–100 ms on Zynq ARM vs ~20 ms on Pi 5 (~5–10 fps vs 15–20 fps)
-- 85k LUT fabric gives less headroom than XC7A200T
-- PS+PL integration adds toolchain complexity (Vivado + Vitis)
-- Pi 5 + XC7A200T is better performance at comparable total cost
-- Worth revisiting for a future rev-2 if a single-board integrated design is desired
-
-#### Considered and rejected: 128-mic array
-
-Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
-- Benefits: +1.3 dB array gain, ~1 dB sidelobe improvement — marginal
-- Costs: FPGA headroom drops from 60% to ~45% on XC7A200T (still fine, but closer);
-  ECP5-45F no longer fits; Pi 5 D&S grows from ~20 ms to ~36 ms at 3°/pt
-- HPBW is aperture-limited, not mic-count-limited — adding mics does not change resolution
-- Verdict: not worth it for the first board; revisit if Phase 4 data shows sidelobe-limited
-  performance in a specific measured scenario
-
-> Note: this tradeoff is specific to this single-FPGA alternate's fixed LUT budget. The
-> primary Multi-FPGA (Clustered) design (above) scales past 96 mics by adding a 5th cluster
-> (each cluster tile's own per-FPGA cost stays fixed at 24ch/71% LUT regardless of cluster
-> count, confirmed by real synthesis — see `fpga/README.md`) rather than upsizing one chip —
-> this LUT-headroom squeeze is itself a reason to prefer the primary design if the mic count
-> is likely to grow.
-
-#### Considered and rejected: 350 mm aperture
-
-Increasing aperture from 300 mm to 350 mm was evaluated:
-- HPBW improvement: ~14% across all frequencies (e.g., 22° → 19° at 3 kHz) — modest
-- Far-field distance increases: 4.2 m → 5.7 m at 8 kHz; at a typical 5 m working range the
-  system would be operating in near-field at 8 kHz, introducing systematic DoA error
-- Spatial Nyquist drops: scaling 96 mics over a larger aperture increases min spacing from
-  ~21 mm to ~24.5 mm, dropping Nyquist from 8.2 kHz to ~7.0 kHz; restoring Nyquist requires
-  ~131 mics → rounds to 128
-- PCB is 17% larger; harder to mount at array center
-- Verdict: the far-field regression outweighs the HPBW gain for the first board; revisit with
-  a larger mic count after Phase 4 field data is available
 
 ---
 
@@ -403,14 +439,18 @@ Increasing aperture from 300 mm to 350 mm was evaluated:
 
 #### GbE PHY
 
-Needed only by the single-FPGA alternate (above) — the primary Multi-FPGA design's hub talks
-USB to a Raspberry Pi 5 instead and has no GbE MAC/PHY at all (see Host interface). The FPGA
-implements the MAC layer (via TEMAC IP); a separate PHY chip handles the analog physical
-layer and provides the RGMII interface.
+Needed only by the primary single-FPGA design (above) — the alternate Multi-FPGA design's hub
+talks USB to a Raspberry Pi 5 instead and has no GbE MAC/PHY at all (see Host interface). The
+FPGA implements the MAC layer in fabric (`alexforencich/verilog-ethernet`'s 1G RGMII MAC, MIT
+license — not Xilinx's TEMAC IP core, which turned out to need a separate license Xilinx
+doesn't bundle by default); a separate PHY chip handles the analog physical layer and
+provides the RGMII interface.
 
-Recommended options (both well-supported in Xilinx reference designs):
-- **Marvell 88E1111** — industry standard, extensive documentation, RGMII
-- **Microchip KSZ9031RNX** — lower cost, also RGMII, widely used in hobbyist designs
+**Chosen: Microchip KSZ9031RNX** — 48-pin QFN (no BGA reflow needed, unlike the other
+candidate below), real quoted price ~$3.70–5.96, RGMII, widely used in hobbyist designs.
+Marvell 88E1111 was considered and rejected: industry-standard and well-documented, but ships
+only in a 117-ball BGA package and has real, confirmed sourcing difficulty at low volume —
+neither advantage outweighs the extra BGA-assembly risk on a board that otherwise has none.
 
 #### Master Clock — 12.288 MHz TCXO
 
@@ -510,11 +550,13 @@ frequency range, giving better sidelobe performance at low mic count.
 
 ## Host Configurations
 
-In the primary Multi-FPGA design, the hub only ever talks to a co-located Raspberry Pi 5 over
-USB (see Host interface, above) — the Pi 5 is present in every deployment, not optional. Two
-operating modes share that hardware and the same `acoustic_camera_p4.py` script, selected via
-a `--backend {numpy,cupy}` flag. (The single-FPGA alternate instead drives GbE directly from
-the hub to either host, with no Pi 5 relay required — see Interface, below.)
+In the primary single-FPGA design, the front-end drives GbE/UDP directly to whichever host is
+present — a Pi 5 in standalone mode, or a GPU workstation in tethered mode — with no
+intermediate relay required (see Interface, below). Two operating modes share the same
+`acoustic_camera_p4.py` script, selected via a `--backend {numpy,cupy}` flag. (The alternate
+Multi-FPGA design instead talks USB to a co-located Raspberry Pi 5, which is present in every
+deployment and, in tethered mode, relays the stream onward over its own GbE port — see the
+blockquote in Interface, below.)
 
 ---
 
@@ -554,10 +596,10 @@ samples/lobe — sufficient for peak localization. Use 0.5°/pt for offline post
 - **MIPI CSI connector** — Pi Camera Module 3 (IMX708, 12 MP) preferred over USB webcam;
   lower CPU overhead, native hardware sync between camera frames and audio timestamps
 - **8 GB RAM** — fits steering matrix, CSM buffers, and video pipeline comfortably
-- **USB 3.0** — receives the hub's stream directly over a synchronous FIFO bridge (see Host
-  interface, above); no adapter
-- **Native GbE** — unused in standalone mode; relays the stream to an external host in
-  Configuration B instead of receiving it (see Interface, below)
+- **Native GbE** — receives the front-end's UDP stream directly (see Interface, below); no
+  adapter needed
+- **USB 3.0** — unused by the primary design in standalone mode; the alternate Multi-FPGA
+  design uses it instead, to receive its hub's stream over a synchronous FIFO bridge
 
 #### Camera: Pi Camera Module 3 Wide
 
@@ -568,11 +610,10 @@ Accessed via `picamera2` library rather than OpenCV `VideoCapture`.
 
 ### Configuration B — Tethered, GbE-attached Host with GPU
 
-High-performance workstation or server connected via a standard network switch or direct GbE
-cable — not to the FPGA hub directly, but to the Raspberry Pi 5's on-board GbE port. The Pi 5
-relays the USB stream it receives from the hub straight out that port (see Host interface,
-above, and Interface, below); the Pi 5 is present in this configuration too, just relaying
-rather than computing. Runs full-resolution beamforming at 20+ fps using a CUDA GPU.
+High-performance workstation or server connected directly to the front-end over a standard
+network switch or direct GbE cable (see Interface, below) — no Pi 5 relay needed; the Pi 5 is
+not present in this configuration at all for the primary design. Runs full-resolution
+beamforming at 20+ fps using a CUDA GPU.
 
 #### Compute feasibility with GPU
 
@@ -601,35 +642,35 @@ Standard USB camera via OpenCV `VideoCapture`. No Pi-specific hardware needed.
 
 ---
 
-### Interface: USB to Pi 5, GbE relay for Configuration B
+### Interface: direct GbE, no relay
 
-The FPGA hardware does not change between configurations — only what the Pi 5 does with the
-110 Mbps stream it receives over USB:
+The FPGA hardware does not change between configurations — only which host is plugged into
+the front-end's GbE port:
 
 ```
-Cluster FPGAs ──spoke bus──> Hub FPGA ──USB──> Raspberry Pi 5 ──── Config A: compute locally
-                                                              └─GbE─ Config B: relay to GPU workstation
+front_end (AC7200 module)  ──GbE/UDP──  [network switch or direct cable]  ──  Pi 5  (Config A)
+                                                                            ──  GPU workstation  (Config B)
 ```
 
-In Configuration A, the Pi 5's own beamforming pipeline reads the stream directly off the USB
-FIFO. In Configuration B, a lightweight relay on the Pi 5 forwards the same packets out its
-GbE port unmodified — the GPU workstation's ingestion code is unaware the stream originated
-over USB rather than a NIC.
+Either host (Pi 5 in Config A; the GPU workstation in Config B) receives the same UDP stream
+directly off its own NIC — no relay hop, no intermediate device. A background thread on the
+receiving host reads frames, checks sequence numbers, and pushes PCM frames into a thread-safe
+deque. The main thread drains the deque to build the sliding audio buffer. Identical code path
+for ingestion in both configurations. The Pi 5 is entirely optional in Configuration B — a GPU
+workstation can run standalone with no Pi 5 present at all.
 
-On the receiving host (Pi 5 in Config A; the GPU workstation in Config B), a background thread
-receives frames, checks sequence numbers, and pushes PCM frames into a thread-safe deque. The
-main thread drains the deque to build the sliding audio buffer. Identical code path for
-ingestion in both configurations.
-
-> **Single-FPGA alternate**: no Pi 5 relay — the hub drives GbE directly to a network switch,
-> and either host (Pi 5 or GPU workstation) receives the same UDP stream directly:
+> **Alternate Multi-FPGA design**: USB to Pi 5, GbE relay for Configuration B. The FPGA
+> hardware does not change between configurations — only what the Pi 5 does with the 110 Mbps
+> stream it receives over USB:
 > ```
-> FPGA hub  ──GbE──  [network switch or direct cable]  ──  Pi 5  (Config A)
->                                                       ──  GPU workstation  (Config B)
+> Cluster FPGAs ──spoke bus──> Hub FPGA ──USB──> Raspberry Pi 5 ──── Config A: compute locally
+>                                                               └─GbE─ Config B: relay to GPU workstation
 > ```
-> The Pi 5 is optional in that design's Configuration B (a GPU workstation can run standalone
-> with no Pi 5 present at all), unlike the primary design where it's mandatory in every
-> deployment.
+> In Configuration A, the Pi 5's own beamforming pipeline reads the stream directly off the USB
+> FIFO. In Configuration B, a lightweight relay on the Pi 5 forwards the same packets out its
+> GbE port unmodified — the GPU workstation's ingestion code is unaware the stream originated
+> over USB rather than a NIC. Unlike the primary design, the Pi 5 is mandatory in every
+> deployment of this alternate, since it's the only thing the hub ever talks to.
 
 ---
 
@@ -664,34 +705,41 @@ channels at 3 MHz. Everything flexible or algorithmically complex stays on the P
 
 ### FPGA responsibilities (hard real-time, parallel)
 
-Split across the cluster and hub tiers in the primary Multi-FPGA design:
-
-#### Cluster FPGA (×4)
+One FPGA (the AC7200 module) does the entire pipeline end-to-end in the primary single-FPGA
+design:
 
 | Block | Detail |
 |---|---|
-| **PDM clock fan-out** | Forwarded PDM clock (from hub) fanned out to 24 local mics |
-| **PDM capture** | 12 data input lines; data latched at each PDM clock edge |
+| **Master clock generation** | 12.288 MHz TCXO fanned out to the mic array (see PDM Clock Distribution, above) |
+| **PDM capture** | 48 data input lines; data latched at each PDM clock edge |
 | **L/R demux** | Each data line carries 2 mics (SEL low → even channel, SEL high → odd channel) |
-| **CIC decimation** | 5-stage CIC, 64:1 per channel; 3.072 MHz → 48 kHz |
-| **FIR compensation** | ~32-tap linear-phase FIR per channel; corrects CIC passband droop |
-| **Spoke bus framing** | Frame 24 channels' 48 kHz PCM onto the 6-bit parallel spoke bus (see Spoke link) |
-
-#### Hub FPGA (×1)
-
-| Block | Detail |
-|---|---|
-| **Master clock generation** | 12.288 MHz TCXO → PLL → 3.072 MHz; forwarded to all 4 clusters over their spoke links |
-| **Spoke bus deframing** | Reassemble the 4× 24-channel streams into 96 channels total |
+| **CIC decimation** | 5-stage CIC, 64:1 per channel; 3.072 MHz → 48 kHz, all 96 channels fully parallel (no time-sharing) |
+| **FIR compensation** | 32-tap linear-phase FIR per channel; corrects CIC passband droop |
 | **Sample alignment** | All 96 PCM channels locked to the same 48 kHz word-select boundary |
-| **USB FIFO framing** | Per-spoke tagged 76-byte records (sync + spoke_id + seq_num + 24 channels), sent independently over the synchronous FIFO to the FT232H bridge -- not a unified 96-channel frame; see `fpga/multi_fpga/USB_FRAMING.md` |
-| **PPS input** (optional) | 1 Hz GPIO for absolute time-tagging; enables future multi-unit synchronization |
+| **GbE/UDP packetization** | `gbe_packetizer.v`: assemble 5 frames × 96 channels per packet, prepend sequence number + timestamp, hand off to the RGMII MAC → PHY; see `fpga/single_fpga/GBE_FRAMING.md` |
 
-> **Single-FPGA alternate**: one FPGA does the entire pipeline above end-to-end — PDM clock
-> generation, 48-line PDM capture, L/R demux, CIC/FIR, sample alignment, and GbE/UDP
-> packetization (assemble N frames × 96 channels, prepend sequence number + timestamp, send
-> over RGMII to PHY) — rather than splitting capture/decimation (clusters) from
-> aggregation/host-bridging (hub).
+> **Alternate Multi-FPGA design**: split across the cluster and hub tiers instead of one chip —
+>
+> **Cluster FPGA (×4)**
+>
+> | Block | Detail |
+> |---|---|
+> | **PDM clock fan-out** | Forwarded PDM clock (from hub) fanned out to 24 local mics |
+> | **PDM capture** | 12 data input lines; data latched at each PDM clock edge |
+> | **L/R demux** | Each data line carries 2 mics (SEL low → even channel, SEL high → odd channel) |
+> | **CIC decimation** | 5-stage CIC, 64:1 per channel; 3.072 MHz → 48 kHz |
+> | **FIR compensation** | ~32-tap linear-phase FIR per channel; corrects CIC passband droop |
+> | **Spoke bus framing** | Frame 24 channels' 48 kHz PCM onto the 6-bit parallel spoke bus (see Spoke link) |
+>
+> **Hub FPGA (×1)**
+>
+> | Block | Detail |
+> |---|---|
+> | **Master clock generation** | 12.288 MHz TCXO → PLL → 3.072 MHz; forwarded to all 4 clusters over their spoke links |
+> | **Spoke bus deframing** | Reassemble the 4× 24-channel streams into 96 channels total |
+> | **Sample alignment** | All 96 PCM channels locked to the same 48 kHz word-select boundary |
+> | **USB FIFO framing** | Per-spoke tagged 76-byte records (sync + spoke_id + seq_num + 24 channels), sent independently over the synchronous FIFO to the FT232H bridge -- not a unified 96-channel frame; see `fpga/multi_fpga/USB_FRAMING.md` |
+> | **PPS input** (optional) | 1 Hz GPIO for absolute time-tagging; enables future multi-unit synchronization |
 
 ### Host responsibilities (flexible, Python)
 
@@ -713,9 +761,27 @@ Split across the cluster and hub tiers in the primary Multi-FPGA design:
 
 ## Hardware Sub-Tasks
 
-Phase 4 is split into three parallel workstreams that merge at integration.
+### Primary design — Single-FPGA (ALINX AC7200)
 
-### Workstream 1 — Cluster tiles (Cmod A7-35T dev boards)
+No dev-board stage at all — the ALINX AC7200 module skips it (see Build strategy, above).
+Work splits into RTL (done) and the two-board PCB layout (in progress).
+
+| Sub-task | Status | Detail |
+|---|---|---|
+| **RTL: pipeline** | Done | 96-channel CIC+FIR, fully parallel, placed/routed clean (43.52% LUT) |
+| **RTL: GbE/UDP packetizer** | Done | `gbe_packetizer.v` + open-source RGMII MAC, placed/routed clean (48.14% LUT combined); bit-exact against golden model, both unit and end-to-end testbenches passing |
+| **Library consolidation** | Done | Shared `pcb/libraries/` (AC7200, AXK connectors, CDCLVC clock buffers, IM72D128, etc.), used by both `mic_array` and `front_end` projects |
+| **`mic_array` PCB layout** | In progress | 96× IM72D128 in the Underbrink spiral, PDM clock fan-out tree, local power regulation; footprints linked and synced from schematic, DRC-clean |
+| **`front_end` PCB layout** | In progress | AC7200 module footprint + carrier connectors, TLV62569DBV buck pre-regulator, KSZ9031RNX GbE PHY; DRC-clean aside from pre-existing unrelated issues (no board outline defined yet) |
+| **Connector part numbers** | Open | Real part numbers for the AC7200 module's 4× 80-pin/0.5mm board-to-board headers still need sourcing from ALINX's manual |
+| **PCB fabrication + assembly** | Not started | Gated on layout completion |
+
+### Alternate design — Multi-FPGA (Clustered)
+
+Fully implemented and working on real hardware. Three parallel workstreams that merged at
+integration.
+
+#### Workstream 1 — Cluster tiles (Cmod A7-35T dev boards)
 
 Originally planned around Cmod S7 (XC7S25) dev boards — moved to Cmod A7-35T after real
 synthesis showed the CIC/FIR pipeline didn't fit the XC7S25 (see the "Superseded by real
@@ -727,7 +793,7 @@ synthesis" note earlier in this doc).
 | **HDL development** | CIC + FIR + spoke bus framing pipeline in Verilog/VHDL, 24ch; test on one Cmod A7-35T before duplicating to the other 3 | Cmod A7-35T in hand |
 | **Spoke bus cabling** | Pmod cable per cluster (8 signals: 6 data + strobe + fwd clock, see Spoke link) — the cluster's Cmod A7-35T's Pmod JA to flying leads on the hub's DIP header, not Pmod-to-Pmod (see "Why all-DIP, no Pmod") | HDL ping-pong test passing |
 
-### Workstream 2 — Hub (Cmod A7-35T module)
+#### Workstream 2 — Hub (Cmod A7-35T module)
 
 | Sub-task | Description | Dependency |
 |---|---|---|
@@ -736,16 +802,16 @@ synthesis" note earlier in this doc).
 | **Spoke + FT232H wiring** | All 4 spokes + FT232H bridge: point-to-point wiring on the DIP header, no Pmod cables (see "Why all-DIP, no Pmod", above) | Cmod A7-35T in hand |
 | **HDL development** | Clock generation/forwarding + spoke deframing/reassembly + USB FIFO framing; test on Cmod A7-35T | Cmod A7-35T in hand |
 
-### Workstream 3 — Mic array PCB
+#### Workstream 3 — Mic array PCB
 
 | Sub-task | Description | Dependency |
 |---|---|---|
 | **Geometry finalization** | Confirm 8×12 Underbrink spiral from Phase 1 simulation; generate mic XY coordinates | Phase 1 data |
 | **PCB design** | 96× IM72D128 in spiral, split into 4 quadrant sections (3 arms/24 mics each) matching the cluster partition; 12.288 MHz TCXO lives on the hub, not the array board; per-cluster PDM clock fan-out with matched traces; DIP-header cable to each cluster's Cmod A7-35T | Geometry final |
-| **PCB fabrication** | Likely fewer layers than the single-FPGA design's 6-layer recommendation — each quadrant only routes matched PDM traces to 3 nearby arms, not the full 300mm span; confirm during layout | Layout complete |
+| **PCB fabrication** | Likely fewer layers than a monolithic array board — each quadrant only routes matched PDM traces to 3 nearby arms, not the full ~300mm span; confirm during layout | Layout complete |
 | **Assembly** | IM72D128 is a small LGA; reflow oven or PCB assembly service | PCB received |
 
-### Integration & Software
+#### Integration & Software
 
 | Sub-task | Description | Dependency |
 |---|---|---|
@@ -754,17 +820,12 @@ synthesis" note earlier in this doc).
 | **Camera** | Pi Camera Module 3 Wide (Config A) or USB webcam (Config B) | Host software running |
 | **Calibration** | Gain + phase estimation at 96-ch scale; extend nb17 approach | Hardware assembled |
 
-### Rev-2 (deferred)
+#### Rev-2 (deferred)
 
 Custom cluster PCBs (bare XC7A35T, one per quadrant) and a custom hub PCB (bare XC7A35T +
 FT232H + 12.288 MHz TCXO) designed after the full pipeline is validated on the dev boards.
 Eliminates the 5 dev boards and produces compact integrated tiles suitable for the Phase 4b
 housing.
-
-> **Single-FPGA alternate's workstream**: a single Nexys Video dev board (~$500, XC7A200T +
-> FMC LPC) replaces Workstreams 1 and 2 above; the mic array PCB is one monolithic board with
-> a 48-line ribbon cable to the Nexys's FMC breakout instead of 4 quadrant sections; rev-2 is
-> a single custom hub PCB (bare XC7A200T + 88E1111 PHY + TCXO) instead of 5 tiles.
 
 ---
 
@@ -772,29 +833,31 @@ housing.
 
 *Populate as bring-up proceeds.*
 
-- [ ] Hub Artix-7 powers up; JTAG accessible
-- [ ] 12.288 MHz TCXO (on hub) oscillating (verify with scope)
-- [ ] Hub PLL locked; 3.072 MHz PDM clock forwarded to each spoke's CLK line
-- [ ] Cluster 0 Spartan-7 powers up; JTAG accessible; receives forwarded PDM clock
-- [ ] Single mic (cluster 0) connected; PDM data line shows valid 1-bit stream on ILA
-- [ ] Cluster 0 CIC output produces 48 kHz PCM samples (verify with ILA + known tone)
-- [ ] Cluster 0 FIR compensation: flat frequency response confirmed on single channel
-- [ ] Cluster 0: all 12 PDM data lines active; 24 channels valid
-- [ ] Spoke bus (cluster 0 ↔ hub): 6 data bits + strobe read correctly on hub ILA
-- [ ] Repeat cluster power-up/PDM/CIC/FIR/spoke checks for clusters 1, 2, 3
-- [ ] Hub reassembles all 4 spokes; 96 channels valid, sample-aligned
-- [ ] USB link up: FT232H enumerates on the Pi 5; sync FIFO transfers a known test pattern
-- [ ] USB packets received on Pi 5; no sequence gaps
+- [ ] AC7200 module powers up on `front_end`; JTAG accessible
+- [ ] 12.288 MHz TCXO (on `mic_array`) oscillating (verify with scope)
+- [ ] PDM clock fanned out and present on the `mic_array` ↔ `front_end` board-to-board
+      connector
+- [ ] Single mic PDM data line shows valid 1-bit stream on ILA
+- [ ] CIC output produces 48 kHz PCM samples (verify with ILA + known tone)
+- [ ] FIR compensation: flat frequency response confirmed on single channel
+- [ ] All 48 PDM data lines active; 96 channels valid
+- [ ] GbE PHY link up (LED); RGMII MAC passes traffic
+- [ ] UDP packets received on host, no sequence gaps
 - [ ] Host pipeline (standalone): 96-channel CSM computed; beamform produces coherent energy map
-- [ ] GbE relay (tethered): Pi 5 forwards the stream out its own port; GPU workstation receives
-      it with no sequence gaps
+- [ ] Host pipeline (tethered): GPU workstation receives the same UDP stream directly, no
+      sequence gaps
 - [ ] Calibration: cross-correlation gain/phase vectors captured and applied
 
-> **Single-FPGA alternate's checklist**: FPGA powers up → TCXO oscillating → PLL locked, PDM
-> clock present on header pin → single mic PDM stream valid on ILA → CIC/FIR verified on one
-> channel → all 48 data lines active, 96 channels valid → GbE PHY link up (LED) → UDP packets
-> received on host, no sequence gaps → host pipeline produces a coherent energy map →
-> calibration applied. No spoke bus, USB, or per-cluster steps — one FPGA, one bring-up pass.
+> **Alternate Multi-FPGA design's checklist**: Hub Artix-7 powers up → JTAG accessible → 12.288
+> MHz TCXO (on hub) oscillating → hub PLL locked, 3.072 MHz PDM clock forwarded to each spoke's
+> CLK line → cluster 0 Spartan-7 powers up, receives forwarded PDM clock → single mic PDM
+> stream valid on ILA → CIC/FIR verified on one channel → all 12 PDM data lines active, 24
+> channels valid → spoke bus (cluster 0 ↔ hub) reads correctly on hub ILA → repeat for clusters
+> 1–3 → hub reassembles all 4 spokes, 96 channels valid, sample-aligned → USB link up (FT232H
+> enumerates on the Pi 5, sync FIFO transfers a known test pattern) → USB packets received on
+> Pi 5, no sequence gaps → host pipeline (standalone) produces a coherent energy map → GbE
+> relay (tethered): Pi 5 forwards the stream out its own port, GPU workstation receives it with
+> no sequence gaps → calibration applied. 5 FPGAs, one bring-up pass per tile.
 
 ---
 
@@ -803,9 +866,13 @@ housing.
 - Ben Wang, "192-channel phased array microphone" (2023) — similar FPGA + GbE architecture
 - Underbrink multi-arm log-spiral array patent — geometry basis
 - Infineon IM72D128 datasheet — mic specs and PDM timing
-- FTDI FT232H datasheet + D2XX/D3XX driver docs — USB sync-FIFO bridge (primary design's hub)
+- ALINX AC7200 user manual — module specs, connector pinouts, GPIO bank mapping (primary
+  design's FPGA module)
+- `alexforencich/verilog-ethernet` — open-source 1G RGMII GbE MAC (MIT license), used by the
+  primary design in place of Xilinx's TEMAC IP core (see GbE PHY / RTL feasibility, above)
+- FTDI FT232H datasheet + D2XX/D3XX driver docs — USB sync-FIFO bridge (alternate design's hub)
 - Digilent Cmod A7-35T reference manual — connector pinouts, FPGA pin names
-  (primary design's dev-board modules)
-- Xilinx TEMAC IP core product guide (PG051) — GbE MAC integration (single-FPGA alternate)
-- `alexforencich/verilog-ethernet` — open-source GbE MAC, alternative to TEMAC (single-FPGA
-  alternate)
+  (alternate design's dev-board modules)
+- Xilinx TEMAC IP core product guide (PG051) — considered for the primary design's GbE MAC,
+  rejected: requires a separate license Xilinx doesn't bundle by default (see RTL feasibility,
+  above)
