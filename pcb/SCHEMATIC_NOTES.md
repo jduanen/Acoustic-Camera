@@ -1,176 +1,235 @@
 # Phase 4 Mic Array — Schematic Notes
 
-## Reference Designators
-
-| Range | Parts |
-|---|---|
-| U1–U96 | IM72D128V01XTMA1 mics (mic_idx 0–95 = U1–U96) |
-| C1–C96 | 100 nF decoupling caps on each VDD pin |
-| C97–C100 | Bulk decoupling (10 µF × 4, one per power zone) |
-| Y1 | 12.288 MHz TCXO |
-| U97 | PDM clock fan-out buffer (see below) |
-| J1 | FMC LPC connector to Nexys Video (Samtec ASP-134604-01 or equivalent) |
+Reflects the current `pcb/single_fpga/` design (single-FPGA is the primary
+design track; `pcb/multi_fpga/` is kept as the proven alternate). The
+project outgrew a single "Nexys Video + FMC" board and is now a **two-board
+system**: the FPGA lives on its own board, the mic array is a second,
+physically separate board, and the two connect with a single high-density
+board-to-board connector.
 
 ---
 
-## Schematic Organisation — Hierarchical Sheets
+## Architecture — Two Boards
 
-96 mics is unwieldy on a flat schematic.  Use 12 hierarchical sub-sheets,
-one per arm.  Each sub-sheet contains 8 mics + 4 decoupling caps + 4 DATA
-net labels.
+| Board | KiCad project | Carries |
+|---|---|---|
+| **front_end** | `front_end.kicad_pcb` / `front_end.kicad_sch` | ALINX AC7200 FPGA SOM, +5V→+3V8 power regulation, inter-board connector |
+| **mic_array** | `mic_array.kicad_pcb` / `mic_array.kicad_sch` | 96 mics, master clock (TCXO) + full clock distribution tree, local 3.3V regulation, inter-board connector |
+
+`top.kicad_sch` is the hierarchical parent that ties "Front End" and
+"Microphone Array" together as sub-sheets, for whole-project ERC/BOM
+purposes — it is **not** a third physical board (`top.kicad_pcb` has no
+routing of its own beyond what's mirrored from the two real boards).
+
+This replaces the earlier plan of driving the mic array from an external
+FPGA dev board (Nexys A7-200T / Nexys Video) over an FMC LPC connector.
+There is no external dev board and no FMC connector in the current design —
+the FPGA (Xilinx XC7A200T-2FBG484I) is the ALINX AC7200 SOM, mounted
+directly on the front_end board.
+
+### Hierarchical sheets
 
 ```
 top.kicad_sch
-├── arm_00.kicad_sch   (U1–U8,   C1–C4,   DATA_00–DATA_03)
-├── arm_01.kicad_sch   (U9–U16,  C5–C8,   DATA_04–DATA_07)
-├── ...
-└── arm_11.kicad_sch   (U89–U96, C89–C92, DATA_44–DATA_47)
+├── mic_array.kicad_sch        ("Microphone Array")
+│   ├── mic_arm_00.kicad_sch   … mic_arm_11.kicad_sch   (8 mics + 1 clock buffer each)
+│   └── array_connector.kicad_sch   ("Array Inter-board Connector")
+└── front_end.kicad_sch        ("Front End")
+    ├── ac7200_conn1.kicad_sch … ac7200_conn4.kicad_sch (AC7200 SOM, one symbol split 4 ways)
+    └── (sheet-local: power regulation, J2/J3)
 ```
 
-In KiCad, duplicate `arm_00.kicad_sch` 11 times and update the reference
-numbers and DATA net indices using Edit → Change Symbols / global labels.
+`ac7200_conn1–4` each place one unit of the same multi-unit `single_fpga:AC7200`
+schematic symbol (U109) — the AC7200's 4× 80-pin connectors (CON1–CON4),
+split across 4 sheets for readability, not 4 separate parts.
+
+---
+
+## Reference Designators
+
+| Range | Board | Parts |
+|---|---|---|
+| U1–U8, U10–U17, U19–U26, … (9 per arm) | mic_array | 8× IM72D128 mics + 1× CDCLVC1108 clock buffer, per arm (arm 0 = U1–U9, arm 1 = U10–U18, … arm 11 = U100–U108) |
+| C1–C96 | mic_array | 100 nF decoupling, one per mic VDD pin |
+| C97–C101 | mic_array | TCXO / CDCLVC1112 decoupling + bulk |
+| R1 (one per arm sheet) | mic_array | 10 kΩ pull-up on each arm's CDCLVC1108 output-enable pin |
+| R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
+| Y1 | mic_array | 12.288 MHz TCXO |
+| U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
+| VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs — separate MIC_3V3 and CLK_3V3 rails |
+| J1 | mic_array | Inter-board connector (Panasonic AXK6S80347YG header) |
+| U109 | front_end | AC7200 FPGA SOM (Xilinx XC7A200T-2FBG484I), one symbol across CON1–CON4 |
+| U111 | front_end | TLV62569DBV, +5V→+3V8 synchronous buck |
+| L1 | front_end | 2.2 µH inductor for U111 |
+| R14, R15 | front_end | 499 kΩ / 100 kΩ feedback divider setting U111's +3V8 output |
+| C102–C104 | front_end | U111 input/output/bulk caps |
+| J2 | front_end | Inter-board connector (AXK5S80347YG socket, mates J1) |
+| J3 | front_end | +5V/GND power input |
+
+Mic numbering (U references) is no longer a clean U1–U96 block — the
+per-arm clock buffer is interleaved into the same reference sequence, so
+each arm consumes 9 consecutive U numbers (8 mics + 1 buffer), not 8.
+
+---
+
+## FPGA: ALINX AC7200 SOM
+
+Xilinx **XC7A200T-2FBG484I**, on ALINX's AC7200 module. Pinout and
+mechanical placement are cross-checked against ALINX's real manual and
+schematic (see [`pcb/libraries/AC7200/AC7200_README.md`](libraries/AC7200/AC7200_README.md)
+— 320/320 connector pins verified, zero discrepancies). The module mounts
+on the front_end board through 4× 80-pin, 0.5mm-pitch board-to-board
+connectors (Panasonic AXK580137YG/AXK680337YG family, 3.0mm mated height).
+
+This fully supersedes the old Nexys A7-200T / Nexys Video I/O-budget
+discussion below (kept for historical context only — see
+"Superseded: External Dev-Board Connector" at the bottom of this file).
+
+---
+
+## Power
+
+```
++5V (J3, front_end) → TLV62569DBV buck (U111, L1, R14/R15 FB divider) → +3V8
+   +3V8 → AC7200 SOM (U109, front_end)
+   +3V8 → J2/J1 inter-board connector → mic_array board
+             +3V8 → VR1 (MCP1700-3302E) → MIC_3V3   (mic analog supply)
+             +3V8 → VR2 (MCP1700-3302E) → CLK_3V3   (TCXO + clock buffers)
+```
+
+MIC_3V3 and CLK_3V3 are deliberately separate LDO outputs from the same
++3V8 rail, isolating the mic analog supply from clock-buffer switching
+noise. Only +3V8 and GND cross the inter-board connector — no +5V or
+regulated 3.3V rail is shared directly between boards.
 
 ---
 
 ## Data Line Assignment
 
-`test/phase4/data_line_assignment.csv` has the full table.  Summary:
+`test/phase4/data_line_assignment.csv` has the full table; unchanged in
+concept from the original plan — 48 DATA lines, 2 mics per line:
 
-| DATA line | Mic L (SEL=GND) | Mic R (SEL=VDD) | Pair distance |
+| DATA line | Mic L (SEL=GND) | Mic R (SEL=MIC_3V3) | Pair distance |
 |---|---|---|---|
-| DATA_00 | U1  (mic 0,  arm 0) | U2  (mic 1,  arm 0) | ~19 mm |
-| DATA_01 | U3  (mic 2,  arm 0) | U4  (mic 3,  arm 0) | ~19 mm |
-| DATA_02 | U5  (mic 4,  arm 0) | U6  (mic 5,  arm 0) | ~19 mm |
-| DATA_03 | U7  (mic 6,  arm 0) | U8  (mic 7,  arm 0) | ~19 mm |
-| DATA_04 | U9  (mic 8,  arm 1) | U10 (mic 9,  arm 1) | ~19 mm |
-| ...     | ...                  | ...                  | ...    |
-| DATA_47 | U95 (mic 94, arm11) | U96 (mic 95, arm11) | ~19 mm |
+| DATA_00 | mic 0, arm 0 | mic 1, arm 0 | ~19 mm |
+| DATA_01 | mic 2, arm 0 | mic 3, arm 0 | ~19 mm |
+| ... | ... | ... | ... |
+| DATA_47 | mic 94, arm 11 | mic 95, arm 11 | ~19 mm |
 
-Rule: within each pair, the mic with the lower index has SEL=GND (L),
-the higher index has SEL=VDD (R).
-
-Within each arm, pairs are (0,1), (2,3), (4,5), (6,7).
-Data line index = arm × 4 + pair_within_arm.
+Rule: within each pair, the mic with the lower index has SEL=GND (L), the
+higher index has SEL=MIC_3V3 (R). Within each arm, pairs are (0,1), (2,3),
+(4,5), (6,7). Data line index = arm × 4 + pair_within_arm. Confirmed
+against the actual schematic wiring (MIC_3V3/GND tie counts per arm match
+this pairing exactly).
 
 ---
 
-## IM72D128 Pin Assignment
+## IM72D128 Pin Assignment — corrected from earlier draft
 
-From the Infineon datasheet (confirm pin numbering against the KiCad footprint):
+The pin order below is taken directly from the `multi_fpga:IM72D128`
+symbol actually used in `mic_arm_00–11.kicad_sch` (the original draft had
+pins 1/2 and 3/4 swapped):
 
 | Pin | Name | Connect to |
 |---|---|---|
-| 1 | VDD | 1.8 V supply + 100 nF to GND |
-| 2 | GND | GND plane |
-| 3 | DATA | DATA_nn net |
-| 4 | CLK | PDM_CLK (shared, 3.072 MHz) |
-| 5 | SEL | GND (L mic) or VDD (R mic) |
-
-> Verify pin numbering against the actual datasheet before ordering the PCB.
-> Footprint sources: Infineon website, Ultra Librarian, SnapEDA.
+| 1 | DATA | DATA_nn net |
+| 2 | VDD | MIC_3V3 + 100 nF to GND |
+| 3 | CLK | MIC_CLK_nn (buffered, one net per mic) |
+| 4 | SEL | GND (L mic) or MIC_3V3 (R mic) |
+| 5 | GND | GND plane |
 
 ---
 
-## PDM Clock Distribution
+## PDM Clock Distribution — two-stage buffer tree
 
-3.072 MHz at 96 loads is too much for a bare TCXO output.  Use a clock
-fan-out buffer between the TCXO and the mics.
-
-**Recommended part**: TI CDCLVC1310 (1-in, 10-out, 3.3 V LVCMOS, ~$0.60)
-or SN74AHCT1G08 chain.  For 96 mics you need:
+The master clock is generated **on the mic_array board** and never
+crosses the inter-board connector — a change from the original single
+central-buffer plan, and it also drops the earlier ÷4 divider idea (the
+TCXO's 12.288 MHz drives the buffer tree directly):
 
 ```
-TCXO (12.288 MHz) → ÷4 divider → 3.072 MHz → fan-out buffer
+Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
+ │
+ ├─ Stage 1: U110 CDCLVC1112 (1:12 LVCMOS buffer)
+ │     TCXO_CLK → ARM_00_CLK … ARM_11_CLK   (one output per arm)
+ │
+ └─ Stage 2: one CDCLVC1108 (1:8 LVCMOS buffer) per arm sheet
+       (U9 in mic_arm_00, U18 in mic_arm_01, … U108 in mic_arm_11)
+       ARM_nn_CLK → MIC_CLK_(8·nn) … MIC_CLK_(8·nn+7)
 ```
 
-Alternatively, the Nexys FPGA generates the 3.072 MHz PDM clock on its
-GPIO output and drives a fan-out buffer on the mic array PCB.  This is
-simpler: one less IC, and the clock is under FPGA control.
+Each mic gets its own buffered clock net, globally numbered
+`MIC_CLK_00`–`MIC_CLK_95` (index = arm × 8 + position-in-arm = mic_idx),
+so there's no per-sheet net-name collision risk despite every arm sheet
+being a copy of the same template. Both buffer ICs have their
+output-enable pin pulled up locally (R13 for U110, one R1 per arm for
+each CDCLVC1108) rather than driven from the FPGA.
 
-For either topology, **matched-length traces** from the fan-out output to
-each mic CLK pin are important above 1 MHz.  Target: all CLK traces within
-±5 mm of each other (±5 mm / (2 × 10⁸ m/s) ≈ ±25 ps skew — well within
-the IM72D128's CLK setup/hold spec).
+**Matched-length traces** from each buffer stage to its loads are still
+important above 1 MHz; keep CLK traces within ±5 mm of each other within
+a given fan-out stage.
 
 ---
 
-## Connector to FPGA Development Board
+## Inter-board Connector
 
-### I/O budget
-
-| Signal | Count |
-|---|---|
-| PDM DATA (mic → FPGA) | 48 |
-| PDM_CLK (FPGA → mics) | 1 |
-| **Total FPGA I/O needed** | **49** |
-
-### ⚠ Nexys A7-200T I/O constraint
-
-The Nexys A7-200T exposes 32 user I/O pins (4× Pmod, 8 per connector).
-**This is 17 pins short of the 49 needed for a 96-mic array.**
-
-### Recommended fix: Nexys Video (~$325)
-
-Digilent's Nexys Video uses the **same XC7A200T FPGA** as the Nexys A7-200T
-and adds an **FMC LPC connector** (68 single-ended I/O — more than enough).
-
-| Board | FPGA | Accessible I/O | FMC | Price |
-|---|---|---|---|---|
-| Nexys A7-200T | XC7A200T | ~32 (4× Pmod) | No | ~$350 |
-| **Nexys Video** | **XC7A200T** | **32 + 68 FMC** | **LPC** | **~$325** |
-
-The Nexys Video is the recommended FPGA hub for this project.  The FMC LPC
-connector carries the 48 DATA + 1 CLK via a matched-impedance cable.  Pmod
-connectors remain available for bring-up debug (ILA probe points, logic
-analyser headers, etc.).
-
-If you already have the Nexys A7-200T, see the **32-channel bringup option**
-below.
-
-### Connector: FMC LPC (Nexys Video path)
-
-Standard FMC LPC pinout.  Map DATA_00–DATA_47 and PDM_CLK to FMC LA pins
-(LA00–LA33, 34 differential pairs; use positive pin of each pair as
-single-ended signal and tie negative to GND on the array PCB).
-
-Use the standard FMC LPC plug (Samtec ASP-134604-01 or Molex 71436-1006)
-on the mic array PCB.
-
-### Connector: 2× 34-pin IDC (32-channel bringup option)
-
-If using Nexys A7-200T for a first bring-up with only 32 channels (4 arms
-× 8 mics = 32 mics, 16 DATA lines + 1 CLK = 17 signals → fits in 3 PMODs):
-
-| PMOD JA | PMOD JB | PMOD JC |
+| Side | Board | Part |
 |---|---|---|
-| DATA_00–DATA_07 | DATA_08–DATA_15 | PDM_CLK + spare |
+| J1 | mic_array | Panasonic AXK6S80347YG (80-pin + 4 fixing pads, 0.5mm pitch, 7.0mm mated height, header) |
+| J2 | front_end | Panasonic AXK5S80347YG (mating socket, same family) |
 
-Run full 32-mic HDL first, verify pipeline end-to-end, then migrate to
-Nexys Video for all 96 channels.
+Carries all 48 DATA_nn nets plus +3V8 and GND. No clock signal crosses
+this connector — see "PDM Clock Distribution" above.
 
 ---
 
-## Layer Stack (4-layer minimum)
+## Layer Stack — implemented
+
+`mic_array.kicad_pcb` is routed on the planned 4-layer stack:
 
 ```
-Top    (signal)   — mic pads, DATA traces, CLK fan-out
-GND    (plane)    — solid ground reference for PDM signal integrity
-PWR    (plane)    — 1.8 V power pour
-Bottom (signal)   — longer DATA runs, connector fanout
+F.Cu   (signal)  — mic pads, DATA traces, per-arm clock fan-out
+In1.Cu (plane)   — solid reference plane
+In2.Cu (plane)   — solid reference plane
+B.Cu   (signal)  — longer DATA runs, connector fanout
 ```
-
-Keep PDM_CLK traces on the top layer with guard traces to GND.
-Route DATA traces as 50 Ω impedance-controlled (top-to-GND reference).
-Stitch GND vias around the CLK fan-out buffer.
 
 ---
 
 ## Board Outline
 
-Array coordinates span ±150 mm (300 mm diameter).  Allow ≥5 mm margin on
-all sides → **320 mm × 320 mm** board minimum.  A circular board outline
-(Ø 320 mm) is conventional for acoustic camera arrays.
+`mic_array.kicad_pcb`'s Edge.Cuts geometry measures **320 mm × 320 mm**
+(circular, Ø320 mm) — matches the original plan and is now the as-routed
+outline, not just a target.
 
-Mount holes: four M3 holes at the PCB corners or compass points.
-Camera mount hole at centre (Ø 12 mm clearance for M8 or standard ¼-20
-thread insert).
+`front_end.kicad_pcb` has no board outline yet — only its 10 footprints
+(AC7200 SOM connectors, U111 buck regulator + support parts, J2, J3) are
+placed; routing hasn't started.
+
+---
+
+## Status (as of the schematics/layouts on disk)
+
+- **mic_array.kicad_pcb**: actively being routed (most recent PCB commits
+  are all on this file — clock-driver grounding/pull-ups done, general
+  routing in progress).
+- **front_end.kicad_pcb**: components placed only; no outline, no routing
+  yet.
+
+---
+
+## Superseded: External Dev-Board Connector (historical, no longer used)
+
+The project originally planned to drive the mic array from an external
+FPGA dev board rather than a custom FPGA carrier:
+
+- Nexys A7-200T exposes only ~32 user I/O (4× Pmod) — 17 short of the 49
+  needed for 96 mics (48 DATA + 1 CLK).
+- Nexys Video (same XC7A200T, FMC LPC connector, 68 SE I/O) was the
+  recommended fix, connecting via a Samtec/Molex FMC LPC plug.
+- A 32-channel bring-up option using 3 Pmods on the Nexys A7-200T was also
+  scoped.
+
+None of this applies to the current design — the ALINX AC7200 SOM
+provides the FPGA directly on the front_end board, and the array connects
+to it via the AXK5S/6S80347YG board-to-board connector described above.
