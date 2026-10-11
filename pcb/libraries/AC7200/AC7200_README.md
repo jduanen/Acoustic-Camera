@@ -52,6 +52,13 @@ supply power via J3 and the carrier board at the same time").
 
 ## Mechanical placement: real, cross-validated two independent ways
 
+> **Correction (2026-10-11): the connector pads are mirrored in Y.** The STEP's Y-up
+> coordinates were copied into KiCad's Y-down frame without negating them, so CON2/CON4 are
+> swapped and the pin order on all four connectors is reversed. ALINX's own top-view drawing,
+> its bottom-layer component drawing (CON labels + pin-1 dots), and both STEP models agree on
+> this. The board size, hole positions and 3D-model offsets below are still correct. Details
+> and fix: [`cad/assembly/README.md`](../../../cad/assembly/README.md#findings-from-the-3d-check-2026-10-11-open-fix-before-fab).
+
 The board outline, 4x mounting holes, and all 4 connectors' real center position + rotation
 were extracted directly from `../cad/AC7200.3.0.stp` -- the user's own reference 3D model, one
 level up in `pcb/single_fpga/cad/` -- by hand-tracing its real STEP AP214 assembly structure
