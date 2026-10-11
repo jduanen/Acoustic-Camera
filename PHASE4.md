@@ -774,6 +774,7 @@ Work splits into RTL (done) and the two-board PCB layout (in progress).
 | **`mic_array` PCB layout** | In progress | 96× IM72D128 in the Underbrink spiral, PDM clock fan-out tree, local power regulation; footprints linked and synced from schematic, DRC-clean |
 | **`front_end` PCB layout** | In progress | AC7200 module footprint + carrier connectors, TLV62569DBV buck pre-regulator, KSZ9031RNX GbE PHY; DRC-clean aside from pre-existing unrelated issues (no board outline defined yet) |
 | **Connector part numbers** | Open | Real part numbers for the AC7200 module's 4× 80-pin/0.5mm board-to-board headers still need sourcing from ALINX's manual |
+| **3D stack-up check** | Done — 2 issues open | Blender assembly animation of mic_array → front_end → AC7200 ([`cad/assembly/`](cad/assembly/README.md)); holes and mated heights align, but U2's AC7200 footprint pads are Y-mirrored and the J1/J2 DATA lines cross in even/odd pairs |
 | **PCB fabrication + assembly** | Not started | Gated on layout completion |
 
 ### Alternate design — Multi-FPGA (Clustered)
