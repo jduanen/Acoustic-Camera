@@ -56,7 +56,8 @@ supply power via J3 and the carrier board at the same time").
 > coordinates were copied into KiCad's Y-down frame without negating them, so CON2/CON4 are
 > swapped and the pin order on all four connectors is reversed. ALINX's own top-view drawing,
 > its bottom-layer component drawing (CON labels + pin-1 dots), and both STEP models agree on
-> this. The board size, hole positions and 3D-model offsets below are still correct. Details
+> this. The board size, hole positions and 3D-model offsets below are still correct. A corrected
+> footprint is drafted as `footprints.pretty/AC7200_corrected.kicad_mod` (not yet on the board). Details
 > and fix: [`cad/assembly/README.md`](../../../cad/assembly/README.md#findings-from-the-3d-check-2026-10-11-open-fix-before-fab).
 
 The board outline, 4x mounting holes, and all 4 connectors' real center position + rotation
