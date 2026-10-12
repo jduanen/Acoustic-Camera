@@ -1,0 +1,29 @@
+(version 1)
+
+# Fine-pitch breakout routing: J2 (AXK5S80347YG, 0.5mm pitch board-to-board
+# connector) and U2 (AC7200 module, same 0.5mm pitch connectors) both have
+# real pin pitch tight enough that the board's general 0.2mm clearance/width
+# rule cannot be met while escaping pads -- the user has already hand-routed
+# this breakout at ~0.15-0.19mm, which is correct/necessary given the real
+# part geometry, not a routing mistake. Scoped to traces/vias/pads touching
+# either connector's courtyard so the 0.2mm rule stays untouched everywhere
+# else on the board.
+(rule "fine-pitch connector breakout clearance (J2/U2 real pin pitch)"
+	(condition "A.insideCourtyard('J2') || B.insideCourtyard('J2') || A.insideCourtyard('U2') || B.insideCourtyard('U2')")
+	(constraint clearance (min 0.15mm))
+)
+
+(rule "fine-pitch connector breakout track width (J2/U2 real pin pitch)"
+	(condition "A.insideCourtyard('J2') || A.insideCourtyard('U2')")
+	(constraint track_width (min 0.15mm))
+)
+
+# The AC7200 module (U2, mechanical-only footprint) sits on top of its four
+# carrier-side headers CON1-4 and over J2's boss holes, so its courtyard
+# legitimately overlaps them. Its courtyard is kept because the breakout rules
+# above are scoped to it.
+(rule "AC7200 module over its B2B headers"
+	(condition "A.Reference == 'U2' || B.Reference == 'U2'")
+	(constraint courtyard_clearance)
+	(severity ignore)
+)
