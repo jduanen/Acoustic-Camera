@@ -1520,7 +1520,7 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "AXK5S80347YG:AXK5S80347YG"
+		(symbol "AXK5S80337YG:AXK5S80337YG"
 			(pin_names
 				(offset 0.254)
 			)
@@ -1539,7 +1539,7 @@
 					)
 				)
 			)
-			(property "Value" "AXK5S80347YG"
+			(property "Value" "AXK5S80337YG"
 				(at 10.414 5.588 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1549,7 +1549,7 @@
 					)
 				)
 			)
-			(property "Footprint" "AXK5S80347YG:CONN80_AXK5S80347YG_PAN"
+			(property "Footprint" "AXK5S80337YG:AXK5S80337YG"
 				(at 10.668 1.524 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1561,7 +1561,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "AXK5S80347YG"
+			(property "Datasheet" "datasheets/con_eng_p5k.pdf"
 				(at 10.16 3.302 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1573,7 +1573,7 @@
 					)
 				)
 			)
-			(property "Description" ""
+			(property "Description" "Panasonic AXK5S80337YG -- P5KS 0.5mm-pitch 80-pin board-to-board SOCKET, 7.0/8.0/9.0mm mated height, with positioning bosses. Mates AXK6S80637YG at 9.0mm."
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1594,7 +1594,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "AXK5S80347YG"
+			(property "ki_keywords" "AXK5S80337YG"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1605,7 +1605,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "CONN80_AXK5S80347YG_PAN"
+			(property "ki_fp_filters" "AXK5S80337YG"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -1616,7 +1616,7 @@
 					)
 				)
 			)
-			(symbol "AXK5S80347YG_0_1"
+			(symbol "AXK5S80337YG_0_1"
 				(rectangle
 					(start 0.16 0)
 					(end 20.16 -104.14)
@@ -3068,9 +3068,7 @@
 						)
 					)
 				)
-			)
-			(embedded_fonts no)
-		)
+			))
 		(symbol "Connector:TestPoint"
 			(pin_numbers
 				(hide yes)
@@ -10339,7 +10337,7 @@
 		)
 	)
 	(symbol
-		(lib_id "AXK5S80347YG:AXK5S80347YG")
+		(lib_id "AXK5S80337YG:AXK5S80337YG")
 		(at 219.71 39.37 0)
 		(unit 1)
 		(body_style 1)
@@ -10359,7 +10357,7 @@
 				)
 			)
 		)
-		(property "Value" "AXK5S80347YG"
+		(property "Value" "AXK5S80337YG"
 			(at 230.378 36.068 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -10369,7 +10367,7 @@
 				)
 			)
 		)
-		(property "Footprint" "AXK5S80347YG:CONN80_AXK5S80347YG_PAN"
+		(property "Footprint" "AXK5S80337YG:AXK5S80337YG"
 			(at 219.71 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -10380,7 +10378,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://www.mouser.com/catalog/specsheets/AXK.pdf"
+		(property "Datasheet" "datasheets/con_eng_p5k.pdf"
 			(at 219.71 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -10391,7 +10389,7 @@
 				)
 			)
 		)
-		(property "Description" "Panasonic AXK580137YG -- P5K series 0.5mm-pitch 80-pin board-to-board SOCKET, module side (confirmed on the ALINX AC7200 module; mates with the carrier board's own AXK680337YG header -- see ../../AC7200/AC7200_README.md). Real dimensions from Panasonic/Mouser's own P5K/P5KS catalog PDF (mouser.com/catalog/specsheets/AXK.pdf), read directly: body 23.20 x 19.50mm (A x B, same as the header), 0.5mm pitch, 40 pins/row x 2 rows staggered by 0.25mm (half pitch), pad 0.25 x 0.75mm, total footprint span 6.80mm (wider than the header's 5.60mm -- read directly off the Socket's own land-pattern drawing, not assumed equal to the header). Part number CONFIRMED, not assumed: the AC7200 module's own STEP model (AC7200.3.0.stp) names this connector 'AXK680137YG', which doesn't decode against Panasonic's real P5K part-number table (leading digit 6 = Header selector, but mated-height digit 1 is documented Socket-only) -- flagged as a likely STEP-model typo when this part was first built. ALINX's own real schematic (docs/AC7200_Schematic.pdf, page 12 'AC7200 CONNECTOR') settles it: all 4 connector reference labels explicitly read 'AXK580137YG', confirming the STEP model's name was wrong and this (leading digit 5) is the real part. All 320 CON1-4 signal-pin assignments in ../../AC7200/KiCad/AC7200.kicad_sym were also cross-checked pin-by-pin against that same real schematic -- exact match, no discrepancies. Pin numbering on THIS standalone connector symbol (1-80 sequential by row) is still an ASSUMED convention, matching the header's own same assumption -- the real schematic only labels FPGA bank/ball nets on CON1-4, not this connector's own physical pin-to-number layout, so it wasn't independently verifiable against a real pin-1 diagram in the catalog either."
+		(property "Description" "Panasonic AXK5S80337YG -- P5KS 0.5mm-pitch 80-pin board-to-board SOCKET, 7.0/8.0/9.0mm mated height, with positioning bosses. Mates AXK6S80637YG at 9.0mm."
 			(at 219.71 39.37 0)
 			(hide yes)
 			(show_name no)
