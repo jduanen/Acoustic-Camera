@@ -1,5 +1,11 @@
 # AC7200 KiCad symbol + footprint -- provenance and caveats
 
+> **2026-10-12:** the carrier side no longer uses `AC7200 Interface` / `AC7200.kicad_mod`. Each
+> connector is its own part: `AC7200_CON1`…`AC7200_CON4` in `AC7200.kicad_sym` (same pin names and
+> positions as units A–D, pins numbered 1–80), footprint `AXK680337YG:AXK680337YG`
+> (`../AXK680337YG/`). The module itself is the board-only mechanical footprint
+> `single_fpga:AC7200_Module`. The older symbol and footprints are kept for reference.
+
 `KiCad/AC7200.kicad_sym` (this directory's `KiCad/` subfolder) + `../footprints.pretty/
 AC7200.kicad_mod` (the `pcb/single_fpga/footprints.pretty/` library, one level up) for the
 ALINX AC7200 XC7A200T-2FBG484I FPGA SOM. Both parse and export cleanly via `kicad-cli sym
