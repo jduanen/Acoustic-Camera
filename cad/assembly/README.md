@@ -65,6 +65,18 @@ NR-20xx inductors, the VQFN-48, a 1206 cap and 3× 0402 resistors (the last two 
 
 ## Findings from the 3D check (2026-10-11): open, fix before fab
 
+> **Status (2026-10-12):** both fixed in the libraries, schematics and PCBs; the
+> affected traces still need re-routing.
+> - Finding 1: CON1–4 are now four separate AXK680337YG parts (Panasonic P5K header,
+>   SamacSys footprint + STEP, 0.8mm boss holes), placed at the corrected (un-mirrored)
+>   positions with pin 1 on each connector's inner row (ALINX pin-1 dots). U2 is now the
+>   board-only mechanical footprint `single_fpga:AC7200_Module` (outline + 4 holes).
+> - Finding 2: J2 is now AXK5S80337YG (EE Concierge manufacturer footprint, odd pins on
+>   the opposite row from the old one) and J1 is AXK6S80637YG, so pin *n* faces pin *n*.
+>   Both have 0.65mm boss holes per `datasheets/AXK.pdf` p.10. The boss diagonal relative
+>   to pin 1 is an assumption (Panasonic's drawing has no pin numbers); confirm it against
+>   Panasonic's product specification drawing before fab.
+
 ### 1. U2 (AC7200) footprint is mirrored: CON1–4 pads are Y-flipped
 
 The footprint `pcb/libraries/single_fpga/footprints.pretty/AC7200.kicad_mod` puts
