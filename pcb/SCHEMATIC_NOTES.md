@@ -13,8 +13,8 @@ board-to-board connector.
 
 | Board | KiCad project | Carries |
 |---|---|---|
-| **front_end** | `front_end.kicad_pcb` / `front_end.kicad_sch` | ALINX AC7200 FPGA SOM, +5V→+3V8 power regulation, inter-board connector |
-| **mic_array** | `mic_array.kicad_pcb` / `mic_array.kicad_sch` | 96 mics, master clock (TCXO) + full clock distribution tree, local 3.3V regulation, inter-board connector |
+| **front_end** | `front_end.kicad_pcb` / `front_end.kicad_sch` | ALINX AC7200 FPGA SOM, DP83867 GbE PHY, +5V input and all regulation (+3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH), inter-board connector |
+| **mic_array** | `mic_array.kicad_pcb` / `mic_array.kicad_sch` | 96 mics, master clock (TCXO) + full clock distribution tree, local 3.3V regulation (MIC_3V3, CLK_3V3) from +3V6, inter-board connector |
 
 `top.kicad_sch` is the hierarchical parent that ties "Front End" and
 "Microphone Array" together as sub-sheets, for whole-project ERC/BOM
@@ -35,13 +35,17 @@ top.kicad_sch
 │   ├── mic_arm_00.kicad_sch   … mic_arm_11.kicad_sch   (8 mics + 1 clock buffer each)
 │   └── array_connector.kicad_sch   ("Array Inter-board Connector")
 └── front_end.kicad_sch        ("Front End")
-    ├── ac7200_conn1.kicad_sch … ac7200_conn4.kicad_sch (AC7200 SOM, one symbol split 4 ways)
-    └── (sheet-local: power regulation, J2/J3)
+    ├── ac7200_conn1.kicad_sch … ac7200_conn4.kicad_sch (CON1–CON4, the AC7200's carrier headers; J4 JTAG on conn3)
+    ├── gbe.kicad_sch          ("Ethernet Interface": DP83867 PHY, U6 buck, U4/U5 LDOs)
+    └── (sheet-local: +5V input J1, U1 buck, J2)
 ```
 
-`ac7200_conn1–4` each place one unit of the same multi-unit `single_fpga:AC7200`
-schematic symbol (U109) — the AC7200's 4× 80-pin connectors (CON1–CON4),
-split across 4 sheets for readability, not 4 separate parts.
+`ac7200_conn1–4` each place one real part: CON1–CON4, the four Panasonic
+AXK680337YG headers on the carrier that the AC7200's sockets plug into
+(symbols `single_fpga:AC7200_CON1`–`AC7200_CON4`, pins named with the module's
+signals, numbered 1–80). The module itself is not in the schematic: on the PCB
+it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
+(outline, courtyard, 4 mounting holes), excluded from the BOM and position files.
 
 ---
 
@@ -49,26 +53,44 @@ split across 4 sheets for readability, not 4 separate parts.
 
 | Range | Board | Parts |
 |---|---|---|
-| U1–U8, U10–U17, U19–U26, … (9 per arm) | mic_array | 8× IM72D128 mics + 1× CDCLVC1108 clock buffer, per arm (arm 0 = U1–U9, arm 1 = U10–U18, … arm 11 = U100–U108) |
+| U1–U96 | mic_array | IM72D128 mics, 8 per arm (arm *n* = U(8n+1)–U(8n+8)) |
+| U97–U108 | mic_array | CDCLVC1108 stage-2 clock buffers, one per arm (arm *n* = U(97+n)) |
 | C1–C96 | mic_array | 100 nF decoupling, one per mic VDD pin |
-| C97–C101 | mic_array | TCXO / CDCLVC1112 decoupling + bulk |
-| R1 (one per arm sheet) | mic_array | 10 kΩ pull-up on each arm's CDCLVC1108 output-enable pin |
+| C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
+| C97 | mic_array | 100 nF CLK_3V3 decoupling (TCXO / CDCLVC1112) |
+| C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
+| R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
+| TP1–TP5 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3, TCXO_CLK |
 | Y1 | mic_array | 12.288 MHz TCXO |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
-| VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs — separate MIC_3V3 and CLK_3V3 rails |
-| J1 | mic_array | Inter-board connector (Panasonic AXK6S80347YG header) |
-| U109 | front_end | AC7200 FPGA SOM (Xilinx XC7A200T-2FBG484I), one symbol across CON1–CON4 |
-| U111 | front_end | TLV62569DBV, +5V→+3V8 synchronous buck |
-| L1 | front_end | 2.2 µH inductor for U111 |
-| R14, R15 | front_end | 499 kΩ / 100 kΩ feedback divider setting U111's +3V8 output |
-| C102–C104 | front_end | U111 input/output/bulk caps |
-| J2 | front_end | Inter-board connector (AXK5S80347YG socket, mates J1) |
-| J3 | front_end | +5V/GND power input |
+| VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs (+3V6 in) — separate MIC_3V3 and CLK_3V3 rails |
+| C98, C99 | mic_array | 1 µF input caps for VR1, VR2 |
+| J1 | mic_array | Inter-board connector (Panasonic AXK6S80637YG header) |
+| CON1–CON4 | front_end | Panasonic AXK680337YG headers that the AC7200 SOM plugs into |
+| U2 | front_end (PCB only) | AC7200 SOM mechanical footprint (not in the schematic or BOM) |
+| J3 | front_end | HanRun HR911130A RJ45 magjack (GbE) |
+| J4 | front_end | 2×7 2 mm JTAG header |
+| Y1 | front_end | 25 MHz crystal for the DP83867 (front_end's Y1; unrelated to mic_array's Y1) |
+| J1 | front_end | +5V/GND main power input (front_end's J1; unrelated to mic_array's J1) |
+| C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
+| U1 | front_end | TLV62569DBV buck, +5V → +3V6 |
+| L1, R1, R2 | front_end | U1's 2.2 µH inductor and 499 kΩ / 100 kΩ feedback divider |
+| C1, C2 | front_end | U1 input (4.7 µF) and output (10 µF) caps |
+| U6 | front_end | TLV62569DBV buck, +5V → +3V3_ETH |
+| L2, R13, R14 | front_end | U6's 2.2 µH inductor and 453 kΩ / 100 kΩ feedback divider |
+| C30, C31 | front_end | U6 input (4.7 µF) and output (10 µF) caps |
+| U4 | front_end | TLV75525PDBV LDO, +3V3_ETH → +2V5_ETH (EN tied to IN) |
+| U5 | front_end | AMS1117-1.0 LDO, +3V3_ETH → +1V0_ETH |
+| C24, C25 | front_end | 10 µF input caps for U4, U5 |
+| U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH) |
+| TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
+| J2 | front_end | Inter-board connector (AXK5S80337YG socket, mates J1) |
 
-Mic numbering (U references) is no longer a clean U1–U96 block — the
-per-arm clock buffer is interleaved into the same reference sequence, so
-each arm consumes 9 consecutive U numbers (8 mics + 1 buffer), not 8.
+Mic numbering is a clean U1–U96 block (mic index + 1); the twelve per-arm
+CDCLVC1108 buffers follow as U97–U108. The two boards are annotated
+independently, so some references (J1, R1–R13, C1–C31, U1–U6, TP1–TP5, Y1)
+exist on both boards as different parts.
 
 ---
 
@@ -79,7 +101,10 @@ mechanical placement are cross-checked against ALINX's real manual and
 schematic (see [`pcb/libraries/AC7200/AC7200_README.md`](libraries/AC7200/AC7200_README.md)
 — 320/320 connector pins verified, zero discrepancies). The module mounts
 on the front_end board through 4× 80-pin, 0.5mm-pitch board-to-board
-connectors (Panasonic AXK580137YG/AXK680337YG family, 3.0mm mated height).
+connectors: the module carries AXK580137YG sockets, and the carrier has the
+mating AXK680337YG headers CON1–CON4 (P5K series, 3.0mm mated height, with
+positioning bosses in 0.8mm NPTH holes). Each header's pin 1 is on its inner row,
+at the end marked by ALINX's pin-1 dot.
 
 This fully supersedes the old Nexys A7-200T / Nexys Video I/O-budget
 discussion below (kept for historical context only — see
@@ -90,17 +115,38 @@ discussion below (kept for historical context only — see
 ## Power
 
 ```
-+5V (J3, front_end) → TLV62569DBV buck (U111, L1, R14/R15 FB divider) → +3V8
-   +3V8 → AC7200 SOM (U109, front_end)
-   +3V8 → J2/J1 inter-board connector → mic_array board
-             +3V8 → VR1 (MCP1700-3302E) → MIC_3V3   (mic analog supply)
-             +3V8 → VR2 (MCP1700-3302E) → CLK_3V3   (TCXO + clock buffers)
++5V  (front_end J1 "Main Power Input"; C3 100 µF/25 V bulk)
+ ├─ AC7200 SOM VCCIN (CON1 pins 1–8)
+ ├─ U1 TLV62569 buck (L1 2.2 µH, R1/R2 = 499k/100k) → +3V6  (≈3.59 V)
+ │    └─ J2 pins 1–8 ══► mic_array J1 pins 1–8
+ │         ├─ VR1 MCP1700-3302E → MIC_3V3  (96 IM72D128 mics)
+ │         └─ VR2 MCP1700-3302E → CLK_3V3  (TCXO Y1, U110 CDCLVC1112,
+ │                                          12× CDCLVC1108, OE pull-ups)
+ └─ U6 TLV62569 buck (L2 2.2 µH, R13/R14 = 453k/100k) → +3V3_ETH  (≈3.32 V)
+      ├─ U3 DP83867 VDDIO (pins 19/30/41), MDIO pull-ups, PHY straps, J4 pin 2
+      ├─ U4 TLV75525 LDO → +2V5_ETH  (U3 VDDA2P5)
+      └─ U5 AMS1117-1.0 LDO → +1V0_ETH  (U3 VDD1P0)
 ```
 
-MIC_3V3 and CLK_3V3 are deliberately separate LDO outputs from the same
-+3V8 rail, isolating the mic analog supply from clock-buffer switching
-noise. Only +3V8 and GND cross the inter-board connector — no +5V or
-regulated 3.3V rail is shared directly between boards.
+Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/Rbottom).
+
+- **+3V6** exists only to feed the mic board's two MCP1700 3.3 V LDOs with headroom
+  above their dropout; nothing else uses it. MIC_3V3 and CLK_3V3 are separate LDO
+  outputs from it, isolating the mic supply from clock-buffer switching noise.
+- **Only +3V6 and GND cross the inter-board connector** (J2/J1 pins 1–8 carry
+  +3V6). No +5V or regulated 3.3 V rail is shared between boards.
+- **+2V5_ETH** uses a TLV75525 (≈0.2–0.3 V dropout) because an AMS1117-2.5 needs
+  ≈1.0–1.1 V of headroom and would sag below the DP83867's VDDA2P5 minimum when
+  fed from 3.3 V.
+- The DP83867's VDDA1P8 pins (13, 48) are unconnected.
+- **PWR_FLAGs:** front_end on +5V, GND, +3V6 (the bucks' power-output pin is SW,
+  so their post-inductor rails need a flag) and +3V3_ETH (in `gbe.kicad_sch`);
+  mic_array on +3V6 and GND (in `array_connector.kicad_sch`), since they arrive
+  through J1. LDO outputs need no flag (their output pins are power outputs). In
+  `top.kicad_sch` the two boards' +3V6/GND flags meet, so top-level ERC reports two
+  power-output-to-power-output errors; these are expected and can be excluded.
+- Power symbols must use a **power input** pin: a power symbol with a power-output
+  pin does not join its global net in KiCad 10 (this disconnected +3V3_ETH once).
 
 ---
 
@@ -154,7 +200,7 @@ Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
  │     TCXO_CLK → ARM_00_CLK … ARM_11_CLK   (one output per arm)
  │
  └─ Stage 2: one CDCLVC1108 (1:8 LVCMOS buffer) per arm sheet
-       (U9 in mic_arm_00, U18 in mic_arm_01, … U108 in mic_arm_11)
+       (U97 in mic_arm_00, U98 in mic_arm_01, … U108 in mic_arm_11)
        ARM_nn_CLK → MIC_CLK_(8·nn) … MIC_CLK_(8·nn+7)
 ```
 
@@ -162,8 +208,8 @@ Each mic gets its own buffered clock net, globally numbered
 `MIC_CLK_00`–`MIC_CLK_95` (index = arm × 8 + position-in-arm = mic_idx),
 so there's no per-sheet net-name collision risk despite every arm sheet
 being a copy of the same template. Both buffer ICs have their
-output-enable pin pulled up locally (R13 for U110, one R1 per arm for
-each CDCLVC1108) rather than driven from the FPGA.
+output-enable pin pulled up locally (R13 for U110, R1–R12 for the arms'
+CDCLVC1108s) rather than driven from the FPGA.
 
 **Matched-length traces** from each buffer stage to its loads are still
 important above 1 MHz; keep CLK traces within ±5 mm of each other within
@@ -175,46 +221,49 @@ a given fan-out stage.
 
 | Side | Board | Part |
 |---|---|---|
-| J1 | mic_array | Panasonic AXK6S80347YG (80-pin + 4 fixing pads, 0.5mm pitch, 7.0mm mated height, header) |
-| J2 | front_end | Panasonic AXK5S80347YG (mating socket, same family) |
+| J1 | mic_array | Panasonic AXK6S80637YG (P5KS 80-pin header, 0.5mm pitch, 9.0mm mated height, positioning bosses) |
+| J2 | front_end | Panasonic AXK5S80337YG (mating P5KS socket, positioning bosses) |
 
-Carries all 48 DATA_nn nets plus +3V8 and GND. No clock signal crosses
+Carries all 48 DATA_nn nets plus +3V6 (pins 1–8) and GND (16 pins). No clock signal crosses
 this connector — see "PDM Clock Distribution" above.
 
 ---
 
 ## Layer Stack — implemented
 
-`mic_array.kicad_pcb` is routed on the planned 4-layer stack:
+Both boards are 4-layer:
 
 ```
-F.Cu   (signal)  — mic pads, DATA traces, per-arm clock fan-out
-In1.Cu (plane)   — solid reference plane
-In2.Cu (plane)   — solid reference plane
-B.Cu   (signal)  — longer DATA runs, connector fanout
+            mic_array                          front_end
+F.Cu    signal: mic pads, DATA,            signal
+        per-arm clock fan-out
+In1.Cu  GND plane                          GND plane
+In2.Cu  MIC_3V3 plane                      +5V plane
+B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
+        connector fan-out
 ```
 
 ---
 
 ## Board Outline
 
-`mic_array.kicad_pcb`'s Edge.Cuts geometry measures **320 mm × 320 mm**
-(circular, Ø320 mm) — matches the original plan and is now the as-routed
-outline, not just a target.
-
-`front_end.kicad_pcb` has no board outline yet — only its 10 footprints
-(AC7200 SOM connectors, U111 buck regulator + support parts, J2, J3) are
-placed; routing hasn't started.
+- `mic_array.kicad_pcb`: circular, **Ø320 mm**, with a Ø12 mm centre cut-out.
+- `front_end.kicad_pcb`: **120 mm × 120 mm** rectangle.
 
 ---
 
 ## Status (as of the schematics/layouts on disk)
 
-- **mic_array.kicad_pcb**: actively being routed (most recent PCB commits
-  are all on this file — clock-driver grounding/pull-ups done, general
-  routing in progress).
-- **front_end.kicad_pcb**: components placed only; no outline, no routing
-  yet.
+- **mic_array.kicad_pcb**: routed; synced with the schematic, and DRC-clean
+  (0 violations, 0 unconnected) after the J1 change to AXK6S80637YG.
+- **front_end.kicad_pcb**: routed apart from the connector changes, and synced
+  with the schematic. Still open:
+  - re-route the CON1–CON4 and J2 fan-out (the old U2 footprint was mirrored and
+    J2's odd/even rows swapped, so the old traces no longer match the pads);
+  - delete the old via stubs under CON1/CON2;
+  - route the new U4 (SOT-23-5, EN tied to IN) and test points TP3–TP6.
+- **Before fab:** confirm the J1/J2 boss-hole orientation relative to pin 1
+  against Panasonic's product specification drawing (see `cad/assembly/README.md`).
 
 ---
 
@@ -232,4 +281,4 @@ FPGA dev board rather than a custom FPGA carrier:
 
 None of this applies to the current design — the ALINX AC7200 SOM
 provides the FPGA directly on the front_end board, and the array connects
-to it via the AXK5S/6S80347YG board-to-board connector described above.
+to it via the AXK5S80337YG/AXK6S80637YG board-to-board connector described above.
