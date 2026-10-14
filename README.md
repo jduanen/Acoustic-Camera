@@ -6,7 +6,7 @@ Capturing, visualizing, and tracking the position of sound sources is useful in 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
 See an animation of the current state of the Phase 4 (96-mic) version's PCBs: 
-https://github.com/jduanen/Acoustic-Camera/blob/main/assets/stack_assembly.mp4
+https://github.com/jduanen/Acoustic-Camera/blob/main/assets/p4_pcbs.gif
 
 See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
 
