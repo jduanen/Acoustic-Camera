@@ -6,6 +6,7 @@ Capturing, visualizing, and tracking the position of sound sources is useful in 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
 The Phase 3 prototype (4x4-mic array) unit looks like this:
+<br>
 <img src="assets/Phase3Back.jpg" width="384" height="510" /><img src="assets/Phase3Front.jpg" width="384" height="510" />
 
 See an animation of the current state of the Phase 4 (96-mic spiral array) version's PCBs: 
