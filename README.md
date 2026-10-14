@@ -7,7 +7,7 @@ Acoustic Cameras can also serve as a useful prosthetic device for people who hav
 
 The Phase 3 prototype (4x4-mic array) unit looks like this:
 <br>
-<img src="assets/Phase3Back.jpg" width="384" height="510" /><img src="assets/Phase3Front.jpg" width="384" height="510" />
+<img src="assets/Phase3Back.jpg" width="384" height="510" /> <img src="assets/Phase3Front.jpg" width="384" height="510" />
 
 See an animation of the current state of the Phase 4 (96-mic spiral array) version's PCBs: 
 https://github.com/jduanen/Acoustic-Camera/blob/main/assets/p4_pcbs.gif
