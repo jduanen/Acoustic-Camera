@@ -5,7 +5,11 @@ An Acoustic Camera computes a power map of the sound scene that exists within a 
 Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
 Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
 
-See an animation of the current state of the Phase 4 (96-mic) version's PCBs: 
+The Phase 3 prototype (4x4-mic array) unit looks like this:
+<img src="assets/Phase3Back.jpg" width="384" height="510" />
+<img src="assets/Phase3Front.jpg" width="384" height="510" />
+
+See an animation of the current state of the Phase 4 (96-mic spiral array) version's PCBs: 
 https://github.com/jduanen/Acoustic-Camera/blob/main/assets/p4_pcbs.gif
 
 See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
