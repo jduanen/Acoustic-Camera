@@ -265,7 +265,7 @@ def caption(text, f_on, f_off):
 plate_mat = emissive_mat("caption_plate", (0, 0, 0), alpha=0.7, strength=0.0)
 
 caption("mic_array  -  96-mic Underbrink spiral, 320 mm", 8, F_FE_IN)
-caption("front_end  -  GbE PHY, buck, AC7200 carrier", F_FE_IN + 10, F_AC_IN)
+caption("front_end  -  GbE PHY, regulators, AC7200 carrier", F_FE_IN + 10, F_AC_IN)
 caption("ALINX AC7200  -  XC7A200T FPGA module", F_AC_IN + 10, F_GUIDES_ON)
 caption("4x M4 holes aligned  -  7.0 mm AXK6S/5S80347YG stack", F_GUIDES_ON + 5, F_FE_DOWN1 + 5)
 caption("4x module holes aligned  -  3.0 mm AXK680337YG stack", F_FE_DOWN1 + 10, F_GUIDES_OFF)
