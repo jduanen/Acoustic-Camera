@@ -3546,14 +3546,17 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Regulator_Linear:AP1117-15"
+		(symbol "Regulator_Linear:TLV75510PDRV"
+			(pin_names
+				(offset 0.254)
+			)
 			(exclude_from_sim no)
 			(in_bom yes)
 			(on_board yes)
 			(in_pos_files yes)
 			(duplicate_pin_numbers_are_jumpers no)
 			(property "Reference" "U"
-				(at -3.81 3.175 0)
+				(at -3.81 5.715 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -3562,8 +3565,8 @@
 					)
 				)
 			)
-			(property "Value" "AP1117-15"
-				(at 0 3.175 0)
+			(property "Value" "TLV75510PDRV"
+				(at 0 5.715 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(effects
@@ -3573,8 +3576,20 @@
 					(justify left)
 				)
 			)
-			(property "Footprint" "Package_TO_SOT_SMD:SOT-223-3_TabPin2"
-				(at 0 5.08 0)
+			(property "Footprint" "Package_SON:WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm"
+				(at 0 8.255 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+						(italic yes)
+					)
+				)
+			)
+			(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tlv755p.pdf"
+				(at 0 1.27 0)
 				(show_name no)
 				(do_not_autoplace no)
 				(hide yes)
@@ -3584,18 +3599,7 @@
 					)
 				)
 			)
-			(property "Datasheet" "http://www.diodes.com/datasheets/AP1117.pdf"
-				(at 2.54 -6.35 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "1A Low Dropout regulator, positive, 1.5V fixed output, SOT-223"
+			(property "Description" "500mA Low Dropout Voltage Regulator, Fixed Output 1.0V, WSON6"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -3606,7 +3610,7 @@
 					)
 				)
 			)
-			(property "ki_keywords" "linear regulator ldo fixed positive obsolete"
+			(property "ki_keywords" "LDO Regulator Fixed Positive"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -3617,7 +3621,7 @@
 					)
 				)
 			)
-			(property "ki_fp_filters" "SOT?223*TabPin2*"
+			(property "ki_fp_filters" "WSON*1EP*2x2mm*P0.65mm*"
 				(at 0 0 0)
 				(show_name no)
 				(do_not_autoplace no)
@@ -3628,10 +3632,10 @@
 					)
 				)
 			)
-			(symbol "AP1117-15_0_1"
+			(symbol "TLV75510PDRV_0_1"
 				(rectangle
-					(start -5.08 -5.08)
-					(end 5.08 1.905)
+					(start -5.08 4.445)
+					(end 5.08 -5.08)
 					(stroke
 						(width 0.254)
 						(type default)
@@ -3641,11 +3645,11 @@
 					)
 				)
 			)
-			(symbol "AP1117-15_1_1"
-				(pin power_in line
-					(at 0 -7.62 90)
+			(symbol "TLV75510PDRV_1_1"
+				(pin power_out line
+					(at 7.62 2.54 180)
 					(length 2.54)
-					(name "GND"
+					(name "OUT"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3660,10 +3664,11 @@
 						)
 					)
 				)
-				(pin power_out line
-					(at 7.62 0 180)
+				(pin no_connect line
+					(at 5.08 0 180)
 					(length 2.54)
-					(name "VO"
+					(hide yes)
+					(name "NC"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3679,9 +3684,9 @@
 					)
 				)
 				(pin power_in line
-					(at -7.62 0 0)
+					(at 0 -7.62 90)
 					(length 2.54)
-					(name "VI"
+					(name "GND"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -3689,6 +3694,80 @@
 						)
 					)
 					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 0 0)
+					(length 2.54)
+					(name "EN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin no_connect line
+					(at 5.08 -2.54 180)
+					(length 2.54)
+					(hide yes)
+					(name "NC"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "IN"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "6"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin passive line
+					(at 0 -7.62 90)
+					(length 2.54)
+					(hide yes)
+					(name "GND"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "7"
 						(effects
 							(font
 								(size 1.27 1.27)
@@ -5121,6 +5200,12 @@
 		(uuid "2c60738c-99d3-4c4d-a66a-74e57ae675e0")
 	)
 	(junction
+		(at 317.5 195.58)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "32752a78-e9ad-4fde-8845-63b5572807fa")
+	)
+	(junction
 		(at 350.52 74.93)
 		(diameter 0)
 		(color 0 0 0 0)
@@ -6078,7 +6163,7 @@
 	)
 	(wire
 		(pts
-			(xy 325.12 203.2) (xy 325.12 209.55)
+			(xy 325.12 205.74) (xy 325.12 209.55)
 		)
 		(stroke
 			(width 0)
@@ -6135,6 +6220,16 @@
 			(type default)
 		)
 		(uuid "7ddbfacc-5ae7-4ab3-a277-4353c7fbcec3")
+	)
+	(wire
+		(pts
+			(xy 317.5 198.12) (xy 317.5 195.58)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "81c3d60c-925b-44ee-9f4d-c56b12b91f1d")
 	)
 	(wire
 		(pts
@@ -8037,7 +8132,7 @@
 				)
 			)
 		)
-		(property "Footprint" "PCM_SparkFun-Resistor:R_0603_1608Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 354.838 86.36 0)
 			(hide yes)
 			(show_name no)
@@ -8070,8 +8165,8 @@
 				)
 			)
 		)
-		(property "PROD_ID" "RES-07828"
-			(at 356.87 86.36 0)
+		(property "Tolerance" "1%"
+			(at 359.41 86.36 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -9929,7 +10024,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_SparkFun-Capacitor:C_0805_2012Metric"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 364.49 92.71 0)
 			(hide yes)
 			(show_name no)
@@ -9940,7 +10035,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/4888/TMK212BBJ106KG-T_SS.pdf"
+		(property "Datasheet" ""
 			(at 364.49 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -9962,18 +10057,7 @@
 				)
 			)
 		)
-		(property "PROD_ID" "CAP-14259"
-			(at 363.22 95.25 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Voltage" ""
+		(property "Voltage" "10V"
 			(at 367.03 82.5562 0)
 			(hide yes)
 			(show_name no)
@@ -9985,7 +10069,7 @@
 				(justify left)
 			)
 		)
-		(property "Tolerance" ""
+		(property "Tolerance" "10%"
 			(at 367.03 85.0962 0)
 			(hide yes)
 			(show_name no)
@@ -9995,6 +10079,39 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+			)
+		)
+		(property "Manufacturer" "Murata"
+			(at 364.49 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Part Number" "GRM21BR71A106KE51L"
+			(at 364.49 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Temperature Coefficient" "X7R"
+			(at 364.49 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(pin "2"
@@ -11277,8 +11394,8 @@
 		)
 	)
 	(symbol
-		(lib_id "Regulator_Linear:AP1117-15")
-		(at 325.12 195.58 0)
+		(lib_id "Regulator_Linear:TLV75510PDRV")
+		(at 325.12 198.12 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -11297,7 +11414,7 @@
 				)
 			)
 		)
-		(property "Value" "AMS1117-1.0"
+		(property "Value" "TLV75510PDRV"
 			(at 325.374 191.516 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -11307,7 +11424,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Package_TO_SOT_SMD:SOT-223-3_TabPin2"
+		(property "Footprint" "Package_SON:WSON-6-1EP_2x2mm_P0.65mm_EP1x1.6mm"
 			(at 325.12 200.66 0)
 			(hide yes)
 			(show_name no)
@@ -11318,7 +11435,7 @@
 				)
 			)
 		)
-		(property "Datasheet" ""
+		(property "Datasheet" "http://www.ti.com/lit/ds/symlink/tlv755p.pdf"
 			(at 327.66 189.23 0)
 			(hide yes)
 			(show_name no)
@@ -11329,8 +11446,9 @@
 				)
 			)
 		)
-		(property "Description" ""
+		(property "Description" "500mA Low Dropout Voltage Regulator, Fixed Output 1.0V, WSON6"
 			(at 325.12 195.58 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -11340,13 +11458,25 @@
 			)
 		)
 		(pin "1"
-			(uuid "027cc707-ed49-4144-888b-59bd2dcdc3e9")
+			(uuid "9894372d-b1de-424c-a8c1-0fdcd3519691")
 		)
 		(pin "2"
-			(uuid "fd473390-4fcc-4029-839d-98f6d4bdec35")
+			(uuid "61f9f78f-afd0-44e1-a641-0acc1636bcb4")
 		)
 		(pin "3"
-			(uuid "08386836-5330-409d-89f8-6e93501c1c2c")
+			(uuid "f7388f47-1ac0-4aef-b3e6-b568d4d56cce")
+		)
+		(pin "4"
+			(uuid "4d583f3f-a727-4a42-95c7-98eb167aa56e")
+		)
+		(pin "5"
+			(uuid "e343d856-eec3-4e2d-9eb2-f918b1a8a56c")
+		)
+		(pin "6"
+			(uuid "c224e8f2-ada9-4368-b5c3-bc7e197581eb")
+		)
+		(pin "7"
+			(uuid "c58ff5c9-2b0a-4f32-b925-294264302ae2")
 		)
 		(instances
 			(project "front_end"
@@ -13520,7 +13650,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Inductor_SMD:L_Taiyo-Yuden_NR-20xx_HandSoldering"
+		(property "Footprint" "Inductor_SMD:L_Murata_DFE201610P"
 			(at 340.36 74.93 0)
 			(hide yes)
 			(show_name no)
@@ -13544,6 +13674,39 @@
 		)
 		(property "Description" ""
 			(at 340.36 74.93 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "Murata"
+			(at 340.36 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Part Number" "DFE201612E-2R2M=P2"
+			(at 340.36 74.93 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Specifications" "2.2uH, Isat>2.4A, Imax>=1.8A, Rdc<=120mOhms, shielded"
+			(at 340.36 74.93 0)
+			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
 			(effects
@@ -13918,7 +14081,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_SparkFun-Resistor:R_0603_1608Metric"
+		(property "Footprint" "Resistor_SMD:R_0603_1608Metric"
 			(at 346.202 78.74 0)
 			(hide yes)
 			(show_name no)
@@ -13951,8 +14114,8 @@
 				)
 			)
 		)
-		(property "PROD_ID" "RES-07828"
-			(at 344.17 78.74 0)
+		(property "Tolerance" "1%"
+			(at 341.63 78.74 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -14392,7 +14555,7 @@
 				(justify left)
 			)
 		)
-		(property "Footprint" "PCM_SparkFun-Capacitor:C_0805_2012Metric"
+		(property "Footprint" "Capacitor_SMD:C_0805_2012Metric"
 			(at 306.07 92.71 0)
 			(hide yes)
 			(show_name no)
@@ -14403,7 +14566,7 @@
 				)
 			)
 		)
-		(property "Datasheet" "https://mm.digikey.com/Volume0/opasdata/d220001/medias/docus/4888/TMK212BBJ106KG-T_SS.pdf"
+		(property "Datasheet" ""
 			(at 306.07 97.79 0)
 			(hide yes)
 			(show_name no)
@@ -14425,18 +14588,7 @@
 				)
 			)
 		)
-		(property "PROD_ID" "CAP-14259"
-			(at 304.8 95.25 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Voltage" ""
+		(property "Voltage" "10V"
 			(at 308.61 82.5562 0)
 			(hide yes)
 			(show_name no)
@@ -14448,7 +14600,7 @@
 				(justify left)
 			)
 		)
-		(property "Tolerance" ""
+		(property "Tolerance" "10%"
 			(at 308.61 85.0962 0)
 			(hide yes)
 			(show_name no)
@@ -14458,6 +14610,39 @@
 					(size 1.27 1.27)
 				)
 				(justify left)
+			)
+		)
+		(property "Manufacturer" "Murata"
+			(at 306.07 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Part Number" "GRM21BR71A475KA73L"
+			(at 306.07 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Temperature Coefficient" "X7R"
+			(at 306.07 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
 			)
 		)
 		(pin "2"
