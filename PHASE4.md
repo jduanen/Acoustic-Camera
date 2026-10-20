@@ -2,14 +2,14 @@
 
 96-mic Underbrink-spiral array + single-FPGA front-end (one ALINX AC7200 module, Xilinx
 XC7A200T) doing the entire 96-channel CIC/FIR pipeline plus direct GbE/UDP packetization to
-the host — no cluster/hub split, no USB bridge. Physically two mating boards: `mic_array`
-(the 96-mic disc) and `front_end` (FPGA module, buck regulator, GbE PHY). RTL feasibility is
-confirmed on real placed/routed numbers; PCB layout is in progress. The original Multi-FPGA
-(Clustered) design (5× Xilinx 7-series FPGAs, USB bridge to a Raspberry Pi 5) is kept as a
-proven, already-working alternate — its RTL is fully implemented and verified, and it
-synthesizes/places/routes clean on real hardware.
+the host — no cluster/hub split, no USB bridge. This single-FPGA design is the current
+Phase 4 design. Physically it is two mating boards: `mic_array` (the 96-mic disc) and
+`front_end` (FPGA module, power regulation, GbE PHY). RTL feasibility is confirmed on real
+placed/routed numbers; the PCBs are being laid out and prepared for fabrication. The original
+Multi-FPGA (Clustered) design (5× Xilinx 7-series FPGAs, USB bridge to a Raspberry Pi 5) was
+breadboarded and its PCBs were laid out, but they were never built; it is kept for reference.
 Goal: full-performance acoustic camera meeting system requirements (200 Hz – 8 kHz, ±45° FoV,
-~5° resolution @ 1 kHz).
+~9.4° resolution @ 8 kHz, ~19° @ 4 kHz; see Array Geometry).
 
 ---
 
@@ -74,7 +74,7 @@ that stack together via board-to-board connectors:
 
 Both boards are managed as independent KiCad projects (`mic_array.kicad_pro`,
 `front_end.kicad_pro`) sharing one common project-local symbol/footprint library
-(`pcb/libraries/`). PCB layout is in progress; not yet fabricated.
+(`pcb/libraries/`). The PCBs are being laid out and prepared for fabrication.
 
 #### Device comparison
 
@@ -165,12 +165,12 @@ Adding 32 mics (96 → 128, 8 arms × 16) was evaluated:
 #### Considered and rejected: 350 mm aperture
 
 Increasing aperture from 300 mm to 350 mm was evaluated:
-- HPBW improvement: ~14% across all frequencies (e.g., 22° → 19° at 3 kHz) — modest
+- HPBW improvement: ~14% across all frequencies (e.g., 25° → ~21.5° at 3 kHz) — modest
 - Far-field distance increases: 4.2 m → 5.7 m at 8 kHz; at a typical 5 m working range the
   system would be operating in near-field at 8 kHz, introducing systematic DoA error
-- Spatial Nyquist drops: scaling 96 mics over a larger aperture increases min spacing from
-  ~21 mm to ~24.5 mm, dropping Nyquist from 8.2 kHz to ~7.0 kHz; restoring Nyquist requires
-  ~131 mics → rounds to 128
+- Spatial Nyquist drops: scaling the 96-mic spiral to 350 mm increases min spacing from
+  12.9 mm to ~15.1 mm, dropping Nyquist from ~13.3 kHz to ~11.4 kHz — still above the 8 kHz
+  target, so not a deciding factor
 - PCB is 17% larger; harder to mount at array center
 - Verdict: the far-field regression outweighs the HPBW gain for the first board; revisit with
   a larger mic count after Phase 4 field data is available
@@ -184,7 +184,8 @@ handling one quadrant of the array, plus 1 "hub" FPGA that aggregates their outp
 bridges it to a Raspberry Pi 5 over USB (see Host interface below) — the hub never speaks
 Ethernet itself.
 
-Kept as a proven, already-working alternate to the primary single-FPGA design (above).
+Superseded by the single-FPGA design (above). This design was breadboarded and its PCBs were
+laid out, but the boards were never built; it is kept for reference.
 Motivation (historical, i.e. why this was originally the primary design before the AC7200
 module made the single-FPGA path practical): a single-FPGA design needs the XC7A200T,
 which ships only in a 484-pin FBGA (`XC7A200T-1FBG484C`) — forcing a dev board at prototype
@@ -446,11 +447,24 @@ license — not Xilinx's TEMAC IP core, which turned out to need a separate lice
 doesn't bundle by default); a separate PHY chip handles the analog physical layer and
 provides the RGMII interface.
 
-**Chosen: Microchip KSZ9031RNX** — 48-pin QFN (no BGA reflow needed, unlike the other
-candidate below), real quoted price ~$3.70–5.96, RGMII, widely used in hobbyist designs.
-Marvell 88E1111 was considered and rejected: industry-standard and well-documented, but ships
-only in a 117-ball BGA package and has real, confirmed sourcing difficulty at low volume —
-neither advantage outweighs the extra BGA-assembly risk on a board that otherwise has none.
+**Chosen: TI DP83867IRRGZ** (U3 on `front_end`, schematic sheet `gbe.kicad_sch`) — 10/100/1000
+RGMII PHY, industrial temperature range (−40 to 85 °C), in a 48-pin 7 × 7 mm VQFN (0.5 mm pitch,
+4.1 mm exposed pad; no BGA reflow needed). As built:
+
+- **Supplies (two-supply mode):** VDDA2P5 = 2.5 V (`+2V5_ETH`, TLV75525 LDO), VDD1P0 = 1.0 V
+  (`+1V0_ETH`, TLV75510 LDO), VDDIO = 3.3 V (`+3V3_ETH`, TLV62569 buck at 3.32 V). The VDDA1P8
+  pins are left unconnected, as the datasheet requires in two-supply mode. Datasheet figures for
+  1000BASE-T: ~137 mA on 2.5 V and ~108 mA on 1.0 V, ~495 mW total.
+- **Clock:** 25 MHz crystal (Y1 on `front_end`).
+- **Line side:** HanRun HR911130A RJ45 magjack (J3).
+- **MAC side:** RGMII to the AC7200 module, with MDIO/MDC management.
+
+The PHY was originally specified as the Microchip KSZ9031RNX (48-pin QFN, RGMII) and changed to
+the DP83867 when the Ethernet interface was added to the schematic (2026-09-30), because the
+DP83867 is easier to source. Marvell 88E1111 was considered and rejected: industry-standard and
+well-documented, but ships only in a 117-ball BGA package and has real, confirmed sourcing
+difficulty at low volume — neither advantage outweighs the extra BGA-assembly risk on a board
+that otherwise has none.
 
 #### Master Clock — 12.288 MHz TCXO
 
@@ -536,11 +550,35 @@ Same as established in Phase 1 simulation (nb05–nb11):
 |---|---|
 | Mic count | 96 |
 | Pattern | Underbrink multi-arm log-spiral |
-| Arms × mics per arm | 12 × 8 (6 × 16 simulated as alternative in Phase 1) |
-| Aperture | ~300 mm diameter |
-| Min mic spacing | ~13 mm |
-| Spatial Nyquist | ~13 kHz (no aliasing within 8 kHz operating range) |
+| Arms × mics per arm | 12 × 8, α = 22° (chosen over 8 × 12 and 6 × 16 in Phase 1) |
+| Aperture | 300 mm diameter |
+| Min mic spacing | 12.94 mm |
+| Mean nearest-neighbour spacing | 18.5 mm |
+| Spatial Nyquist (*c* / 2*d*<sub>min</sub>) | ≈ 13.3 kHz (no aliasing within the 8 kHz operating range) |
 | Far-field distance | 0.52 m @ 1 kHz · 1.6 m @ 3 kHz · 4.2 m @ 8 kHz |
+
+Spacings are computed from the as-designed mic coordinates in `test/phase4/array_xy.csv`
+(the same file the PCB placement uses).
+
+Half-power beam width (delay-and-sum, broadside source), simulated from those coordinates:
+
+| Frequency | HPBW | Rule of thumb (58° × λ/D) |
+|---:|---:|---:|
+| 500 Hz | ~180° (omnidirectional) | 133° |
+| 1 kHz | 82° | 66° |
+| 1.5 kHz | 52° | 44° |
+| 2 kHz | 38° | 33° |
+| 3 kHz | 25° | 22° |
+| 4 kHz | 19° | 17° |
+| 6 kHz | 12.5° | 11° |
+| 8 kHz | 9.4° | 8.3° |
+| 10 kHz | 7.5° | 6.6° |
+| 12 kHz | 6.3° | 5.5° |
+
+The beam is circularly symmetric (azimuth and elevation HPBW agree to within 0.1°). The real
+beams are ~12–15% wider than the rule of thumb because the log-spiral concentrates mics toward
+the centre, shrinking the effective aperture. The array is useful from ~2 kHz (38°) up to its
+~13 kHz Nyquist limit.
 
 The geometry was optimized in Phase 1 simulation. The Underbrink pattern is preferred over a
 regular grid because its logarithmic spiral arm spacing suppresses grating lobes across the full
@@ -585,7 +623,7 @@ real-time; 20 for offline.
 
 The CSM itself (~5 ms for 128 snapshots) is not the bottleneck.
 
-**3°/pt is adequate for live display**: HPBW at 8 kHz ≈ 8° for a 300 mm aperture gives ~2.7
+**3°/pt is adequate for live display**: HPBW at 8 kHz ≈ 9.4° for this array gives ~3
 samples/lobe — sufficient for peak localization. Use 0.5°/pt for offline post-processing.
 
 #### Why Pi 5 (not Pi 4 or CM4)
@@ -764,23 +802,24 @@ design:
 ### Primary design — Single-FPGA (ALINX AC7200)
 
 No dev-board stage at all — the ALINX AC7200 module skips it (see Build strategy, above).
-Work splits into RTL (done) and the two-board PCB layout (in progress).
+Work splits into RTL (done) and the two-board PCB layout, which is being finalized and
+prepared for fabrication.
 
 | Sub-task | Status | Detail |
 |---|---|---|
 | **RTL: pipeline** | Done | 96-channel CIC+FIR, fully parallel, placed/routed clean (43.52% LUT) |
 | **RTL: GbE/UDP packetizer** | Done | `gbe_packetizer.v` + open-source RGMII MAC, placed/routed clean (48.14% LUT combined); bit-exact against golden model, both unit and end-to-end testbenches passing |
 | **Library consolidation** | Done | Shared `pcb/libraries/` (AC7200, AXK connectors, CDCLVC clock buffers, IM72D128, etc.), used by both `mic_array` and `front_end` projects |
-| **`mic_array` PCB layout** | In progress | 96× IM72D128 in the Underbrink spiral, PDM clock fan-out tree, local power regulation; footprints linked and synced from schematic, DRC-clean |
-| **`front_end` PCB layout** | In progress | AC7200 module footprint + carrier connectors, TLV62569DBV buck pre-regulator, KSZ9031RNX GbE PHY; DRC-clean aside from pre-existing unrelated issues (no board outline defined yet) |
+| **`mic_array` PCB layout** | In progress — re-routing | 96× IM72D128 in the Underbrink spiral (Ø320 mm, 4-layer), PDM clock fan-out tree, local power regulation; synced with schematic. Mic footprint corrected 2026-10-16 against the IM72D128 datasheet (pins 2/3 were swapped, pin-5 GND ring copper added, PG-LLGA-5-3 3D model), so every mic's VDD/CLOCK connections are being re-routed; not yet DRC-clean |
+| **`front_end` PCB layout** | Routed, DRC-clean | 120 × 120 mm, 4-layer. AC7200 module on CON1–4 (AXK680337YG), 2× TLV62569DBV bucks (+3V6, +3V3_ETH), TLV75525/TLV75510 LDOs (+2V5_ETH, +1V0_ETH), DP83867IRRGZ GbE PHY (7 × 7 mm VQFN); 0 DRC violations, 0 unconnected, synced with schematic; preparing for fabrication |
 | **Connector part numbers** | Done | AC7200 carrier headers CON1–4: Panasonic AXK680337YG (P5K, 3.0mm mated, bosses). mic_array ↔ front_end: J2 AXK5S80337YG socket / J1 AXK6S80637YG header (P5KS, 9.0mm mated, bosses). Boss-hole orientation vs pin 1 still to confirm against Panasonic's spec drawing |
-| **3D stack-up check** | Done — 2 issues fixed, re-route pending | Blender assembly animation of mic_array → front_end → AC7200 ([`cad/assembly/`](cad/assembly/README.md)); the mirrored AC7200 pads and the J1/J2 even/odd crossing are fixed in the footprints (2026-10-12); CON1–4 and J2 fan-out need re-routing |
-| **PCB fabrication + assembly** | Not started | Gated on layout completion |
+| **3D stack-up check** | Done — 2 issues fixed | Blender assembly animation of mic_array → front_end → AC7200 ([`cad/assembly/`](cad/assembly/README.md)); the mirrored AC7200 pads and the J1/J2 even/odd crossing were fixed in the footprints (2026-10-12) and the CON1–4/J2 fan-out has been re-routed |
+| **PCB fabrication + assembly** | Preparing | Both boards being prepared for fabrication; gated on final layout checks |
 
 ### Alternate design — Multi-FPGA (Clustered)
 
-Fully implemented and working on real hardware. Three parallel workstreams that merged at
-integration.
+Breadboarded with dev boards and PCBs laid out, but the boards were never built; superseded by
+the single-FPGA design above. Three parallel workstreams that merged at integration.
 
 #### Workstream 1 — Cluster tiles (Cmod A7-35T dev boards)
 
