@@ -3,7 +3,7 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "Original name IFX-PG-LLGA-5-4\n\nMax Component Height - 1.3mm")
+	(descr "Infineon IM72D128V01 (PG-LLGA-5-3, 4x3x1.2mm), bottom port. Land pattern per IM72D128V01 datasheet v1.01 Fig.13: pins 1/2 (DATA/VDD) share a column, 3/4 (CLOCK/SELECT) the other; pin 5 = copper GND ring R0.58-R1.04 around the 0.8mm sound port. Corrected 2026-10-16 (pads 2/3 were swapped; pin-5 ring copper was missing; 3D model was PG-LLGA-5-4 and offset). Footprint origin is 0.41mm from the package centre and 1.09mm from the port; the port is at (1.09, 0).")
 	(property "Reference" "Designator"
 		(at -2.3 -2.204 0)
 		(unlocked yes)
@@ -354,7 +354,7 @@
 		(thermal_bridge_angle 0)
 		(uuid "a049fa9e-759b-4ac8-96cd-f18fc539478c")
 	)
-	(pad "2" smd rect
+	(pad "3" smd rect
 		(at -1.09 0.85)
 		(size 0.45 0.75)
 		(layers "F.Cu" "F.Mask")
@@ -362,7 +362,7 @@
 		(thermal_bridge_angle 0)
 		(uuid "32be3d70-ad83-4169-939a-0970c793f103")
 	)
-	(pad "3" smd rect
+	(pad "2" smd rect
 		(at -0.39 -0.85)
 		(size 0.45 0.75)
 		(layers "F.Cu" "F.Mask")
@@ -378,19 +378,28 @@
 		(thermal_bridge_angle 0)
 		(uuid "6f9de954-68e9-4200-92df-0b35f0b8c1a9")
 	)
-	(pad "5" smd roundrect
-		(at 0.285 0)
+	(pad "5" smd custom
+		(at 0.28 0)
 		(size 0.4 0.4)
-		(layers "F.Cu" "F.Mask" "F.Paste")
-		(roundrect_rratio 0.5)
-		(solder_mask_margin 0.1016)
-		(thermal_bridge_angle 0)
-		(uuid "fc2ad0a1-e072-418d-b00b-a00cd6fd73d4")
+		(layers "F.Cu" "F.Mask")
+		(solder_mask_margin 0.05)
+		(options
+			(clearance outline)
+			(anchor circle)
+		)
+		(primitives
+			(gr_circle
+				(center 0.81 0)
+				(end 1.62 0)
+				(width 0.46)
+				(fill no)
+			)
+		)
 	)
 	(embedded_fonts no)
-	(model "/home/jdn/Code/Acoustic-Camera/lib/IM72D128V01/PG-LLGA-5-4_Z8B00190520_V03_3D.stp"
+	(model "${KIPRJMOD}/../IM72D128/infineon-pg-llga-5-3-3d-stp-package-en.stp"
 		(offset
-			(xyz 0 0 0)
+			(xyz 0.41 0 0)
 		)
 		(scale
 			(xyz 1 1 1)
