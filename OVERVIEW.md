@@ -159,10 +159,12 @@ the Pi 5. Rejected for the first board because:
 
 ### Supporting ICs
 
-* **GbE PHY**: needed only by the primary single-FPGA design — chosen: Microchip KSZ9031RNX
-  (48-QFN, no BGA, ~$4–6, RGMII ↔ FPGA MAC); Marvell 88E1111 considered and rejected (117-ball
-  BGA, real sourcing difficulty at low volume). The alternate design's hub has no GbE MAC/PHY
-  at all
+* **GbE PHY**: needed only by the primary single-FPGA design — chosen: TI DP83867IRRGZ
+  (48-pin 7 × 7 mm VQFN, no BGA, RGMII ↔ FPGA MAC, two-supply mode: 2.5 V + 1.0 V + 3.3 V VDDIO;
+  see PHASE4.md). Originally specified as the Microchip KSZ9031RNX; switched to the DP83867 because it
+  is easier to source; Marvell 88E1111 considered and
+  rejected (117-ball BGA, real sourcing difficulty at low volume). The alternate design's hub has
+  no GbE MAC/PHY at all
 * **Master clock**: 12.288 MHz TCXO (temperature-compensated oscillator)
   - ÷ 4 = 3.072 MHz PDM clock (exact)
   - × 4 via PLL = 49.152 MHz FPGA master; ÷ 1024 = 48.000 kHz word select (exact)
