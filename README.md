@@ -3,8 +3,9 @@
 A low-cost, high-performance acoustic camera: a microphone array computes a power map of the
 sound sources in a video camera's field of view and overlays it on the video in real time.
 Uses include locating vibration, gas leaks and electrical breakdown, and as a hearing aid for
-people who can no longer localize sound with one ear. Condensed from [README.md](./README.md);
-see the linked documents for detail.
+people who can no longer localize sound with one functional ear. 
+A full technical overview of the project can be found in [OVERVIEW.md](./OVERVIEW.md);
+see the linked documents for more detail.
 
 ## How it works
 
