@@ -1,15 +1,33 @@
 # Acoustic Camera — Project Summary
 
-A low-cost, high-performance acoustic camera: a microphone array computes a power map of the
-sound sources in a video camera's field of view and overlays it on the video in real time.
-Uses include locating vibration, gas leaks and electrical breakdown, and as a hearing aid for
-people who can no longer localize sound with one functional ear. 
+This project involves the design and implementation of a low-cost,
+high-performance acoustic camera: i.e., a microphone array computes a power map
+of the sound sources in a video camera's field of view and overlays it on the
+video in real time.
+
+Uses of such a device include locating vibration, gas leaks and electrical
+breakdown, and as a hearing aid for people who can no longer localize sound
+with one functional ear.
+
+One of the top-level objectives for this project is to explore the use of
+deep-learning models for this application and compare the performance and cost
+with that of traditional DSP-based beamforming algorithms.
+
 A full technical overview of the project can be found in [OVERVIEW.md](./OVERVIEW.md);
 see the linked documents for more detail.
 
+The Phase 3 prototype (4x4-mic array) unit looks like this:
+<br>
+<img src="assets/Phase3Back.jpg" width="384" height="510" /> <img src="assets/Phase3Front.jpg" width="384" height="510" />
+
+This is an animation of the current state of the Phase 4 (96-mic spiral array) version's PCBs: 
+![P4 PCBs](./assets/p4_pcbs.gif)
+
+See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
+
 ## How it works
 
-The array samples the sound field at every mic at once. For each candidate direction
+The microphone array samples the sound field at every mic at once. For each candidate direction
 (azimuth, elevation), a **steering vector** describes the expected phase pattern across the
 mics; a **beamformer** scores each direction against the measured **cross-spectral matrix
 (CSM)** and the scores form the energy map overlaid on the video.
@@ -34,7 +52,7 @@ band to cut noise. Details: [BACKGROUND.md](./BACKGROUND.md), [MIC_ARRAYS.md](./
 
 | Parameter | Target |
 |---|---|
-| Frequency range | 200 Hz – 8 kHz (useful imaging from ~2 kHz) |
+| Frequency range | 200 Hz: 8 kHz (useful imaging from ~2 kHz) |
 | Resolution (HPBW) | ~9.4° @ 8 kHz, ~19° @ 4 kHz, ~82° @ 1 kHz (simulated, Phase 4 array) |
 | Distance | ~0.5 m (far-field limit) to ~10 m |
 | Field of view | ±45° H, ±30° V, matched to the camera |
@@ -117,9 +135,9 @@ Needs real Phase 3/4 data to train and validate models.
   (Ben Wang) recovers mic positions and speed of sound. This project uses **Acoular** (Python)
   for parts of its beamforming work.
 
-## Open questions and TODOs (from the README)
+## Open questions and TODOs
 
-- Match camera optics to the array's FOV and resolution.
-- Partition processing between FPGA and host; choose final processing/display hardware.
-- Packaging; low-noise audio front-end layout.
-- Add-on arms to extend the aperture for better low-frequency resolution.
+- Match camera optics to the array's FOV and resolution
+- Partition processing between FPGA and host; choose final processing/display hardware
+- Packaging; low-noise audio front-end layout
+- Add-on arms to extend the aperture for better low-frequency resolution

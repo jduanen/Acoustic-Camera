@@ -1,18 +1,6 @@
-# Acoustic-Camera
-The design and implementation of a low-cost, high-performance, acoustic camera
+# Acoustic-Camera Project Overview
 
-An Acoustic Camera computes a power map of the sound scene that exists within a video camera's field of view and overlays it onto the video in real time.
-Capturing, visualizing, and tracking the position of sound sources is useful in a variety of different use cases, including the detection and localization of sources of vibration, gas leaks, electrical breakdown, etc. 
-Acoustic Cameras can also serve as a useful prosthetic device for people who have lost hearing in one ear and can no longer localize sound sources.
-
-The Phase 3 prototype (4x4-mic array) unit looks like this:
-<br>
-<img src="assets/Phase3Back.jpg" width="384" height="510" /> <img src="assets/Phase3Front.jpg" width="384" height="510" />
-
-This is an animation of the current state of the Phase 4 (96-mic spiral array) version's PCBs: 
-![P4 PCBs](./assets/p4_pcbs.gif)
-
-See an example of a commercial product here [Fluke](https://youtu.be/UPVcwDzhBZ8) and a low-cost consumer product here [Fotric](https://youtu.be/MBhJoPzHv2Y)
+This project involves the design and implementation of a low-cost, high-performance, acoustic camera -- i.e., a device that computes a power map of the sound scene that exists within a video camera's field of view and overlays it onto the video in real time.
 
 # Table of Contents
 
