@@ -57,6 +57,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U97–U108 | mic_array | CDCLVC1108 stage-2 clock buffers, one per arm (arm *n* = U(97+n)) |
 | C1–C96 | mic_array | 100 nF decoupling, one per mic VDD pin |
 | C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
+| C117–C137 | mic_array | 100 nF 0603 GND–MIC_3V3 clock return-path stitching caps on F.Cu (see PDM Clock Distribution) |
 | C97 | mic_array | 100 nF CLK_3V3 decoupling (TCXO / CDCLVC1112) |
 | C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
@@ -235,6 +236,16 @@ the 0.1 mm outer-layer microstrip). The two buffer stages already allow up to
 0.5 ns each of part-to-part skew. 0.85 ns is ≈0.3 µm of acoustic path, or
 0.006° at 20 kHz, and is negligible against the 326 ns PDM period for DATA
 capture.
+
+
+**Return path at clock layer changes.** The mic_array stackup is F.Cu / In1 GND /
+In2 MIC_3V3 / B.Cu, so a clock on B.Cu returns on the MIC_3V3 plane, not GND. At each
+F.Cu↔B.Cu clock via the return current has to cross between the two planes, which a GND
+via can't provide; a GND–MIC_3V3 capacitor next to the via does. C117–C137 (100 nF 0603,
+F.Cu, so the board stays single-sided) are placed 1.3–2.2 mm from the 21 clock vias
+that previously had no GND via or GND–MIC_3V3 cap within 10 mm, each pad dropping to its
+plane through its own via. Prefer
+keeping clocks on F.Cu when re-routing; any new layer change should get a cap like these.
 
 ---
 
