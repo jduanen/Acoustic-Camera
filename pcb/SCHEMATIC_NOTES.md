@@ -61,6 +61,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
+| R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
 | TP1–TP5 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3, TCXO_CLK |
 | Y1 | mic_array | 12.288 MHz TCXO |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
@@ -81,7 +82,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | L2, R13, R14 | front_end | U6's 2.2 µH inductor and 453 kΩ / 100 kΩ feedback divider |
 | C30, C31 | front_end | U6 input (4.7 µF) and output (10 µF) caps |
 | U4 | front_end | TLV75525PDBV LDO, +3V3_ETH → +2V5_ETH (EN tied to IN) |
-| U5 | front_end | AMS1117-1.0 LDO, +3V3_ETH → +1V0_ETH |
+| U5 | front_end | TLV75510PDRV LDO (WSON-6), +3V3_ETH → +1V0_ETH (EN tied to IN) |
 | C24, C25 | front_end | 10 µF input caps for U4, U5 |
 | U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH) |
 | TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
@@ -125,7 +126,7 @@ discussion below (kept for historical context only — see
  └─ U6 TLV62569 buck (L2 2.2 µH, R13/R14 = 453k/100k) → +3V3_ETH  (≈3.32 V)
       ├─ U3 DP83867 VDDIO (pins 19/30/41), MDIO pull-ups, PHY straps, J4 pin 2
       ├─ U4 TLV75525 LDO → +2V5_ETH  (U3 VDDA2P5)
-      └─ U5 AMS1117-1.0 LDO → +1V0_ETH  (U3 VDD1P0)
+      └─ U5 TLV75510 LDO → +1V0_ETH  (U3 VDD1P0)
 ```
 
 Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/Rbottom).
@@ -188,16 +189,31 @@ pins 1/2 and 3/4 swapped):
 
 ## PDM Clock Distribution — two-stage buffer tree
 
-The master clock is generated **on the mic_array board** and never
-crosses the inter-board connector — a change from the original single
-central-buffer plan, and it also drops the earlier ÷4 divider idea (the
-TCXO's 12.288 MHz drives the buffer tree directly):
+The reference oscillator sits **on the mic_array board**, but the FPGA
+generates the mic clock: Y1's 12.288 MHz goes across the inter-board
+connector to the FPGA (CON1), the FPGA divides it by 4 to a 50 %-duty
+3.072 MHz `PDM_CLK`, and `PDM_CLK` comes back across the connector to the
+buffer tree. 12.288 MHz must never reach the mics directly — the IM72D128's
+maximum clock is 5.04 MHz (2.9–3.3 MHz in its normal mode). Because the FPGA
+launches `PDM_CLK` itself, it captures DATA in the same clock domain.
+
+Both clocks use CON1 so CON2 and CON4 can stay unpopulated. CON1 has no free
+clock-capable (L11–L14) 3.3 V pin, so Y13 is a general I/O. The XDC therefore needs
+`set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets <TCXO_CLK IBUF net>]` to let it
+reach a BUFG/MMCM through fabric routing. The extra few hundred picoseconds of delay and
+jitter are irrelevant at 12.288 MHz in / 3.072 MHz out. Drive `PDM_CLK` (AB11) with
+low drive strength and slow slew, since it has no series resistor.
 
 ```
 Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
+ │   R15 33 Ω series → TCXO_CLK (TP5) → J1/J2 pin 41
+ │                    → CON1 pin 21, B13_L5_P, ball Y13 (3.3 V input)
+ │
+ FPGA ÷4 → PDM_CLK 3.072 MHz → CON1 pin 25, B13_L7_P, ball AB11 (3.3 V output)
+ │                    → J2/J1 pin 45 (pin 43 = GND between the two clocks)
  │
  ├─ Stage 1: U110 CDCLVC1112 (1:12 LVCMOS buffer)
- │     TCXO_CLK → ARM_00_CLK … ARM_11_CLK   (one output per arm)
+ │     PDM_CLK → ARM_00_CLK … ARM_11_CLK   (one output per arm)
  │
  └─ Stage 2: one CDCLVC1108 (1:8 LVCMOS buffer) per arm sheet
        (U97 in mic_arm_00, U98 in mic_arm_01, … U108 in mic_arm_11)
@@ -211,9 +227,12 @@ being a copy of the same template. Both buffer ICs have their
 output-enable pin pulled up locally (R13 for U110, R1–R12 for the arms'
 CDCLVC1108s) rather than driven from the FPGA.
 
-**Matched-length traces** from each buffer stage to its loads are still
-important above 1 MHz; keep CLK traces within ±5 mm of each other within
-a given fan-out stage.
+**Trace-length matching is not needed** at 3.072 MHz. As routed, the
+U110 → mic paths run 107–245 mm (a 138 mm spread, ≈0.85 ns at ≈6.2 ps/mm on
+the 0.1 mm outer-layer microstrip). The two buffer stages already allow up to
+0.5 ns each of part-to-part skew. 0.85 ns is ≈0.3 µm of acoustic path, or
+0.006° at 20 kHz, and is negligible against the 326 ns PDM period for DATA
+capture.
 
 ---
 
@@ -224,8 +243,9 @@ a given fan-out stage.
 | J1 | mic_array | Panasonic AXK6S80637YG (P5KS 80-pin header, 0.5mm pitch, 9.0mm mated height, positioning bosses) |
 | J2 | front_end | Panasonic AXK5S80337YG (mating P5KS socket, positioning bosses) |
 
-Carries all 48 DATA_nn nets plus +3V6 (pins 1–8) and GND (16 pins). No clock signal crosses
-this connector — see "PDM Clock Distribution" above.
+Carries all 48 DATA_nn nets plus +3V6 (pins 1–8), GND (16 pins, plus pin 43), and the two
+clocks: TCXO_CLK (pin 41, mic_array → FPGA) and PDM_CLK (pin 45, FPGA → mic_array) — see
+"PDM Clock Distribution" above. Pins 42 and 44–48 are unused.
 
 ---
 
