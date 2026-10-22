@@ -8,6 +8,14 @@ VIVADO_SETTINGS ?= /opt/Xilinx/Vivado/settings64.sh
 # whenever unisim primitives (IBUF/BUFG/OBUF -- see clk_reset.v) are
 # elaborated in xsim. Lives as a sibling of the Vivado install dir.
 GLBL_V ?= $(dir $(VIVADO_SETTINGS))../data/verilog/src/glbl.v
+# Vivado launcher for the build targets: sources settings64.sh and puts
+# Vivado's bundled libncurses.so.5 (gone from Ubuntu 26.04) on
+# LD_LIBRARY_PATH, then passes all arguments through to vivado.
+VIVADO ?= $(HOME)/bin/vivado.sh
+# The xsim targets run xvlog/xelab/xsim directly (vivado.sh only wraps
+# vivado), and they need the same bundled libraries.
+VIVADO_LIBS ?= $(dir $(VIVADO_SETTINGS))lib/lnx64.o/Ubuntu/24
+export LD_LIBRARY_PATH := $(VIVADO_LIBS)$(if $(LD_LIBRARY_PATH),:$(LD_LIBRARY_PATH))
 
 SHELL := /bin/bash
 .ONESHELL:
@@ -93,7 +101,7 @@ define XSIM_RUN_SINGLE_FPGA
 	fi
 endef
 
-.PHONY: sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-all clean-sim golden-test
+.PHONY: build-spike build-stage2-spike sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -136,6 +144,15 @@ sim-gbe-packetizer:
 
 sim-gbe-pipeline:
 	$(call XSIM_RUN_SINGLE_FPGA,../../multi_fpga/cluster/rtl/pdm_line_demux.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v tb_gbe_pipeline.v,tb_gbe_pipeline)
+
+# Single-FPGA Vivado batch builds (non-project mode; see each script's header).
+build-spike:
+	cd fpga/single_fpga/vivado
+	$(VIVADO) -mode batch -source build_spike.tcl -journal build_spike.jou -log build_spike.log
+
+build-stage2-spike:
+	cd fpga/single_fpga/vivado
+	$(VIVADO) -mode batch -source build_stage2_spike.tcl -journal build_stage2.jou -log build_stage2.log
 
 golden-test:
 	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
