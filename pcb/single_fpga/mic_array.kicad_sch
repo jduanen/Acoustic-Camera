@@ -1828,6 +1828,16 @@
 	)
 	(wire
 		(pts
+			(xy 236.22 158.75) (xy 233.68 158.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "06be3730-4490-4e2d-bdc5-63f3029344bb")
+	)
+	(wire
+		(pts
 			(xy 232.41 80.01) (xy 232.41 78.74)
 		)
 		(stroke
@@ -2068,16 +2078,6 @@
 	)
 	(wire
 		(pts
-			(xy 245.11 158.75) (xy 233.68 158.75)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "70eb1d76-8c7c-49cc-8a23-af30f51e9e5e")
-	)
-	(wire
-		(pts
 			(xy 123.19 176.53) (xy 130.81 176.53)
 		)
 		(stroke
@@ -2195,6 +2195,16 @@
 			(type default)
 		)
 		(uuid "a07440e5-10c6-40e7-ad3d-cfda62caffbf")
+	)
+	(wire
+		(pts
+			(xy 245.11 158.75) (xy 241.3 158.75)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a10e71e4-1eb7-43df-9d7d-53cf627c4315")
 	)
 	(wire
 		(pts
@@ -2800,7 +2810,7 @@
 			)
 		)
 	)
-	(global_label "TCXO_CLK"
+	(global_label "PDM_CLK"
 		(shape input)
 		(at 44.45 153.67 180)
 		(fields_autoplaced yes)
@@ -4723,6 +4733,96 @@
 		)
 	)
 	(symbol
+		(lib_id "PCM_SparkFun-Resistor:10k_0603")
+		(at 238.76 158.75 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "d2118895-dcb0-410d-b534-8b3372a21dc5")
+		(property "Reference" "R15"
+			(at 238.506 161.036 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "33"
+			(at 238.506 162.814 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "PCM_SparkFun-Resistor:R_0603_1608Metric"
+			(at 238.76 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "https://www.vishay.com/docs/20035/dcrcwe3.pdf"
+			(at 238.76 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Resistor"
+			(at 238.76 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "PROD_ID" ""
+			(at 238.76 158.75 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "884604f3-8b80-4458-b4ef-1e78bfb2cc6c")
+		)
+		(pin "2"
+			(uuid "e701593a-9f31-4458-ad94-f431dca8114b")
+		)
+		(instances
+			(project "mic_array"
+				(path "/12638caa-1907-413e-8e98-06abbbf6ccbc"
+					(reference "R15")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
 		(lib_id "power:GND")
 		(at 251.46 80.01 0)
 		(unit 1)
@@ -5477,11 +5577,10 @@
 		(members "037b9d72-3a26-4b57-b4f1-7b49782951f6" "05ed405e-4e2d-4c21-a71c-ef22bede9a70"
 			"0c43ee04-cf33-4ec3-bc90-01842c8c47bc" "11e1f8a7-ccbe-4f93-bf34-baac9ccea104"
 			"1441a65f-9e0a-4fbb-9aea-91c889fb87a2" "2dcf9488-30b2-46b5-a3ec-ca4687c223e3"
-			"58925e13-98d6-4727-a72d-7bd5fa21d73c" "70eb1d76-8c7c-49cc-8a23-af30f51e9e5e"
-			"8e39dec4-fa64-4bba-9b80-4e4136f1cc73" "8f39ad8a-ff66-4761-9ffd-615b8819a5d3"
-			"d14e62a1-58d3-4051-bd6e-e48ef22b8999" "d1973912-4cfb-491e-a741-fa687ac05d13"
-			"d5799d01-5e4b-4364-9530-a008c6d06132" "dcc917c2-c356-4014-b24e-954f046c8e7b"
-			"f8c53211-524a-4a72-9661-10537c9aa3c7"
+			"58925e13-98d6-4727-a72d-7bd5fa21d73c" "8e39dec4-fa64-4bba-9b80-4e4136f1cc73"
+			"8f39ad8a-ff66-4761-9ffd-615b8819a5d3" "d14e62a1-58d3-4051-bd6e-e48ef22b8999"
+			"d1973912-4cfb-491e-a741-fa687ac05d13" "d5799d01-5e4b-4364-9530-a008c6d06132"
+			"dcc917c2-c356-4014-b24e-954f046c8e7b" "f8c53211-524a-4a72-9661-10537c9aa3c7"
 		)
 	)
 	(group ""
