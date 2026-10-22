@@ -74,7 +74,24 @@ xelab.pb
 xsim.dir/
 clockInfo.txt
 demo/
-vivado/
+# Vivado run scratch, except the single-FPGA build scripts (used by
+# `make build-spike` / `make build-stage2-spike`).
+**/vivado/*
+!fpga/single_fpga/vivado/*.tcl
 pcb/multi_fpga/gerbers/
 .Xil/
 *.bak
+
+# files that aren't used
+CDCLVC1108PW/
+CDCLVC1112PW/
+MAB/
+FEB/
+cad/eec/
+cad/AXK680337YG/
+cad/AXK680337YG--3DModel-STEP-56544.STEP
+cad/assembly/stack_assembly.blend1
+pcb/multi_fpga/tools/fixup.py
+cleanup.sh
+report.txt
+xilinx.txt
