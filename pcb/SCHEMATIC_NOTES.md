@@ -203,6 +203,8 @@ clock-capable (L11–L14) 3.3 V pin, so Y13 is a general I/O. The XDC therefore 
 reach a BUFG/MMCM through fabric routing. The extra few hundred picoseconds of delay and
 jitter are irrelevant at 12.288 MHz in / 3.072 MHz out. Drive `PDM_CLK` (AB11) with
 low drive strength and slow slew, since it has no series resistor.
+These constraints are in
+[`fpga/single_fpga/xdc/single_fpga_top.xdc`](../fpga/single_fpga/xdc/single_fpga_top.xdc).
 
 ```
 Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
