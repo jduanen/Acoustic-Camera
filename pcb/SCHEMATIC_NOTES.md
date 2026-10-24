@@ -203,8 +203,9 @@ Both clocks use CON1 so CON2 and CON4 can stay unpopulated. CON1 has no free
 clock-capable (L11–L14) 3.3 V pin, so Y13 is a general I/O. The XDC therefore needs
 `set_property CLOCK_DEDICATED_ROUTE FALSE [get_nets <TCXO_CLK IBUF net>]` to let it
 reach a BUFG/MMCM through fabric routing. The extra few hundred picoseconds of delay and
-jitter are irrelevant at 12.288 MHz in / 3.072 MHz out. Drive `PDM_CLK` (AB11) with
-low drive strength and slow slew, since it has no series resistor.
+jitter are irrelevant at 12.288 MHz in / 3.072 MHz out. Drive `PDM_CLK` (AB11) at
+DRIVE 12, SLEW SLOW: U110 needs >= 1 V/ns input slew into ~15-17 pF of unterminated
+line, and the 12 mA output impedance roughly matches the ~40-45 ohm trace.
 These constraints are in
 [`fpga/single_fpga/xdc/single_fpga_top.xdc`](../fpga/single_fpga/xdc/single_fpga_top.xdc).
 

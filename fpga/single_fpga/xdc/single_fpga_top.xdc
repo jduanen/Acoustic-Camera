@@ -18,7 +18,7 @@ set_property CFGBVS VCCO [current_design]
 set_property CONFIG_VOLTAGE 3.3 [current_design]
 
 set_property -dict {PACKAGE_PIN Y13 IOSTANDARD LVCMOS33} [get_ports TCXO_CLK]
-set_property -dict {PACKAGE_PIN AB11 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports PDM_CLK]
+set_property -dict {PACKAGE_PIN AB11 IOSTANDARD LVCMOS33 DRIVE 12 SLEW SLOW} [get_ports PDM_CLK]
 
 create_clock -period 81.380 -name TCXO_CLK [get_ports TCXO_CLK]
 
@@ -33,5 +33,8 @@ create_clock -period 81.380 -name TCXO_CLK [get_ports TCXO_CLK]
 # with Place 30-574 rather than passing silently.
 set_property -quiet CLOCK_DEDICATED_ROUTE FALSE [get_nets -quiet TCXO_CLK_IBUF]
 
-# PDM_CLK has no series resistor on front_end (only J2 -> CON1, ~24 mm), so
-# it uses low drive + slow slew (set above) to soften its edges.
+# PDM_CLK drives ~67 mm of unterminated trace (front_end CON1 -> J2 -> mic_array
+# U110 CLKIN) plus TP8, ~15-17 pF in all. U110 (CDCLVC1112) needs >= 1 V/ns input
+# slew, which DRIVE 4 couldn't guarantee into that load. DRIVE 12's output
+# impedance is close to the ~40-45 ohm trace, so the source is roughly matched;
+# SLEW SLOW keeps the edges no faster than they need to be.
