@@ -58,6 +58,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C1–C96 | mic_array | 100 nF decoupling, one per mic VDD pin |
 | C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
 | C117–C137 | mic_array | 100 nF 0603 GND–MIC_3V3 clock return-path stitching caps on F.Cu (see PDM Clock Distribution) |
+| C138–C156 | mic_array | 100 nF 0603 extra CLK_3V3 decoupling for U110 and the arm CDCLVC1108s (in `misc.kicad_sch`; see PDM Clock Distribution) |
 | C97 | mic_array | 100 nF CLK_3V3 decoupling (TCXO / CDCLVC1112) |
 | C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
@@ -85,7 +86,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U4 | front_end | TLV75525PDBV LDO, +3V3_ETH → +2V5_ETH (EN tied to IN) |
 | U5 | front_end | TLV75510PDRV LDO (WSON-6), +3V3_ETH → +1V0_ETH (EN tied to IN) |
 | C24, C25 | front_end | 10 µF input caps for U4, U5 |
-| U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH) |
+| U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH); 4.1 mm exposed pad has 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) |
 | TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
 | J2 | front_end | Inter-board connector (AXK5S80337YG socket, mates J1) |
 
@@ -242,10 +243,19 @@ capture.
 In2 MIC_3V3 / B.Cu, so a clock on B.Cu returns on the MIC_3V3 plane, not GND. At each
 F.Cu↔B.Cu clock via the return current has to cross between the two planes, which a GND
 via can't provide; a GND–MIC_3V3 capacitor next to the via does. C117–C137 (100 nF 0603,
-F.Cu, so the board stays single-sided) are placed 1.3–2.2 mm from the 21 clock vias
+F.Cu, so the board stays single-sided) are placed 1.0–2.6 mm from the 21 clock vias
 that previously had no GND via or GND–MIC_3V3 cap within 10 mm, each pad dropping to its
 plane through its own via. Prefer
 keeping clocks on F.Cu when re-routing; any new layer change should get a cap like these.
+
+
+**Buffer decoupling.** Each CDCLVC11xx VDD pin should have a cap within ~1–2 mm, but on
+F.Cu the area outside the VDD pins is taken by the fanning-out clock outputs. C138–C156
+(19 × 100 nF, F.Cu, in `misc.kicad_sch`) are tied into the CLK_3V3 trace that runs under
+each buffer and bring every VDD pin of U110 and of U97–U102, U104 and U106–U108 to within
+2.0–5.8 mm of a cap (previously up to 9–13 mm). U103 and U105 had no room and still have
+pins 10/14 about 9 mm from C108/C110. Opening space around those two buffers, or adding
+caps on B.Cu under them, is the remaining improvement.
 
 ---
 
