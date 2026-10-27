@@ -64,7 +64,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
 | R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
-| TP1–TP5 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3, TCXO_CLK |
+| TP1–TP4 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3 (TCXO_CLK is probed at front_end TP7) |
 | Y1 | mic_array | 12.288 MHz TCXO |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
 | VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs (+3V6 in) — separate MIC_3V3 and CLK_3V3 rails |
@@ -74,7 +74,8 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U2 | front_end (PCB only) | AC7200 SOM mechanical footprint (not in the schematic or BOM) |
 | J3 | front_end | HanRun HR911130A RJ45 magjack (GbE) |
 | J4 | front_end | 2×7 2 mm JTAG header |
-| Y1 | front_end | 25 MHz crystal for the DP83867 (front_end's Y1; unrelated to mic_array's Y1) |
+| Y1 | front_end | 25 MHz crystal for the DP83867, `Device:Crystal_GND24` on a 3225 4-pad footprint (part still to be chosen; see "GbE PHY, RGMII and Y1") — unrelated to mic_array's Y1 |
+| C12, C13 | front_end | 18 pF Y1 load caps (C12 on XO, C13 on XI) |
 | J1 | front_end | +5V/GND main power input (front_end's J1; unrelated to mic_array's J1) |
 | C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
 | U1 | front_end | TLV62569DBV buck, +5V → +3V6 |
@@ -88,11 +89,17 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C24, C25 | front_end | 10 µF input caps for U4, U5 |
 | U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH); 4.1 mm exposed pad has 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) |
 | TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
+| TP7, TP8 | front_end | Clock test points: TCXO_CLK (2.6 mm stub, near CON1.21) and PDM_CLK (3.7 mm stub, near CON1.25) |
+| TP9, TP10 | front_end | GND test points; TP9 is the probe ground for TP7/TP8 (5–6 mm away) |
+| D1 | front_end | Broadcom ASMB-MTB0-0A3A2 common-anode RGB status LED (PLCC-4), anode on +5V; see "Status LED" |
+| Q1–Q3 | front_end | 2N7002 low-side switches for D1's red, green, blue cathodes (gates = LED_R/G/B) |
+| R16–R18 | front_end | D1 cathode current limits (0603): 620 Ω (red), 390 Ω (green), 390 Ω (blue), ≈5 mA each |
+| R19–R21 | front_end | 100 kΩ gate pull-downs (0603) on Q1–Q3 (LED off until the FPGA drives it) |
 | J2 | front_end | Inter-board connector (AXK5S80337YG socket, mates J1) |
 
 Mic numbering is a clean U1–U96 block (mic index + 1); the twelve per-arm
 CDCLVC1108 buffers follow as U97–U108. The two boards are annotated
-independently, so some references (J1, R1–R13, C1–C31, U1–U6, TP1–TP5, Y1)
+independently, so some references (J1, R1–R13, C1–C31, U1–U6, TP1–TP4, Y1)
 exist on both boards as different parts.
 
 ---
@@ -211,10 +218,10 @@ These constraints are in
 
 ```
 Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
- │   R15 33 Ω series → TCXO_CLK (TP5) → J1/J2 pin 41
+ │   R15 33 Ω series → TCXO_CLK → J1/J2 pin 41 (probe at front_end TP7)
  │                    → CON1 pin 21, B13_L5_P, ball Y13 (3.3 V input)
  │
- FPGA ÷4 → PDM_CLK 3.072 MHz → CON1 pin 25, B13_L7_P, ball AB11 (3.3 V output)
+ FPGA ÷4 → PDM_CLK 3.072 MHz → CON1 pin 25, B13_L7_P, ball AB11 (3.3 V output; TP8)
  │                    → J2/J1 pin 45 (pin 43 = GND between the two clocks)
  │
  ├─ Stage 1: U110 CDCLVC1112 (1:12 LVCMOS buffer)
@@ -232,13 +239,23 @@ being a copy of the same template. Both buffer ICs have their
 output-enable pin pulled up locally (R13 for U110, R1–R12 for the arms'
 CDCLVC1108s) rather than driven from the FPGA.
 
-**Trace-length matching is not needed** at 3.072 MHz. As routed, the
-U110 → mic paths run 107–245 mm (a 138 mm spread, ≈0.85 ns at ≈6.2 ps/mm on
-the 0.1 mm outer-layer microstrip). The two buffer stages already allow up to
-0.5 ns each of part-to-part skew. 0.85 ns is ≈0.3 µm of acoustic path, or
-0.006° at 20 kHz, and is negligible against the 326 ns PDM period for DATA
-capture.
+**Clock trace lengths.** Matching isn't functionally required at 3.072 MHz: the
+mics' own DATA-valid delay varies 40–100 ns part to part, the two buffer stages allow
+0.5 ns part-to-part skew each, and 1 ns of skew is ≈0.3 µm of acoustic path (0.006° at
+20 kHz). The tree was still balanced to tidy the skew. Lengths include vias at 1.545 mm
+each (F.Cu↔B.Cu copper-centre span of this stackup):
 
+| U110 → mic path | Before | As routed now |
+|---|---|---|
+| Range | 110.0–234.9 mm | 195.0–234.9 mm |
+| Spread | 124.9 mm (~0.77 ns) | 40.0 mm (~0.25 ns) |
+| Std dev | 27.5 mm | 13.1 mm |
+
+How: every ARM_nn_CLK except ARM_08 was lengthened so each arm's longest U110 → mic path
+is ~234.9 mm (ARM_08 sets the target), then the 17 shortest MIC_CLK_nn paths were
+lengthened to a 195 mm floor. Further reduction costs ~7+ traces and ~100+ mm of meander
+per 5 mm of spread, so it stops here. Feed nets (both boards, excluding J1/J2):
+TCXO_CLK ≈56 mm, PDM_CLK ≈80 mm.
 
 **Return path at clock layer changes.** The mic_array stackup is F.Cu / In1 GND /
 In2 MIC_3V3 / B.Cu, so a clock on B.Cu returns on the MIC_3V3 plane, not GND. At each
@@ -257,6 +274,82 @@ each buffer and bring every VDD pin of U110 and of U97–U102, U104 and U106–U
 2.0–5.8 mm of a cap (previously up to 9–13 mm). U103 and U105 had no room and still have
 pins 10/14 about 9 mm from C108/C110. Opening space around those two buffers, or adding
 caps on B.Cu under them, is the remaining improvement.
+
+---
+
+## GbE PHY, RGMII and Y1 (front_end)
+
+**RGMII pin assignment.** The whole TX group is in FPGA bank 16 on CON3: TXC on CON3.14
+(B16_L23_N) and TX_CTL on CON3.12 (B16_L23_P, the other half of TXC's pin pair), with
+TXD0–TXD3. TX_CTL was originally on CON1.22 (bank 13); that pin is now unused. RXC is on
+CON3.15 (B15_L12_P, MRCC), RX_CTL on CON3.2 (B15_IO25, same bank as RXC), RXD0–RXD3 in
+bank 16.
+
+**RGMII lengths** (front_end only; the AC7200 module's internal routing is unknown and
+adds to these):
+
+| Group | Clock | Worst data/ctl vs clock |
+|---|---|---|
+| TX | TXC 54.6 mm | 1.8 mm (~11 ps), TXD0 |
+| RX | RXC 37.1 mm | 4.4 mm (~27 ps), RXD1 |
+
+**U3 exposed pad.** 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) are marked
+**filled and capped** (IPC-4761 Type VII) in their via properties; every other via uses
+the board default (tented both sides). ODB++ export carries this as
+`filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (17 vias each). Gerber + Excellon do
+**not** — for a Gerber order, send the fab note that sits on User.Drawings below the
+board outline, or put it in the order comments. User.Drawings isn't in the board's saved
+Gerber plot layers yet; tick it in File → Plot and save the board to include it.
+
+**Y1 crystal circuit.** Y1 uses `Device:Crystal_GND24` on
+`Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm`: crystal on pads **1 (XO) and 3 (XI)**
+(diagonal), pads **2 and 4 to GND** (each with a GND via, 1.05 mm and 1.8 mm away). It
+originally used the 2-pin `Device:Crystal`, which put XI on pad 2 — a case/ground pad on
+standard 3225 crystals — so it would not have oscillated. Y1 sits 5.4–5.8 mm from U3 pins
+14/15; XI is 9.35 mm and XO 10.02 mm, F.Cu, no vias; C12 is 1.6 mm and C13 3.3 mm from
+their Y1 pads.
+
+**Y1 part requirements** (no part number has been chosen yet; DP83867 datasheet
+Table 9-3 / §9.2.1.3):
+
+| Parameter | Requirement |
+|---|---|
+| Frequency | 25 MHz, fundamental, parallel resonant |
+| Frequency tolerance over operating temperature | ±50 ppm max (±20–30 ppm parts recommended for margin) |
+| Frequency stability, 1-year aging | ±50 ppm max |
+| Package / pinout | 3.2 × 2.5 mm, 4 pads, crystal between pads 1 and 3, pads 2/4 GND or case — confirm against the chosen part's datasheet |
+| Load capacitance (CL) | Match to C12/C13: **12 pF** with the fitted 18 pF caps (≈18/2 + ~3 pF stray), or TI's recommended **18 pF** with C12/C13 changed to ~27 pF |
+| Temperature range | Cover the board's operating range; the tolerance above must hold over it |
+
+Typical families that fit: Abracon ABM8, NDK NX3225SA, ECS-250-…-CKM. When chosen, add
+its manufacturer part number to Y1 in `gbe.kicad_sch` and set C12/C13 to its recommended
+load caps.
+
+---
+
+## Status LED (front_end)
+
+D1 is an RGB LED the FPGA uses to show operating state. It sits on F.Cu beside the RJ45
+(J3), just inside the bottom edge, with Q1–Q3 and R16–R21 in a row to its right. The
+three drive nets come from free bank-13 (3.3 V) pins on CON1:
+
+| Net | CON1 pin | Bank pin | FPGA ball |
+|---|---|---|---|
+| LED_R | 32 | B13_L6_P | W14 |
+| LED_G | 33 | B13_L3_N | AB13 |
+| LED_B | 34 | B13_L6_N | Y14 |
+
+- **Drive:** common anode on +5V; each cathode goes through its current-limit resistor
+  (R16–R18) to a 2N7002 (Q1–Q3) that the FPGA pin switches. A 3.3 V pin can't fully
+  forward-bias the ≈3.0 V green and blue dies, so they are switched from +5V instead;
+  +5V never reaches an FPGA pin.
+- **Polarity:** active high — driving LED_x to 1 turns that colour on. The 100 kΩ
+  pull-downs (R19–R21) keep the LED off while the FPGA is unpowered or unconfigured.
+- **Current:** ≈5 mA per colour (red Vf ≈2.0 V → 620 Ω; green/blue Vf ≈3.0 V → 390 Ω).
+  Adjust R16–R18 for brightness or colour balance; the FET's few-ohm Rds(on) at 3.3 V
+  gate drive is negligible.
+- **FPGA constraints:** `fpga/single_fpga/xdc/single_fpga_top.xdc`, LVCMOS33, DRIVE 4,
+  SLEW SLOW (gate load only). The AC7200's own user LED (ball W5, bank 34) is separate.
 
 ---
 
@@ -298,16 +391,17 @@ B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
 
 ## Status (as of the schematics/layouts on disk)
 
-- **mic_array.kicad_pcb**: routed; synced with the schematic, and DRC-clean
-  (0 violations, 0 unconnected) after the J1 change to AXK6S80637YG.
-- **front_end.kicad_pcb**: routed apart from the connector changes, and synced
-  with the schematic. Still open:
-  - re-route the CON1–CON4 and J2 fan-out (the old U2 footprint was mirrored and
-    J2's odd/even rows swapped, so the old traces no longer match the pads);
-  - delete the old via stubs under CON1/CON2;
-  - route the new U4 (SOT-23-5, EN tied to IN) and test points TP3–TP6.
-- **Before fab:** confirm the J1/J2 boss-hole orientation relative to pin 1
-  against Panasonic's product specification drawing (see `cad/assembly/README.md`).
+- **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
+  entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
+- **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
+  including the status LED (LED_R/G/B ≈114/99/93 mm from CON1.32–34, two vias each).
+- **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
+- **Before fab:**
+  - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;
+  - add User.Drawings to the front_end Gerber plot layers (or send ODB++) so the U3
+    filled/capped-via note reaches the fab;
+  - confirm the J1/J2 boss-hole orientation relative to pin 1 against Panasonic's
+    product specification drawing (see `cad/assembly/README.md`).
 
 ---
 

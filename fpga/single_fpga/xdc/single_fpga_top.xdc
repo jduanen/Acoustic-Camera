@@ -38,3 +38,14 @@ set_property -quiet CLOCK_DEDICATED_ROUTE FALSE [get_nets -quiet TCXO_CLK_IBUF]
 # slew, which DRIVE 4 couldn't guarantee into that load. DRIVE 12's output
 # impedance is close to the ~40-45 ohm trace, so the source is roughly matched;
 # SLEW SLOW keeps the edges no faster than they need to be.
+
+# Status RGB LED (front_end D1, pcb/SCHEMATIC_NOTES.md "Status LED"). Each pin
+# drives the gate of a 2N7002 that sinks one cathode of the common-anode LED on
+# +5V: active high (1 = colour on); 100k gate pull-downs keep it off until the
+# FPGA is configured. Gate load only, so minimum drive.
+#   LED_R  CON1 pin 32  B13_L6_P  W14   (bank 13, VCCO 3.3V)
+#   LED_G  CON1 pin 33  B13_L3_N  AB13  (bank 13, VCCO 3.3V)
+#   LED_B  CON1 pin 34  B13_L6_N  Y14   (bank 13, VCCO 3.3V)
+set_property -dict {PACKAGE_PIN W14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_R]
+set_property -dict {PACKAGE_PIN AB13 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_G]
+set_property -dict {PACKAGE_PIN Y14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_B]
