@@ -39,6 +39,14 @@ set_property -quiet CLOCK_DEDICATED_ROUTE FALSE [get_nets -quiet TCXO_CLK_IBUF]
 # impedance is close to the ~40-45 ohm trace, so the source is roughly matched;
 # SLEW SLOW keeps the edges no faster than they need to be.
 
+# PDM_CLK is a forwarded clock (single_fpga_top.v's pdm_div[1] -> OBUF), not data:
+# U110 is a buffer with no setup/hold window, so a set_output_delay on it would be a
+# made-up number. Declare it as the TCXO/4 generated clock instead (3.072 MHz,
+# 325.52 ns). This also satisfies Vivado's TIMING-18 check on the port, and is the
+# reference the mic DATA_nn set_input_delay constraints will use once those pins are
+# constrained (FPGA clock-to-out + buffer tree + IM72D128 tDV + return trace).
+create_generated_clock -name PDM_CLK -source [get_ports TCXO_CLK] -divide_by 4 [get_ports PDM_CLK]
+
 # Status RGB LED (front_end D1, pcb/SCHEMATIC_NOTES.md "Status LED"). Each pin
 # drives the gate of a 2N7002 that sinks one cathode of the common-anode LED on
 # +5V: active high (1 = colour on); 100k gate pull-downs keep it off until the
@@ -49,3 +57,6 @@ set_property -quiet CLOCK_DEDICATED_ROUTE FALSE [get_nets -quiet TCXO_CLK_IBUF]
 set_property -dict {PACKAGE_PIN W14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_R]
 set_property -dict {PACKAGE_PIN AB13 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_G]
 set_property -dict {PACKAGE_PIN Y14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports LED_B]
+# Nothing samples the LED pins -- they change at human-visible rates -- so there is no
+# timing requirement to meet. Exclude them from timing analysis.
+set_false_path -to [get_ports {LED_R LED_G LED_B}]
