@@ -350,6 +350,9 @@ three drive nets come from free bank-13 (3.3 V) pins on CON1:
   gate drive is negligible.
 - **FPGA constraints:** `fpga/single_fpga/xdc/single_fpga_top.xdc`, LVCMOS33, DRIVE 4,
   SLEW SLOW (gate load only). The AC7200's own user LED (ball W5, bank 34) is separate.
+- **Colours** (`fpga/single_fpga/rtl/status_led.v`): YELLOW while in reset, GREEN once
+  running, GREEN/BLUE alternating (≈171 ms each) while packets are going out, reverting to
+  GREEN ≈0.34 s after they stop. RED alone is reserved for a future fault indication.
 
 ---
 

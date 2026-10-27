@@ -34,6 +34,12 @@ working alternate, staged in three parts:
   (`sim-gbe-packetizer`, `sim-gbe-pipeline`).
 - **Stage 3** (carrier-board PCB for the AC7200 module) has not been started — see
   `pcb/single_fpga/`.
+- **Board top** (`rtl/single_fpga_top.v`, constrained by `xdc/single_fpga_top.xdc`): TCXO_CLK
+  in, PDM_CLK = TCXO/4 out, power-on reset, and the front-end status LED (`rtl/status_led.v`:
+  YELLOW in reset, GREEN running, GREEN/BLUE alternating while packets are going out;
+  outputs active high; `sim-status-led`). The pipeline and MAC aren't instantiated in it yet.
+  `make build-top` runs `vivado/build_top.tcl` through to a bitstream
+  (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
 
 The MAC is `alexforencich/verilog-ethernet` (MIT license), vendored unmodified — see
 `rtl/third_party/verilog-ethernet/README.md` for provenance and why it was chosen over

@@ -101,7 +101,7 @@ define XSIM_RUN_SINGLE_FPGA
 	fi
 endef
 
-.PHONY: build-spike build-stage2-spike sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-all clean-sim golden-test
+.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -145,6 +145,9 @@ sim-gbe-packetizer:
 sim-gbe-pipeline:
 	$(call XSIM_RUN_SINGLE_FPGA,../../multi_fpga/cluster/rtl/pdm_line_demux.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v tb_gbe_pipeline.v,tb_gbe_pipeline)
 
+sim-status-led:
+	$(call XSIM_RUN_SINGLE_FPGA,../rtl/status_led.v tb_status_led.v,tb_status_led)
+
 # Single-FPGA Vivado batch builds (non-project mode; see each script's header).
 build-spike:
 	cd fpga/single_fpga/vivado
@@ -154,10 +157,14 @@ build-stage2-spike:
 	cd fpga/single_fpga/vivado
 	$(VIVADO) -mode batch -source build_stage2_spike.tcl -journal build_stage2.jou -log build_stage2.log
 
+build-top:
+	cd fpga/single_fpga/vivado
+	$(VIVADO) -mode batch -source build_top.tcl -journal build_top.jou -log build_top.log
+
 golden-test:
 	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="
