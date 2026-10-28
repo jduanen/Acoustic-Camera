@@ -101,6 +101,22 @@ set_multicycle_path -hold  -end 1 -from [get_clocks PDM_CLK] -to [get_clocks TCX
 # analysis and limits launches to the two TCXO edges that actually make a PDM_CLK edge.
 create_waiver -type METHODOLOGY -id {TIMING-18} -user single_fpga -objects [get_ports {DATA[*]}] \
     -description {DATA input delays are referenced to PDM_CLK (the forwarded clock that launches them), not TCXO_CLK}
+
+# Sampler -> pipeline (rtl/single_fpga_top.v "Pipeline clock"). pipe_clk is TCXO_CLK
+# through a BUFGCE, so STA times these as same-clock, single-cycle paths -- and the
+# BUFG/BUFGCE skew (both fabric-fed from the non-clock-capable pin) then fails hold by
+# ~0.1 ns. The real relationship is fixed by the logic, not by any parameter: pdm_l/pdm_r
+# change only on the TCXO edge where pdm_div goes 0->1 (pdm_sampler's div_r == 3 branch;
+# reset holds them at their initial 0), and pipe_clk rises only where it goes 2->3. So
+# each new value is captured two TCXO cycles after launch (setup -end 2), and the latest
+# capture it could disturb is two cycles before launch (hold -end 3: the hold edge moves
+# back from launch + 1 cycle, where setup 2 leaves it, to launch - 2). Cells are named
+# explicitly: Vivado's -filter globs don't support [lr]-style classes. While nothing
+# consumes the pipeline (no MAC yet) synthesis trims these cells, and -quiet doesn't stop
+# synthesis noting "Empty from list" (Synth 8-3321) for the first line; that goes away
+# once the pipeline drives the MAC.
+set_multicycle_path -quiet -setup -end 2 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*]}]
+set_multicycle_path -quiet -hold  -end 3 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*]}]
 set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {DATA[0]}]  ;# CON3.5  B15_L4_P
 set_property -dict {PACKAGE_PIN G18 IOSTANDARD LVCMOS33} [get_ports {DATA[1]}]  ;# CON3.7  B15_L4_N
 set_property -dict {PACKAGE_PIN G15 IOSTANDARD LVCMOS33} [get_ports {DATA[2]}]  ;# CON3.11 B15_L2_P
