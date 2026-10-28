@@ -55,7 +55,7 @@ module single_fpga_top #(
     always @(posedge clk)
         pipe_ce <= (pdm_div == 2'd1);
     wire pipe_clk;
-    BUFGCE bufgce_pipe (.I(TCXO_CLK), .CE(pipe_ce), .O(pipe_clk));
+    BUFGCE #(.SIM_DEVICE("7SERIES")) bufgce_pipe (.I(TCXO_CLK), .CE(pipe_ce), .O(pipe_clk));
 
     reg [$clog2(POR_CYCLES+1)-1:0] por_cnt = 0;
     reg                            rst     = 1'b1;
