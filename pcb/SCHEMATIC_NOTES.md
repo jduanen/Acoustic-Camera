@@ -240,7 +240,7 @@ output-enable pin pulled up locally (R13 for U110, R1–R12 for the arms'
 CDCLVC1108s) rather than driven from the FPGA.
 
 **Clock trace lengths.** Matching isn't functionally required at 3.072 MHz: the
-mics' own DATA-valid delay varies 40–100 ns part to part, the two buffer stages allow
+mics' own DATA-driven delay (tDD) varies 40–80 ns part to part, the two buffer stages allow
 0.5 ns part-to-part skew each, and 1 ns of skew is ≈0.3 µm of acoustic path (0.006° at
 20 kHz). The tree was still balanced to tidy the skew. Lengths include vias at 1.545 mm
 each (F.Cu↔B.Cu copper-centre span of this stackup):
