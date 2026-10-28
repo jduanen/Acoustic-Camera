@@ -60,12 +60,26 @@ module tb_gbe_pipeline;
     wire [7:0] tdata;
     wire       tvalid, tlast, tuser;
 
+    // pdm_line_demux.v (both edges of the PDM-rate clk) makes the L/R bits
+    // single_fpga_pipeline_top.v takes -- on the board, pdm_sampler.v does.
+    wire [N_LINES-1:0] ch_l, ch_r;
+    genvar gi;
+    generate
+        for (gi = 0; gi < N_LINES; gi = gi + 1) begin : g_pdm
+            pdm_line_demux u_demux (
+                .clk(clk), .rst(rst),
+                .pdm_d(pdm_d[gi]),
+                .ch_l(ch_l[gi]), .ch_r(ch_r[gi])
+            );
+        end
+    endgenerate
+
     single_fpga_pipeline_top #(
         .DST_MAC(48'hAABBCCDDEEFF), .SRC_MAC(48'h001122334455),
         .SRC_IP(32'hC0A80002),      .DST_IP(32'hC0A80001),
         .SRC_PORT(16'd50000),       .DST_PORT(16'd50000)
     ) dut (
-        .clk(clk), .rst(rst), .pdm_d(pdm_d),
+        .clk(clk), .rst(rst), .ch_l(ch_l), .ch_r(ch_r),
         .tx_clk(tx_clk), .tx_rst(tx_rst),
         .tx_axis_tdata(tdata), .tx_axis_tvalid(tvalid), .tx_axis_tready(tx_ready),
         .tx_axis_tlast(tlast), .tx_axis_tuser(tuser)

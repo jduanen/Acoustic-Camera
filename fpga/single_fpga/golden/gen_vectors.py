@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """gen_vectors.py -- generates checked-in .mem stimulus/expected-output
-fixtures (fpga/single_fpga/vectors/) for tb_gbe_pipeline.v, the end-to-end
+fixtures (fpga/single_fpga/vectors/) for tb_gbe_pipeline.v (and
+tb_single_fpga_top.v, see gen_board_top_vectors()), the end-to-end
 integration test covering the real 96-channel CIC+FIR pipeline
 (single_fpga_pipeline_top.v, reusing fpga/multi_fpga/cluster/rtl's pdm_line_demux.v/
 cic_decimator.v/fir_compensator.v unmodified) feeding the real
@@ -151,6 +152,43 @@ def gen_gbe_packetizer_vectors():
           f"-> gbe_packetizer_stimulus.mem / gbe_packetizer_expected.mem")
 
 
+def gen_board_top_vectors():
+    """Expected per-channel FIR outputs for tb_single_fpga_top.v, which plays
+    pipeline_pdm_bits.mem's streams through modelled mics into the real board
+    top (pdm_sampler.v -> single_fpga_pipeline_top.v on the gated pipe_clk).
+
+    Unlike tb_gbe_pipeline.v's pdm_line_demux.v path there's no L/R
+    asymmetry: the sampler hands each period's L and R bits to the CICs on
+    the same pipe_clk edge, so every channel gets the same shift. The
+    testbench's mics start streaming at the first PDM_CLK fall after the
+    board top's POR releases; that period's L/R pair reaches the CICs on
+    their third post-reset sample (the first two are the sampler's
+    reset-cleared outputs and the pair requested before streaming began),
+    hence two leading zeros. Derivation in tb_single_fpga_top.v's header.
+    """
+    os.makedirs(VEC_DIR, exist_ok=True)
+    coeffs = quantize_coeffs(design_compensation_fir())
+    pdm_bits, _ = gen_multitone_pdm(n_ch=N_CH, n_frames=N_FRAMES)
+    lead = 2
+
+    def channel_pipeline(bits1ch):
+        b = [int(x) for x in bits1ch]
+        bits = [0] * lead + b[:len(b) - lead]
+        cic_out, width = cic_bitexact(bits, 5, 64)
+        shift = width - FIR_DATA_WIDTH
+        mask = (1 << FIR_DATA_WIDTH) - 1
+        return fir_bitexact([(v >> shift) & mask for v in cic_out], coeffs)
+
+    per_channel_out = [channel_pipeline(b) for b in pdm_bits]
+    hex_digits = (FIR_DATA_WIDTH + 3) // 4
+    with open(os.path.join(VEC_DIR, "board_top_expected_channels.mem"), "w") as f:
+        for frame_idx in range(N_FRAMES):
+            for c in range(N_CH):
+                f.write(f"{per_channel_out[c][frame_idx]:0{hex_digits}x}\n")
+    print(f"board_top: {N_CH} channels x {N_FRAMES} frames -> board_top_expected_channels.mem")
+
+
 if __name__ == "__main__":
     gen_gbe_pipeline_vectors()
     gen_gbe_packetizer_vectors()
+    gen_board_top_vectors()

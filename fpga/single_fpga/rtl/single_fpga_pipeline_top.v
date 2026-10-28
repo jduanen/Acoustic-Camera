@@ -2,20 +2,21 @@
 
 // Real (non-spike) 96-channel CIC+FIR pipeline + GbE packetizer top-level.
 // Combines single_fpga_top_spike.v's already-passed Stage 1 pipeline wiring
-// (unmodified fpga/multi_fpga/cluster/rtl/pdm_line_demux.v, cic_decimator.v,
+// (unmodified fpga/multi_fpga/cluster/rtl/cic_decimator.v and
 // fir_compensator.v, reused by relative path, same as the spike) with
 // gbe_packetizer.v's tx_axis_* output -- the real, buildable checkpoint this
 // project's Stage 2 work stands on. single_fpga_top_spike.v itself is left
 // untouched (it's the Stage 1 utilization-only checkpoint, kept for its own
 // historical record -- see the plan file).
 //
-// Still NOT a complete board top: no clock generation (PDM_CLK divider/POR,
-// see fpga/multi_fpga/cluster/rtl/clk_reset.v for the pattern this will eventually
-// follow), no eth_mac_1g_rgmii.v instantiation (tx_clk/tx_rst are inputs
-// here, meant to be driven by that MAC's own outputs once it's wired in),
-// no RGMII PHY interface. That real board-top integration is later work;
-// this module's job is just "pipeline output correctly reaches the
-// packetizer's AXI-Stream input," verified by tb_gbe_pipeline.v.
+// Takes each line's already-separated L and R bits (ch_l/ch_r, one new pair
+// per clk, clk = the PDM rate): single_fpga_top.v gets them from
+// pdm_sampler.v, while tb_gbe_pipeline.v and single_fpga_top_stage2_spike.v
+// make them with pdm_line_demux.v from a PDM-rate clk's two edges. No clock
+// generation or MAC here (tx_clk/tx_rst are inputs, meant to be driven by
+// eth_mac_1g_rgmii.v's own outputs once it's wired in); this module's job is
+// just "pipeline output correctly reaches the packetizer's AXI-Stream
+// input," verified by tb_gbe_pipeline.v and tb_single_fpga_top.v.
 module single_fpga_pipeline_top #(
     parameter [47:0] DST_MAC  = 48'h000000000000,
     parameter [47:0] SRC_MAC  = 48'h000000000000,
@@ -26,7 +27,8 @@ module single_fpga_pipeline_top #(
 ) (
     input  wire        clk,
     input  wire        rst,
-    input  wire [47:0] pdm_d,
+    input  wire [47:0] ch_l,           // line n's L (SEL=GND) bit = channel 2n
+    input  wire [47:0] ch_r,           // line n's R (SEL=VDD) bit = channel 2n+1
 
     input  wire        tx_clk,
     input  wire        tx_rst,
@@ -40,19 +42,6 @@ module single_fpga_pipeline_top #(
     localparam integer N_CH       = 96;
     localparam integer CIC_WIDTH  = 31; // IN_WIDTH(1) + STAGES(5)*clog2(R=64)(6) -- Hogenauer bound
     localparam integer FIR_WIDTH  = 24;
-
-    wire [N_LINES-1:0] ch_l, ch_r;
-
-    genvar li;
-    generate
-        for (li = 0; li < N_LINES; li = li + 1) begin : g_pdm
-            pdm_line_demux u_demux (
-                .clk(clk), .rst(rst),
-                .pdm_d(pdm_d[li]),
-                .ch_l(ch_l[li]), .ch_r(ch_r[li])
-            );
-        end
-    endgenerate
 
     wire [N_CH*CIC_WIDTH-1:0] cic_out_flat;
     wire [N_CH-1:0]           cic_valid;

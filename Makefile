@@ -101,7 +101,21 @@ define XSIM_RUN_SINGLE_FPGA
 	fi
 endef
 
-.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-all clean-sim golden-test
+# Same as XSIM_RUN_SINGLE_FPGA, but also links glbl.v + unisims_ver -- needed by
+# testbenches of single_fpga_top.v, which instantiates BUFG/BUFGCE.
+define XSIM_RUN_SINGLE_FPGA_UNISIM
+	source $(VIVADO_SETTINGS) >/dev/null
+	cd $(SINGLE_FPGA_SIM)
+	xvlog --work work $(1) $(GLBL_V)
+	xelab work.$(2) work.glbl -s $(2)_sim -L unisims_ver
+	xsim $(2)_sim -R | tee $(2).run.log
+	if ! grep -q '^PASS:' $(2).run.log; then
+		echo "*** $(2) did not report PASS -- treating as failed ***"
+		exit 1
+	fi
+endef
+
+.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -151,6 +165,9 @@ sim-status-led:
 sim-pdm-sampler:
 	$(call XSIM_RUN_SINGLE_FPGA,../rtl/pdm_sampler.v tb_pdm_sampler.v,tb_pdm_sampler)
 
+sim-board-top:
+	$(call XSIM_RUN_SINGLE_FPGA_UNISIM,../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v ../rtl/pdm_sampler.v ../rtl/status_led.v ../rtl/single_fpga_top.v tb_single_fpga_top.v,tb_single_fpga_top)
+
 # Single-FPGA Vivado batch builds (non-project mode; see each script's header).
 build-spike:
 	cd fpga/single_fpga/vivado
@@ -167,7 +184,7 @@ build-top:
 golden-test:
 	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

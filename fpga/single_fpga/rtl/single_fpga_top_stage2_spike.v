@@ -47,12 +47,26 @@ module single_fpga_top_stage2_spike (
     wire [7:0]  tx_axis_tdata;
     wire        tx_axis_tvalid, tx_axis_tready, tx_axis_tlast, tx_axis_tuser;
 
+    // pdm_line_demux.v (both edges of the PDM-rate clk) makes the L/R bits
+    // single_fpga_pipeline_top.v takes -- on the board, pdm_sampler.v does.
+    wire [48-1:0] ch_l, ch_r;
+    genvar li;
+    generate
+        for (li = 0; li < 48; li = li + 1) begin : g_pdm
+            pdm_line_demux u_demux (
+                .clk(clk), .rst(rst),
+                .pdm_d(pdm_d[li]),
+                .ch_l(ch_l[li]), .ch_r(ch_r[li])
+            );
+        end
+    endgenerate
+
     single_fpga_pipeline_top #(
         .DST_MAC(48'hAABBCCDDEEFF), .SRC_MAC(48'h001122334455),
         .SRC_IP(32'hC0A80002),      .DST_IP(32'hC0A80001),
         .SRC_PORT(16'd50000),       .DST_PORT(16'd50000)
     ) u_pipeline (
-        .clk(clk), .rst(rst), .pdm_d(pdm_d),
+        .clk(clk), .rst(rst), .ch_l(ch_l), .ch_r(ch_r),
         .tx_clk(mac_tx_clk), .tx_rst(mac_tx_rst),
         .tx_axis_tdata(tx_axis_tdata), .tx_axis_tvalid(tx_axis_tvalid),
         .tx_axis_tready(tx_axis_tready), .tx_axis_tlast(tx_axis_tlast),

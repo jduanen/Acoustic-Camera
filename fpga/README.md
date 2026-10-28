@@ -40,8 +40,11 @@ working alternate, staged in three parts:
   outputs active high; `sim-status-led`), and DATA sampling (`rtl/pdm_sampler.v`: the 48
   mic lines captured in IOB flip-flops two TCXO cycles after each PDM_CLK edge, split into
   L/R bits with a once-per-period `pdm_valid`; input delays and multicycle in the XDC;
-  `sim-pdm-sampler`). Nothing consumes the samples yet, so synthesis trims the sampler;
-  the pipeline and MAC aren't instantiated in it yet.
+  `sim-pdm-sampler`), feeding the 96-channel CIC+FIR+packetizer pipeline
+  (`rtl/single_fpga_pipeline_top.v`, now taking separated L/R bits) on a 3.072 MHz
+  `pipe_clk` gated from TCXO_CLK by a BUFGCE. `sim-board-top` checks it bit-exact from the
+  pins (modelled mics on DATA) to all 96 FIR outputs. The RGMII MAC isn't in yet, so the
+  packetizer's MAC side is tied off and synthesis trims the pipeline until it is.
   `make build-top` runs `vivado/build_top.tcl` through to a bitstream
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
 
