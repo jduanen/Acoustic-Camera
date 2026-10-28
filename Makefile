@@ -101,7 +101,7 @@ define XSIM_RUN_SINGLE_FPGA
 	fi
 endef
 
-.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-all clean-sim golden-test
+.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -148,6 +148,9 @@ sim-gbe-pipeline:
 sim-status-led:
 	$(call XSIM_RUN_SINGLE_FPGA,../rtl/status_led.v tb_status_led.v,tb_status_led)
 
+sim-pdm-sampler:
+	$(call XSIM_RUN_SINGLE_FPGA,../rtl/pdm_sampler.v tb_pdm_sampler.v,tb_pdm_sampler)
+
 # Single-FPGA Vivado batch builds (non-project mode; see each script's header).
 build-spike:
 	cd fpga/single_fpga/vivado
@@ -164,7 +167,7 @@ build-top:
 golden-test:
 	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

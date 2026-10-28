@@ -5,13 +5,17 @@
 //   TCXO_CLK   in   12.288 MHz from mic_array Y1 (CON1.21, ball Y13)
 //   PDM_CLK    out  3.072 MHz mic clock, TCXO/4, 50 % duty (CON1.25, AB11)
 //   LED_R/G/B  out  status LED, active high (CON1.32-34, W14/AB13/Y14)
+//   DATA[47:0] in   mic data lines, DATA[n] = net DATA_nn (CON3, bank 15)
 //
-// Currently clocks, power-on reset and the status LED only. The pipeline
-// (single_fpga_pipeline_top.v) and the RGMII MAC aren't instantiated yet:
-// the DATA_nn and RGMII pins have no XDC constraints, and the MAC's
-// tx_clk/tx_rst aren't generated. When they are, drive pkt_toggle from the
-// tx_clk domain (flip it on each tx_axis_tvalid & tready & tlast) so the
-// LED shows streaming -- until then it is tied low and the LED goes
+// Currently clocks, power-on reset, the status LED and DATA sampling
+// (pdm_sampler.v: one L and one R bit per line per PDM period, with a
+// pdm_valid strobe). Nothing consumes the samples yet, so synthesis trims
+// the sampler: the pipeline (single_fpga_pipeline_top.v) needs a clock-enable
+// path to run on pdm_valid (its pdm_line_demux/cic_decimator assume clk =
+// PDM_CLK), the RGMII pins have no XDC constraints, and the MAC's
+// tx_clk/tx_rst aren't generated. When they are, drive pkt_toggle
+// from the tx_clk domain (flip it on each tx_axis_tvalid & tready & tlast)
+// so the LED shows streaming -- until then it is tied low and the LED goes
 // YELLOW -> GREEN only.
 //
 // TCXO_CLK's ball isn't clock-capable, so the BUFG is reached over fabric
@@ -27,7 +31,8 @@ module single_fpga_top #(
     output wire PDM_CLK,
     output wire LED_R,
     output wire LED_G,
-    output wire LED_B
+    output wire LED_B,
+    input  wire [47:0] DATA
 );
     wire clk;
     BUFG bufg_inst (.I(TCXO_CLK), .O(clk));
@@ -44,6 +49,14 @@ module single_fpga_top #(
             por_cnt <= por_cnt + 1'b1;
         rst <= (por_cnt < POR_CYCLES);
     end
+
+    wire [47:0] pdm_l, pdm_r;
+    wire        pdm_valid;
+    pdm_sampler #(.N_LINES(48)) u_pdm_sampler (
+        .clk(clk), .rst(rst),
+        .pdm_div(pdm_div), .data(DATA),
+        .pdm_l(pdm_l), .pdm_r(pdm_r), .pdm_valid(pdm_valid)
+    );
 
     wire pkt_toggle = 1'b0; // no packetizer/MAC yet -- see header
 

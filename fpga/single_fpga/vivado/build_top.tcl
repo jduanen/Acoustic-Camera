@@ -1,8 +1,8 @@
 # Board-top build script -- non-project-mode Vivado batch flow for
 # rtl/single_fpga_top.v against xdc/single_fpga_top.xdc (the real AC7200 pin
 # constraints), through to a bitstream. Unlike the two spike scripts, this is
-# the design that actually goes on the board: currently clocks, POR and the
-# status LED only (see single_fpga_top.v's header comment).
+# the design that actually goes on the board: currently clocks, POR, the
+# status LED and DATA sampling (see single_fpga_top.v's header comment).
 #
 # Part is the AC7200's own XC7A200T-2FBG484I (-2 speed grade; the spikes use
 # -1 as a conservative utilization/timing target).
@@ -22,6 +22,7 @@ file mkdir $outdir
 
 read_verilog [list \
     $repo_root/fpga/single_fpga/rtl/status_led.v \
+    $repo_root/fpga/single_fpga/rtl/pdm_sampler.v \
     $repo_root/fpga/single_fpga/rtl/single_fpga_top.v \
 ]
 read_xdc $repo_root/fpga/single_fpga/xdc/single_fpga_top.xdc

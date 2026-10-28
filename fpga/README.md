@@ -37,7 +37,11 @@ working alternate, staged in three parts:
 - **Board top** (`rtl/single_fpga_top.v`, constrained by `xdc/single_fpga_top.xdc`): TCXO_CLK
   in, PDM_CLK = TCXO/4 out, power-on reset, and the front-end status LED (`rtl/status_led.v`:
   YELLOW in reset, GREEN running, GREEN/BLUE alternating while packets are going out;
-  outputs active high; `sim-status-led`). The pipeline and MAC aren't instantiated in it yet.
+  outputs active high; `sim-status-led`), and DATA sampling (`rtl/pdm_sampler.v`: the 48
+  mic lines captured in IOB flip-flops two TCXO cycles after each PDM_CLK edge, split into
+  L/R bits with a once-per-period `pdm_valid`; input delays and multicycle in the XDC;
+  `sim-pdm-sampler`). Nothing consumes the samples yet, so synthesis trims the sampler;
+  the pipeline and MAC aren't instantiated in it yet.
   `make build-top` runs `vivado/build_top.tcl` through to a bitstream
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
 
