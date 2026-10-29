@@ -9,6 +9,7 @@
 //   SYS_CLK_P/N in  AC7200's own 200 MHz oscillator (R4/T4, bank 34, 1.5 V)
 //   RGMII_*         to the DP83867 (front_end U3): TX in bank 16, RX in bank 15
 //   PHY_RESET_N out DP83867 RESET_N (CON1.28)
+//   MDC/MDIO        DP83867 management interface (CON1.26/24), via mdio_init.v
 //
 // Clocks, power-on reset, the status LED, DATA sampling (pdm_sampler.v), the
 // 96-channel CIC+FIR+packetizer pipeline (single_fpga_pipeline_top.v) and the
@@ -29,11 +30,11 @@
 // PHY_RESET_N is held low for PHY_RST_CYCLES TCXO cycles (~10.7 ms) after
 // configuration, well over the DP83867's 1 us minimum. Its straps re-latch
 // on release, with this FPGA's RX inputs high-Z rather than pulled the way
-// they may be during configuration. MDC/MDIO aren't driven: the PHY runs
-// from its straps (autoneg on, advertising 10/100/1000). The packetizer only
-// keeps up at 1000 Mb/s -- at 10/100 the MAC would back-pressure it into
-// overrunning its ping-pong buffer -- so a link that negotiates lower will
-// send corrupt data until MDIO is used to advertise 1000 only.
+// they may be during configuration. The straps advertise 10/100/1000, but the
+// packetizer only keeps up at 1000 Mb/s (at 10/100 the MAC would back-pressure
+// it into overrunning its ping-pong buffer), so mdio_init.v then rewrites the
+// PHY's advertisement to 1000 only, restarts autonegotiation and reads the
+// advertisement back; if it didn't take, the status LED shows solid red.
 //
 // The status LED's streaming indication comes from pkt_toggle, flipped in
 // the MAC's tx_clk domain on the last byte of each frame accepted.
@@ -54,7 +55,8 @@
 // so every path is timed at 81.38 ns, not the 325.52 ns it really has.
 module single_fpga_top #(
     parameter integer POR_CYCLES     = 16,
-    parameter integer PHY_RST_CYCLES = 1 << 17
+    parameter integer PHY_RST_CYCLES = 1 << 17,
+    parameter integer MDIO_WAIT      = 1 << 13   // mdio_init's post-reset wait
 ) (
     input  wire        TCXO_CLK,
     output wire        PDM_CLK,
@@ -71,7 +73,9 @@ module single_fpga_top #(
     input  wire        RGMII_RXC,
     input  wire [3:0]  RGMII_RXD,
     input  wire        RGMII_RX_CTL,
-    output wire        PHY_RESET_N
+    output wire        PHY_RESET_N,
+    output wire        MDC,
+    inout  wire        MDIO
 );
     wire clk;
     BUFG bufg_inst (.I(TCXO_CLK), .O(clk));
@@ -149,6 +153,15 @@ module single_fpga_top #(
     end
     assign PHY_RESET_N = phy_reset_n;
 
+    // ---- PHY configuration: advertise 1000 Mb/s only ----
+    wire mdio_o, mdio_oe, mdio_done, mdio_fault;
+    mdio_init #(.PHY_ADDR(5'd0), .WAIT_CYCLES(MDIO_WAIT)) u_mdio (
+        .clk(clk), .rst(!phy_reset_n),
+        .mdc(MDC), .mdio_o(mdio_o), .mdio_oe(mdio_oe), .mdio_i(MDIO),
+        .done(mdio_done), .fault(mdio_fault)
+    );
+    assign MDIO = mdio_oe ? mdio_o : 1'bz;
+
     wire       tx_clk, tx_rst, tx_axis_tready;
     wire [7:0] tx_axis_tdata;
     wire       tx_axis_tvalid, tx_axis_tlast, tx_axis_tuser;
@@ -198,7 +211,7 @@ module single_fpga_top #(
 
     status_led u_status_led (
         .clk(clk), .rst(rst),
-        .pkt_toggle(pkt_toggle),
+        .pkt_toggle(pkt_toggle), .fault(mdio_fault),
         .led_r(LED_R), .led_g(LED_G), .led_b(LED_B)
     );
 endmodule

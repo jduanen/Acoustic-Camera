@@ -9,13 +9,14 @@
 // fpga/multi_fpga/cluster/rtl/clk_reset.v and hub/rtl/reset_seq.v, plus a
 // streaming indicator:
 //   rst high                          -> YELLOW (R+G)
+//   fault high (and not rst)          -> RED
 //   running, no recent packet         -> GREEN
 //   running, packet within HOLD_CYCLES -> GREEN/BLUE alternating every
 //                                        2^BLINK_BIT clk cycles
 // Packets go out at 9,600/s (GBE_FRAMING.md), far faster than the eye can follow, so each one
 // just re-arms the HOLD_CYCLES window instead of producing its own flash;
-// the LED reverts to solid GREEN once packets stop for that long. RED alone
-// is left free for a future fault indication (nothing detects one yet).
+// the LED reverts to solid GREEN once packets stop for that long. `fault` is
+// mdio_init.v's: the PHY's advertisement didn't read back as 1000 Mb/s only.
 //
 // pkt_toggle flips once per packet in the MAC's tx_clk domain (async to
 // clk), so it is passed through a 2-FF synchronizer and edge-detected here
@@ -30,6 +31,7 @@ module status_led #(
     input  wire clk,
     input  wire rst,
     input  wire pkt_toggle,
+    input  wire fault,
     output wire led_r,
     output wire led_g,
     output wire led_b
@@ -55,7 +57,7 @@ module status_led #(
     wire streaming = (hold_cnt != 0);
     wire blue_ph   = streaming & blink_cnt[BLINK_BIT];
 
-    assign led_r = rst;
-    assign led_g = rst | ~blue_ph;
-    assign led_b = ~rst & blue_ph;
+    assign led_r = rst | fault;
+    assign led_g = rst | (~fault & ~blue_ph);
+    assign led_b = ~rst & ~fault & blue_ph;
 endmodule

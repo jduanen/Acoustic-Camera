@@ -209,6 +209,16 @@ set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports {RGMII_RXD[3
 set_property -dict {PACKAGE_PIN AB17 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports PHY_RESET_N]
 set_false_path -to [get_ports PHY_RESET_N]
 
+# MDC  CON1.26  B13_L2_P  AB16;  MDIO  CON1.24  B13_L1_N  AA16 (R8 2.2k pull-up on board).
+# rtl/mdio_init.v: MDC = TCXO/8 = 1.536 MHz, MDIO changed on MDC's falling edge, so each
+# bit this end drives has ~325 ns of setup and hold at the PHY (it needs 10 ns); in the
+# read-back the PHY drives MDIO <= 10 ns after an MDC rise and it's sampled as MDC next
+# rises, ~650 ns later. Untimed by design.
+set_property -dict {PACKAGE_PIN AB16 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports MDC]
+set_property -dict {PACKAGE_PIN AA16 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports MDIO]
+set_false_path -to [get_ports {MDC MDIO}]
+set_false_path -from [get_ports MDIO]
+
 # RX timing (DP83867 RGMII timing, RX clock skew strap mode 1 = 2 ns internal delay):
 # at the PHY's pins data is valid >= 1.2 ns before and after each RXC edge (TsetupT,
 # TholdT with internal delay). Board skew within the RX group is a few mm (<0.05 ns).

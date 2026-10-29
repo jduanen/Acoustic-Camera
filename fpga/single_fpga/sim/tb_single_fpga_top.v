@@ -12,7 +12,11 @@
 //     board_top_expected_packets.mem, and a correct Ethernet FCS.
 // SYS_CLK is a 200 MHz differential source and RGMII_RXC an idle 125 MHz
 // clock (the MAC sets its speed from RXC's rate). PHY_RESET_N must stay low
-// for PHY_RST_CYCLES (shortened here) and then go high.
+// for PHY_RST_CYCLES (shortened here) and then go high, and the MDIO PHY
+// configuration must reach the pins: a PHY register model (mdio_phy_model.v)
+// on MDC/MDIO must see the two writes and the read-back, mdio_init must
+// finish without a fault, and the status LED must never show red. (Frame
+// contents and MDIO timing are checked in detail in tb_mdio_init.v.)
 //
 // Mic model as in tb_pdm_sampler.v, at the slow datasheet/board corner: each
 // mic drives TDD after its PDM_CLK edge (L after the fall, R after the rise),
@@ -52,15 +56,23 @@ module tb_single_fpga_top;
     wire       txc, tx_ctl, phy_reset_n;
     wire [3:0] txd;
 
-    single_fpga_top #(.PHY_RST_CYCLES(PHY_RST_CYCLES)) dut (
+    wire mdc, mdio;
+    pullup (mdio);                      // board R8
+    mdio_phy_model #(.ADDR(5'd0), .MODE(0)) phy (.mdc(mdc), .mdio(mdio));
+
+    single_fpga_top #(.PHY_RST_CYCLES(PHY_RST_CYCLES), .MDIO_WAIT(64)) dut (
         .TCXO_CLK(tcxo), .PDM_CLK(pdm_clk),
         .LED_R(led_r), .LED_G(led_g), .LED_B(led_b),
         .DATA(data),
         .SYS_CLK_P(sys_clk), .SYS_CLK_N(~sys_clk),
         .RGMII_TXC(txc), .RGMII_TXD(txd), .RGMII_TX_CTL(tx_ctl),
         .RGMII_RXC(rxc), .RGMII_RXD(4'h0), .RGMII_RX_CTL(1'b0),
-        .PHY_RESET_N(phy_reset_n)
+        .PHY_RESET_N(phy_reset_n),
+        .MDC(mdc), .MDIO(mdio)
     );
+
+    reg red_seen = 1'b0;
+    always @(posedge tcxo) if (led_r === 1'b1 && led_g === 1'b0) red_seen = 1'b1;
 
     // ---- mics ----
     localparam real CLK_DLY = 6.2, TDD = 80.0, THZ = 30.0, RET_DLY = 1.9;
@@ -241,6 +253,12 @@ module tb_single_fpga_top;
     end
 
     always @(posedge tcxo) if (fir_done && n_pkts == N_PACKETS) begin
+        if (dut.mdio_done !== 1'b1 || dut.mdio_fault !== 1'b0 || phy.writes != 2 || phy.reads != 1
+            || phy.regs[4] !== 16'h0001 || red_seen) begin
+            $display("FAIL: MDIO config: done=%b fault=%b, PHY saw %0d writes %0d reads, ANAR=%04h, red LED %0s",
+                     dut.mdio_done, dut.mdio_fault, phy.writes, phy.reads, phy.regs[4], red_seen ? "seen" : "not seen");
+            errors = errors + 1;
+        end
         if (errors == 0)
             $display("PASS: tb_single_fpga_top, %0d channels x %0d frames and %0d RGMII frames bit-exact",
                      N_CH, N_FRAMES, N_PACKETS);

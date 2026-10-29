@@ -3,7 +3,8 @@
 // Checks status_led.v: YELLOW while rst, solid GREEN once running with no
 // packets, GREEN/BLUE alternating while pkt_toggle keeps flipping (from an
 // async clock, through the synchronizer), back to solid GREEN HOLD_CYCLES
-// after the last packet, and YELLOW again if rst re-asserts. Small
+// after the last packet, solid RED while fault is set (even while packets
+// are flowing), and YELLOW again if rst re-asserts, fault or not. Small
 // BLINK_BIT/HOLD_CYCLES so the run is short.
 module tb_status_led;
     localparam integer BLINK_BIT   = 3;            // 8-cycle blink phases
@@ -16,6 +17,7 @@ module tb_status_led;
 
     reg rst = 1'b1;
     reg pkt_toggle = 1'b0;
+    reg fault = 1'b0;
     reg pkts_on = 1'b0;
     integer tx_cnt = 0;
     always @(posedge tx_clk) begin
@@ -25,7 +27,7 @@ module tb_status_led;
 
     wire led_r, led_g, led_b;
     status_led #(.BLINK_BIT(BLINK_BIT), .HOLD_CYCLES(HOLD_CYCLES)) dut (
-        .clk(clk), .rst(rst), .pkt_toggle(pkt_toggle),
+        .clk(clk), .rst(rst), .pkt_toggle(pkt_toggle), .fault(fault),
         .led_r(led_r), .led_g(led_g), .led_b(led_b)
     );
 
@@ -86,7 +88,20 @@ module tb_status_led;
             errors = errors + 1;
         end
 
+        fault = 1'b1; pkts_on = 1'b1;
+        repeat (10) @(posedge clk);
+        for (i = 0; i < 4 * (1 << (BLINK_BIT + 1)); i = i + 1) begin
+            @(posedge clk); #1;
+            if ({led_r, led_g, led_b} !== 3'b100) begin
+                if (errors < 20) $display("FAIL: fault while streaming: RGB=%b%b%b, expected 100", led_r, led_g, led_b);
+                errors = errors + 1;
+            end
+        end
+
         rst = 1'b1;
+        @(posedge clk); #1;
+        expect_rgb(1, 1, 0, "rst re-asserted, fault set");
+        fault = 1'b0; pkts_on = 1'b0;
         @(posedge clk); #1;
         expect_rgb(1, 1, 0, "rst re-asserted");
 

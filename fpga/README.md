@@ -36,7 +36,8 @@ working alternate, staged in three parts:
   `pcb/single_fpga/`.
 - **Board top** (`rtl/single_fpga_top.v`, constrained by `xdc/single_fpga_top.xdc`): TCXO_CLK
   in, PDM_CLK = TCXO/4 out, power-on reset, and the front-end status LED (`rtl/status_led.v`:
-  YELLOW in reset, GREEN running, GREEN/BLUE alternating while packets are going out;
+  YELLOW in reset, RED on a PHY configuration fault, GREEN running, GREEN/BLUE alternating
+  while packets are going out;
   outputs active high; `sim-status-led`), and DATA sampling (`rtl/pdm_sampler.v`: the 48
   mic lines captured in IOB flip-flops two TCXO cycles after each PDM_CLK edge, split into
   L/R bits with a once-per-period `pdm_valid`; input delays and multicycle in the XDC;
@@ -44,7 +45,9 @@ working alternate, staged in three parts:
   (`rtl/single_fpga_pipeline_top.v`, now taking separated L/R bits) on a 3.072 MHz
   `pipe_clk` gated from TCXO_CLK by a BUFGCE, and the vendored RGMII MAC sending its UDP
   frames to the DP83867 (125 MHz + 90-degree clocks from the module's 200 MHz SYS_CLK via an
-  MMCM; TX only; PHY_RESET_N pulsed after configuration; no MDIO yet). `sim-board-top`
+  MMCM; TX only; PHY_RESET_N pulsed after configuration; `rtl/mdio_init.v` then sets the
+  PHY to advertise 1000 Mb/s only over MDIO and reads it back, lighting the LED red if it
+  didn't take; `sim-mdio-init`, against `sim/mdio_phy_model.v`). `sim-board-top`
   checks it from the pins: modelled mics on DATA, all 96 FIR outputs bit-exact, and the
   RGMII TX frames decoded back to bytes (preamble, body, FCS) plus the PHY's TXC-to-data
   timing.

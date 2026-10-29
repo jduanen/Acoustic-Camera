@@ -115,7 +115,7 @@ define XSIM_RUN_SINGLE_FPGA_UNISIM
 	fi
 endef
 
-.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top sim-all clean-sim golden-test
+.PHONY: build-spike build-stage2-spike build-top sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-usb-framer sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top sim-mdio-init sim-all clean-sim golden-test
 
 sim-pdm:
 	$(call XSIM_RUN,../rtl/pdm_line_demux.v tb_pdm_line_demux.v,tb_pdm_line_demux)
@@ -165,8 +165,11 @@ sim-status-led:
 sim-pdm-sampler:
 	$(call XSIM_RUN_SINGLE_FPGA,../rtl/pdm_sampler.v tb_pdm_sampler.v,tb_pdm_sampler)
 
+sim-mdio-init:
+	$(call XSIM_RUN_SINGLE_FPGA,../rtl/mdio_init.v mdio_phy_model.v tb_mdio_init.v,tb_mdio_init)
+
 sim-board-top:
-	$(call XSIM_RUN_SINGLE_FPGA_UNISIM,../rtl/third_party/verilog-ethernet/eth_mac_1g_rgmii.v ../rtl/third_party/verilog-ethernet/eth_mac_1g.v ../rtl/third_party/verilog-ethernet/axis_gmii_rx.v ../rtl/third_party/verilog-ethernet/axis_gmii_tx.v ../rtl/third_party/verilog-ethernet/lfsr.v ../rtl/third_party/verilog-ethernet/rgmii_phy_if.v ../rtl/third_party/verilog-ethernet/ssio_ddr_in.v ../rtl/third_party/verilog-ethernet/iddr.v ../rtl/third_party/verilog-ethernet/oddr.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v ../rtl/pdm_sampler.v ../rtl/status_led.v ../rtl/single_fpga_top.v tb_single_fpga_top.v,tb_single_fpga_top)
+	$(call XSIM_RUN_SINGLE_FPGA_UNISIM,../rtl/third_party/verilog-ethernet/eth_mac_1g_rgmii.v ../rtl/third_party/verilog-ethernet/eth_mac_1g.v ../rtl/third_party/verilog-ethernet/axis_gmii_rx.v ../rtl/third_party/verilog-ethernet/axis_gmii_tx.v ../rtl/third_party/verilog-ethernet/lfsr.v ../rtl/third_party/verilog-ethernet/rgmii_phy_if.v ../rtl/third_party/verilog-ethernet/ssio_ddr_in.v ../rtl/third_party/verilog-ethernet/iddr.v ../rtl/third_party/verilog-ethernet/oddr.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v ../rtl/pdm_sampler.v ../rtl/status_led.v ../rtl/mdio_init.v ../rtl/single_fpga_top.v mdio_phy_model.v tb_single_fpga_top.v,tb_single_fpga_top)
 
 # Single-FPGA Vivado batch builds (non-project mode; see each script's header).
 build-spike:
@@ -184,7 +187,7 @@ build-top:
 golden-test:
 	python3 -m pytest fpga/multi_fpga/cluster/golden fpga/multi_fpga/hub/golden fpga/single_fpga/golden -q
 
-sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top
+sim-all: golden-test sim-pdm sim-pdm-sync sim-cic sim-cic-shared sim-fir sim-framer sim-clk sim-top sim-reset-seq sim-hub-deframer sim-usb-framer sim-hub-top sim-gbe-packetizer sim-gbe-pipeline sim-status-led sim-pdm-sampler sim-board-top sim-mdio-init
 	@echo "=================================================="
 	@echo "ALL FPGA CLUSTER SIMULATIONS PASSED"
 	@echo "=================================================="

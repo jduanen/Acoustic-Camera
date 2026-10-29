@@ -312,7 +312,12 @@ once. Rotating U3 90° counter-clockwise would remove that crossing.
 - RX clock skew: GPIO_0/GPIO_1 unstrapped → **mode 1, 2.0 ns**. The PHY centres RXC in the
   data (≥1.2 ns setup and hold at its pins), so the FPGA captures with no added delay.
 - RX_CTRL = mode 3 (R11 5.76k / R12 2.49k), as the datasheet requires; autoneg enabled.
-  LED_1 mode 1 sets ANEG_SEL = 0 (as mode 2 did): the PHY advertises 10/100/1000.
+  LED_1 mode 1 sets ANEG_SEL = 0 (as mode 2 did): the PHY comes out of reset advertising
+  10/100/1000. The FPGA then rewrites that over MDIO (PHY address 0, RX_D0/RX_D2
+  unstrapped): ANAR = 0x0001 (no 10/100), BMCR = 0x1340 (restart autoneg), so it links
+  at 1000 Mb/s or not at all -- the UDP stream can't be sustained at 10/100. It then
+  reads ANAR back; anything but 0x0001 (0xFFFF if the PHY doesn't answer, 0x01E1 if it
+  ignored the write) turns the status LED solid red.
 
 **RGMII lengths** (front_end only, pad to pad; each net has 2 vias, counted at 1.545 mm
 each; the AC7200 module's internal routing is unknown and adds to these). Re-balanced with
@@ -385,7 +390,8 @@ three drive nets come from free bank-13 (3.3 V) pins on CON1:
   SLEW SLOW (gate load only). The AC7200's own user LED (ball W5, bank 34) is separate.
 - **Colours** (`fpga/single_fpga/rtl/status_led.v`): YELLOW while in reset, GREEN once
   running, GREEN/BLUE alternating (≈171 ms each) while packets are going out, reverting to
-  GREEN ≈0.34 s after they stop. RED alone is reserved for a future fault indication.
+  GREEN ≈0.34 s after they stop. Solid RED is a PHY configuration fault: the MDIO
+  read-back of the DP83867's advertisement didn't return 1000 Mb/s only.
 
 ---
 
