@@ -279,14 +279,44 @@ caps on B.Cu under them, is the remaining improvement.
 
 ## GbE PHY, RGMII and Y1 (front_end)
 
-**RGMII pin assignment.** The whole TX group is in FPGA bank 16 on CON3: TXC on CON3.14
-(B16_L23_N) and TX_CTL on CON3.12 (B16_L23_P, the other half of TXC's pin pair), with
-TXD0–TXD3. TX_CTL was originally on CON1.22 (bank 13); that pin is now unused. RXC is on
-CON3.15 (B15_L12_P, MRCC), RX_CTL on CON3.2 (B15_IO25, same bank as RXC), RXD0–RXD3 in
-bank 16.
+**RGMII pin assignment.** Each group has its own bank and its own row of CON3. CON3's
+odd (east) row is bank 15 for pins 1–23 and its even (west) row bank 16 for pins 4–24
+(pin 2 is bank 15).
+
+| Row | Pins, south → north |
+|---|---|
+| East, bank 15 (RX) | 5 RXD1 (B15_L4_P), 7 RXD0 (L4_N), 11 RX_CTL (L2_P), 13 RXD2 (L2_N), 15 RXC (L12_P, MRCC), 17 RXD3 (L12_N) |
+| West, bank 16 (TX) | 4 TXD3 (B16_IO25), 6 TXD2 (L21_N), 8 TXD1 (L21_P), 12 TXD0 (L23_P), 14 TXC (L23_N), 16 TX_CTL (L22_P) |
+
+TX follows U3's own pin order (pins 25–29 TXD3…TXC, then TX_CTL on pin 37). RX can't be
+fully ordered: RXC has to stay on CON3.15, the clock-capable pin. The RX group must share a
+bank with RXC: RX data is clocked by a BUFIO from the RXC pin, and a BUFIO only reaches its
+own bank (Vivado: "A BUFIO can only drive loads in the same IO bank"; through a BUFG
+instead, the ~5 ns clock insertion leaves no setup/hold solution in the PHY's 2.4 ns
+window). RXD0–RXD3 were originally in bank 16 (CON3.6/8/16/18), RX_CTL on CON3.2 and TXD2
+on CON3.3, and TX_CTL originally on CON1.22 (bank 13, now unused). The DATA lines moved out
+of the way have tens of ns of margin and don't care which bank they're in: DATA_00 → CON3.3,
+DATA_01 → .22, DATA_02 → .2, DATA_03 → .24, DATA_05 → .18.
+
+U3's RGMII pins run down its east edge with TX south of RX, so routed north to CON3 the TX
+bundle lands naturally east of RX, the opposite of the banks' rows: the two bundles cross
+once. Rotating U3 90° counter-clockwise would remove that crossing.
+
+**RGMII timing set by the PHY straps** (DP83867 Tables 7-6, 7-9, 7-10):
+- TX clock skew: R5/R6 are **DNP**, so LED_1 reads mode 1 (internal 9k pull-down); LED_2
+  is mode 1 too (only R4 330 Ω into an LED) → TX[2:0] = 000 → **mode 1, 2.0 ns**. The PHY
+  delays TXC itself, so the FPGA sends TXC edge-aligned with the data (RGMII TskewT
+  ±0.5 ns; the PHY accepts ±1.0 ns). R5 10k / R6 2.49k (LED_1 mode 2) gave TX[2] = 1,
+  mode 5, 0 ns: the FPGA then had to shift TXC 90° itself, and that closed timing with
+  only ~20 ps either side across process corners, so they were left unfitted.
+- RX clock skew: GPIO_0/GPIO_1 unstrapped → **mode 1, 2.0 ns**. The PHY centres RXC in the
+  data (≥1.2 ns setup and hold at its pins), so the FPGA captures with no added delay.
+- RX_CTRL = mode 3 (R11 5.76k / R12 2.49k), as the datasheet requires; autoneg enabled.
+  LED_1 mode 1 sets ANEG_SEL = 0 (as mode 2 did): the PHY advertises 10/100/1000.
 
 **RGMII lengths** (front_end only; the AC7200 module's internal routing is unknown and
-adds to these):
+adds to these). Both rows predate the row-grouping pin move and need re-measuring once
+the groups are re-routed:
 
 | Group | Clock | Worst data/ctl vs clock |
 |---|---|---|
@@ -396,8 +426,10 @@ B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
 
 - **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
   entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
-- **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
-  including the status LED (LED_R/G/B ≈114/99/93 mm from CON1.32–34, two vias each).
+- **front_end**: ERC-clean. The schematic's CON3 RGMII/DATA pin assignment (RX on the
+  east row, TX on the west) and R5/R6 DNP aren't on the PCB yet: run Update PCB from
+  Schematic, re-route the RGMII and moved DATA nets, re-check RX and TX length matching,
+  then re-run DRC.
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
   - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;

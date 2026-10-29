@@ -2,7 +2,7 @@
 # rtl/single_fpga_top.v against xdc/single_fpga_top.xdc (the real AC7200 pin
 # constraints), through to a bitstream. Unlike the two spike scripts, this is
 # the design that actually goes on the board: currently clocks, POR, the
-# status LED, DATA sampling and the CIC/FIR/packetizer pipeline, without the
+# status LED, DATA sampling, the CIC/FIR/packetizer pipeline and the RGMII
 # MAC (see single_fpga_top.v's header comment).
 #
 # Part is the AC7200's own XC7A200T-2FBG484I (-2 speed grade; the spikes use
@@ -21,7 +21,17 @@ set outdir     "$script_dir/build_top"
 
 file mkdir $outdir
 
+set tp "$repo_root/fpga/single_fpga/rtl/third_party/verilog-ethernet"
 read_verilog [list \
+    $tp/eth_mac_1g_rgmii.v \
+    $tp/eth_mac_1g.v \
+    $tp/rgmii_phy_if.v \
+    $tp/axis_gmii_rx.v \
+    $tp/axis_gmii_tx.v \
+    $tp/ssio_ddr_in.v \
+    $tp/oddr.v \
+    $tp/iddr.v \
+    $tp/lfsr.v \
     $repo_root/fpga/multi_fpga/cluster/rtl/cic_decimator.v \
     $repo_root/fpga/multi_fpga/cluster/rtl/fir_compensator.v \
     $repo_root/fpga/single_fpga/rtl/gbe_packetizer.v \

@@ -1,5 +1,5 @@
 # Single-FPGA (ALINX AC7200, xc7a200tfbg484-2) pin constraints -- clocks,
-# status LED and mic data lines.
+# status LED, mic data lines and the GbE PHY.
 #
 # Clock scheme (pcb/SCHEMATIC_NOTES.md, "PDM Clock Distribution"): the
 # 12.288 MHz TCXO (Y1) sits on the mic_array board and reaches the FPGA as
@@ -61,7 +61,7 @@ set_property -dict {PACKAGE_PIN Y14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get
 # timing requirement to meet. Exclude them from timing analysis.
 set_false_path -to [get_ports {LED_R LED_G LED_B}]
 
-# Mic data lines DATA_00..DATA_47 (front_end CON3, all bank 15, VCCO 3.3V), one bit per
+# Mic data lines DATA_00..DATA_47 (front_end CON3, VCCO 3.3V), one bit per
 # net: DATA[n] = DATA_nn. Each line carries two IM72D128 mics, L on the falling PDM_CLK
 # edge and R on the rising (pcb/SCHEMATIC_NOTES.md "Data Line Assignment"). CON3 pin,
 # bank-pin name and ball are from the AC7200 user manual's CON3 table; the CON3 pin of
@@ -107,7 +107,8 @@ create_waiver -type METHODOLOGY -id {TIMING-18} -user single_fpga -objects [get_
 # BUFG/BUFGCE skew (both fabric-fed from the non-clock-capable pin) then fails hold by
 # ~0.1 ns. The real relationship is fixed by the logic, not by any parameter: pdm_l/pdm_r
 # change only on the TCXO edge where pdm_div goes 0->1 (pdm_sampler's div_r == 3 branch;
-# reset holds them at their initial 0), and pipe_clk rises only where it goes 2->3. So
+# reset holds them at their initial 0), as does pipe_rst, the pipeline's reset (its
+# pdm_div == 0 enable), and pipe_clk rises only where pdm_div goes 2->3. So
 # each new value is captured two TCXO cycles after launch (setup -end 2), and the latest
 # capture it could disturb is two cycles before launch (hold -end 3: the hold edge moves
 # back from launch + 1 cycle, where setup 2 leaves it, to launch - 2). Cells are named
@@ -115,14 +116,14 @@ create_waiver -type METHODOLOGY -id {TIMING-18} -user single_fpga -objects [get_
 # consumes the pipeline (no MAC yet) synthesis trims these cells, and -quiet doesn't stop
 # synthesis noting "Empty from list" (Synth 8-3321) for the first line; that goes away
 # once the pipeline drives the MAC.
-set_multicycle_path -quiet -setup -end 2 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*]}]
-set_multicycle_path -quiet -hold  -end 3 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*]}]
-set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {DATA[0]}]  ;# CON3.5  B15_L4_P
-set_property -dict {PACKAGE_PIN G18 IOSTANDARD LVCMOS33} [get_ports {DATA[1]}]  ;# CON3.7  B15_L4_N
-set_property -dict {PACKAGE_PIN G15 IOSTANDARD LVCMOS33} [get_ports {DATA[2]}]  ;# CON3.11 B15_L2_P
-set_property -dict {PACKAGE_PIN G16 IOSTANDARD LVCMOS33} [get_ports {DATA[3]}]  ;# CON3.13 B15_L2_N
+set_multicycle_path -quiet -setup -end 2 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*] pipe_rst_reg*}]
+set_multicycle_path -quiet -hold  -end 3 -from [get_cells -quiet {u_pdm_sampler/pdm_l_reg[*] u_pdm_sampler/pdm_r_reg[*] pipe_rst_reg*}]
+set_property -dict {PACKAGE_PIN F15 IOSTANDARD LVCMOS33} [get_ports {DATA[0]}]  ;# CON3.3  B16_IO0
+set_property -dict {PACKAGE_PIN G21 IOSTANDARD LVCMOS33} [get_ports {DATA[1]}]  ;# CON3.22 B16_L24_P
+set_property -dict {PACKAGE_PIN M17 IOSTANDARD LVCMOS33} [get_ports {DATA[2]}]  ;# CON3.2  B15_IO25
+set_property -dict {PACKAGE_PIN G22 IOSTANDARD LVCMOS33} [get_ports {DATA[3]}]  ;# CON3.24 B16_L24_N
 set_property -dict {PACKAGE_PIN J16 IOSTANDARD LVCMOS33} [get_ports {DATA[4]}]  ;# CON3.1  B15_IO0
-set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports {DATA[5]}]  ;# CON3.17 B15_L12_N
+set_property -dict {PACKAGE_PIN D22 IOSTANDARD LVCMOS33} [get_ports {DATA[5]}]  ;# CON3.18 B16_L22_N
 set_property -dict {PACKAGE_PIN J20 IOSTANDARD LVCMOS33} [get_ports {DATA[6]}]  ;# CON3.21 B15_L11_P
 set_property -dict {PACKAGE_PIN J21 IOSTANDARD LVCMOS33} [get_ports {DATA[7]}]  ;# CON3.23 B15_L11_N
 set_property -dict {PACKAGE_PIN G13 IOSTANDARD LVCMOS33} [get_ports {DATA[8]}]  ;# CON3.25 B15_L1_N
@@ -165,3 +166,87 @@ set_property -dict {PACKAGE_PIN M15 IOSTANDARD LVCMOS33} [get_ports {DATA[44]}] 
 set_property -dict {PACKAGE_PIN M18 IOSTANDARD LVCMOS33} [get_ports {DATA[45]}] ;# CON3.72 B15_L16_P
 set_property -dict {PACKAGE_PIN M16 IOSTANDARD LVCMOS33} [get_ports {DATA[46]}] ;# CON3.73 B15_L24_N
 set_property -dict {PACKAGE_PIN L18 IOSTANDARD LVCMOS33} [get_ports {DATA[47]}] ;# CON3.74 B15_L16_N
+
+# ---------------------------------------------------------------------------------------
+# GbE: AC7200 200 MHz SYS_CLK -> MMCM -> 125 MHz RGMII clocks, the DP83867 (front_end U3)
+# on CON3 RGMII and CON1 PHY_RESET_N. Pins from the AC7200 manual's CON1/CON3 tables and a
+# kicad-cli netlist of pcb/single_fpga/front_end.kicad_sch (RGMII RX moved to bank 15 so
+# BUFIO/BUFR from RXC reaches it -- see pcb/SCHEMATIC_NOTES.md "GbE PHY, RGMII and Y1").
+# ---------------------------------------------------------------------------------------
+
+# SYS_CLK: SiT9102 200 MHz differential, bank 34 (1.5 V, the DDR3 bank).
+set_property -dict {PACKAGE_PIN R4 IOSTANDARD DIFF_SSTL15} [get_ports SYS_CLK_P]
+set_property -dict {PACKAGE_PIN T4 IOSTANDARD DIFF_SSTL15} [get_ports SYS_CLK_N]
+create_clock -period 5.000 -name SYS_CLK [get_ports SYS_CLK_P]
+
+# RGMII TX, bank 16 (3.3 V).
+#   RGMII_TXC     CON3.14  B16_L23_N  D21
+#   RGMII_TX_CTL  CON3.16  B16_L22_P  E22
+#   RGMII_TXD0-3  CON3.12/8/6/4  B16_L23_P/L21_P/L21_N/IO25  E21/B21/A21/F21
+# All on CON3's even (west) row, south to north TXD3, TXD2, TXD1, TXD0, TXC, TX_CTL --
+# U3's own pin order, so the TX bundle routes without crossings.
+set_property -dict {PACKAGE_PIN D21 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports RGMII_TXC]
+set_property -dict {PACKAGE_PIN E22 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports RGMII_TX_CTL]
+set_property -dict {PACKAGE_PIN E21 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports {RGMII_TXD[0]}]
+set_property -dict {PACKAGE_PIN B21 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports {RGMII_TXD[1]}]
+set_property -dict {PACKAGE_PIN A21 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports {RGMII_TXD[2]}]
+set_property -dict {PACKAGE_PIN F21 IOSTANDARD LVCMOS33 DRIVE 8 SLEW FAST} [get_ports {RGMII_TXD[3]}]
+
+# RGMII RX, bank 15 (3.3 V). RXC is on a clock-capable (MRCC) pin.
+#   RGMII_RXC     CON3.15  B15_L12_P  J19
+#   RGMII_RX_CTL  CON3.11  B15_L2_P   G15
+#   RGMII_RXD0-3  CON3.7/5/13/17  B15_L4_N/L4_P/L2_N/L12_N  G18/G17/G16/H19
+# All on CON3's odd (east) row, pins 5-17; RXC has to stay on CON3.15 (clock-capable).
+set_property -dict {PACKAGE_PIN J19 IOSTANDARD LVCMOS33} [get_ports RGMII_RXC]
+set_property -dict {PACKAGE_PIN G15 IOSTANDARD LVCMOS33} [get_ports RGMII_RX_CTL]
+set_property -dict {PACKAGE_PIN G18 IOSTANDARD LVCMOS33} [get_ports {RGMII_RXD[0]}]
+set_property -dict {PACKAGE_PIN G17 IOSTANDARD LVCMOS33} [get_ports {RGMII_RXD[1]}]
+set_property -dict {PACKAGE_PIN G16 IOSTANDARD LVCMOS33} [get_ports {RGMII_RXD[2]}]
+set_property -dict {PACKAGE_PIN H19 IOSTANDARD LVCMOS33} [get_ports {RGMII_RXD[3]}]
+
+# PHY_RESET_N  CON1.28  B13_L2_N  AB17. Held low ~10 ms after configuration, then high;
+# the board's R9 10k pull-up holds it high while the FPGA is unconfigured.
+set_property -dict {PACKAGE_PIN AB17 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get_ports PHY_RESET_N]
+set_false_path -to [get_ports PHY_RESET_N]
+
+# RX timing (DP83867 RGMII timing, RX clock skew strap mode 1 = 2 ns internal delay):
+# at the PHY's pins data is valid >= 1.2 ns before and after each RXC edge (TsetupT,
+# TholdT with internal delay). Board skew within the RX group is a few mm (<0.05 ns).
+# Center-aligned DDR input: max = T/2 - setup = 2.8 ns, min = hold = 1.2 ns, both edges.
+create_clock -period 8.000 -name RGMII_RXC [get_ports RGMII_RXC]
+set_input_delay -clock RGMII_RXC -max 2.8 [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
+set_input_delay -clock RGMII_RXC -min 1.2 [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
+set_input_delay -clock RGMII_RXC -clock_fall -max 2.8 -add_delay [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
+set_input_delay -clock RGMII_RXC -clock_fall -min 1.2 -add_delay [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
+
+# TX timing (RGMII TX clock skew strap mode 1 = the PHY delays TXC by 2 ns internally):
+# TXC leaves the FPGA edge-aligned with its data, both from ODDRs on gtx_clk, and must
+# meet the RGMII transmitter spec, data within +-0.5 ns of each TXC edge (TskewT) --
+# tighter than the PHY's own +-1.0 ns (TsetupR/TholdR with internal delay). Skew-based
+# DDR output: each data edge is checked against the same-edge TXC transition
+# (multicycle setup 0 / hold -1), max = -skew_after = -0.5, min = +skew_before = 0.5,
+# and the opposite-edge pairs are false paths.
+create_generated_clock -name RGMII_TXC -source [get_pins mmcm_gtx/CLKOUT0] -multiply_by 1 [get_ports RGMII_TXC]
+set_output_delay -clock RGMII_TXC -max -0.5 [get_ports {RGMII_TXD[*] RGMII_TX_CTL}]
+set_output_delay -clock RGMII_TXC -min  0.5 [get_ports {RGMII_TXD[*] RGMII_TX_CTL}]
+set_output_delay -clock RGMII_TXC -clock_fall -max -0.5 -add_delay [get_ports {RGMII_TXD[*] RGMII_TX_CTL}]
+set_output_delay -clock RGMII_TXC -clock_fall -min  0.5 -add_delay [get_ports {RGMII_TXD[*] RGMII_TX_CTL}]
+set_multicycle_path -setup 0 -from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -to [get_clocks RGMII_TXC]
+set_multicycle_path -hold -1 -from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -to [get_clocks RGMII_TXC]
+set_false_path -setup -rise_from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -fall_to [get_clocks RGMII_TXC]
+set_false_path -setup -fall_from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -rise_to [get_clocks RGMII_TXC]
+set_false_path -hold  -rise_from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -fall_to [get_clocks RGMII_TXC]
+set_false_path -hold  -fall_from [get_clocks -of_objects [get_pins mmcm_gtx/CLKOUT0]] -rise_to [get_clocks RGMII_TXC]
+
+# The three clock sources are independent oscillators. Every crossing between them is
+# handled in logic: the packetizer's toggle-synchronized ping-pong handoff (TCXO ->
+# 125 MHz), status_led's pkt_toggle synchronizer (125 MHz -> TCXO), and the MAC's own
+# RXC-rate speed detector (RXC -> 125 MHz).
+# The vendored MAC's RXC -> gtx_clk synchronizers, marked ASYNC_REG here rather than in
+# third_party/ (kept unmodified): the speed detector's prescaler sync, and the MII-select
+# sync into the RX clock domain (unused while RX is disabled, hence -quiet).
+set_property -quiet ASYNC_REG TRUE [get_cells -quiet {u_mac/rx_prescale_sync_reg[*] u_mac/rx_mii_select_sync_reg[*]}]
+set_clock_groups -asynchronous \
+    -group [get_clocks -include_generated_clocks TCXO_CLK] \
+    -group [get_clocks -include_generated_clocks SYS_CLK] \
+    -group [get_clocks RGMII_RXC]

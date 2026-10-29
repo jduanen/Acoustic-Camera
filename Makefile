@@ -166,7 +166,7 @@ sim-pdm-sampler:
 	$(call XSIM_RUN_SINGLE_FPGA,../rtl/pdm_sampler.v tb_pdm_sampler.v,tb_pdm_sampler)
 
 sim-board-top:
-	$(call XSIM_RUN_SINGLE_FPGA_UNISIM,../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v ../rtl/pdm_sampler.v ../rtl/status_led.v ../rtl/single_fpga_top.v tb_single_fpga_top.v,tb_single_fpga_top)
+	$(call XSIM_RUN_SINGLE_FPGA_UNISIM,../rtl/third_party/verilog-ethernet/eth_mac_1g_rgmii.v ../rtl/third_party/verilog-ethernet/eth_mac_1g.v ../rtl/third_party/verilog-ethernet/axis_gmii_rx.v ../rtl/third_party/verilog-ethernet/axis_gmii_tx.v ../rtl/third_party/verilog-ethernet/lfsr.v ../rtl/third_party/verilog-ethernet/rgmii_phy_if.v ../rtl/third_party/verilog-ethernet/ssio_ddr_in.v ../rtl/third_party/verilog-ethernet/iddr.v ../rtl/third_party/verilog-ethernet/oddr.v ../../multi_fpga/cluster/rtl/cic_decimator.v ../../multi_fpga/cluster/rtl/fir_compensator.v ../rtl/gbe_packetizer.v ../rtl/single_fpga_pipeline_top.v ../rtl/pdm_sampler.v ../rtl/status_led.v ../rtl/single_fpga_top.v tb_single_fpga_top.v,tb_single_fpga_top)
 
 # Single-FPGA Vivado batch builds (non-project mode; see each script's header).
 build-spike:

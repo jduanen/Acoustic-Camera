@@ -162,14 +162,14 @@ def gen_board_top_vectors():
     the same pipe_clk edge, so every channel gets the same shift. The
     testbench's mics start streaming at the first PDM_CLK fall after the
     board top's POR releases; that period's L/R pair reaches the CICs on
-    their third post-reset sample (the first two are the sampler's
-    reset-cleared outputs and the pair requested before streaming began),
-    hence two leading zeros. Derivation in tb_single_fpga_top.v's header.
+    their second post-reset sample (the first is the pair requested before
+    streaming began), hence one leading zero. Derivation in
+    tb_single_fpga_top.v's header.
     """
     os.makedirs(VEC_DIR, exist_ok=True)
     coeffs = quantize_coeffs(design_compensation_fir())
     pdm_bits, _ = gen_multitone_pdm(n_ch=N_CH, n_frames=N_FRAMES)
-    lead = 2
+    lead = 1
 
     def channel_pipeline(bits1ch):
         b = [int(x) for x in bits1ch]
@@ -185,7 +185,17 @@ def gen_board_top_vectors():
         for frame_idx in range(N_FRAMES):
             for c in range(N_CH):
                 f.write(f"{per_channel_out[c][frame_idx]:0{hex_digits}x}\n")
-    print(f"board_top: {N_CH} channels x {N_FRAMES} frames -> board_top_expected_channels.mem")
+    # ...and the UDP frames the MAC sends for them (tb_single_fpga_top.v
+    # decodes RGMII_TXD back to these bytes), same packing as the pipeline's.
+    per_channel_frames = [[per_channel_out[c][f] for c in range(N_CH)] for f in range(N_FRAMES)]
+    packets = gen_packets(per_channel_frames, DST_MAC, SRC_MAC, SRC_IP, DST_IP,
+                          SRC_PORT, DST_PORT)
+    with open(os.path.join(VEC_DIR, "board_top_expected_packets.mem"), "w") as f:
+        for pkt in packets:
+            for byte in pkt:
+                f.write(f"{byte:02x}\n")
+    print(f"board_top: {N_CH} channels x {N_FRAMES} frames -> {len(packets)} packets "
+          f"-> board_top_expected_channels.mem / board_top_expected_packets.mem")
 
 
 if __name__ == "__main__":

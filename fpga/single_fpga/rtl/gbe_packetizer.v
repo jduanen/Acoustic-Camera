@@ -188,7 +188,7 @@ module gbe_packetizer #(
     // divide-by-3 to recover a channel/byte-within-channel address pair from
     // a flat byte offset.
     // ------------------------------------------------------------------
-    reg [2:0] tog_sync;
+    (* ASYNC_REG = "TRUE" *) reg [2:0] tog_sync;
     wire      pkt_pulse = tog_sync[2] ^ tog_sync[1];
 
     reg                     pkt_pending;

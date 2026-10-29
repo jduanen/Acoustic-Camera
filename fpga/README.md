@@ -42,9 +42,12 @@ working alternate, staged in three parts:
   L/R bits with a once-per-period `pdm_valid`; input delays and multicycle in the XDC;
   `sim-pdm-sampler`), feeding the 96-channel CIC+FIR+packetizer pipeline
   (`rtl/single_fpga_pipeline_top.v`, now taking separated L/R bits) on a 3.072 MHz
-  `pipe_clk` gated from TCXO_CLK by a BUFGCE. `sim-board-top` checks it bit-exact from the
-  pins (modelled mics on DATA) to all 96 FIR outputs. The RGMII MAC isn't in yet, so the
-  packetizer's MAC side is tied off and synthesis trims the pipeline until it is.
+  `pipe_clk` gated from TCXO_CLK by a BUFGCE, and the vendored RGMII MAC sending its UDP
+  frames to the DP83867 (125 MHz + 90-degree clocks from the module's 200 MHz SYS_CLK via an
+  MMCM; TX only; PHY_RESET_N pulsed after configuration; no MDIO yet). `sim-board-top`
+  checks it from the pins: modelled mics on DATA, all 96 FIR outputs bit-exact, and the
+  RGMII TX frames decoded back to bytes (preamble, body, FCS) plus the PHY's TXC-to-data
+  timing.
   `make build-top` runs `vivado/build_top.tcl` through to a bitstream
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
 

@@ -34,7 +34,7 @@ module status_led #(
     output wire led_g,
     output wire led_b
 );
-    reg [2:0] pkt_sync = 3'b000;
+    (* ASYNC_REG = "TRUE" *) reg [2:0] pkt_sync = 3'b000;
     always @(posedge clk)
         pkt_sync <= {pkt_sync[1:0], pkt_toggle};
     wire pkt_seen = pkt_sync[2] ^ pkt_sync[1];
