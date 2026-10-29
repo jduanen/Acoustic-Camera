@@ -314,14 +314,17 @@ once. Rotating U3 90° counter-clockwise would remove that crossing.
 - RX_CTRL = mode 3 (R11 5.76k / R12 2.49k), as the datasheet requires; autoneg enabled.
   LED_1 mode 1 sets ANEG_SEL = 0 (as mode 2 did): the PHY advertises 10/100/1000.
 
-**RGMII lengths** (front_end only; the AC7200 module's internal routing is unknown and
-adds to these). Both rows predate the row-grouping pin move and need re-measuring once
-the groups are re-routed:
+**RGMII lengths** (front_end only, pad to pad; each net has 2 vias, counted at 1.545 mm
+each; the AC7200 module's internal routing is unknown and adds to these). Re-balanced with
+tuning meanders after the row-grouping pin move:
 
-| Group | Clock | Worst data/ctl vs clock |
-|---|---|---|
-| TX | TXC 54.6 mm | 1.8 mm (~11 ps), TXD0 |
-| RX | RXC 37.1 mm | 4.4 mm (~27 ps), RXD1 |
+| Group | Clock | Data/ctl | Worst vs clock | Group spread |
+|---|---|---|---|---|
+| TX | TXC 53.05 mm | 53.22–53.54 mm | +0.49 mm (~3 ps), TXD0 | 0.49 mm |
+| RX | RXC 44.11 mm | 43.64–44.33 mm | −0.46 mm (~3 ps), RXD1 | 0.69 mm |
+
+For scale: the PHY accepts TXC within ±1.0 ns of its data and gives ±1.2 ns of RX setup
+and hold, so these skews are a few percent of the margin.
 
 **U3 exposed pad.** 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) are marked
 **filled and capped** (IPC-4761 Type VII) in their via properties; every other via uses
@@ -426,10 +429,8 @@ B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
 
 - **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
   entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
-- **front_end**: ERC-clean. The schematic's CON3 RGMII/DATA pin assignment (RX on the
-  east row, TX on the west) and R5/R6 DNP aren't on the PCB yet: run Update PCB from
-  Schematic, re-route the RGMII and moved DATA nets, re-check RX and TX length matching,
-  then re-run DRC.
+- **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
+  including the row-grouped RGMII pins, R5/R6 DNP and the re-balanced RGMII lengths above.
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
   - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;
