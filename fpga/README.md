@@ -45,12 +45,13 @@ working alternate, staged in three parts:
   (`rtl/single_fpga_pipeline_top.v`, now taking separated L/R bits) on a 3.072 MHz
   `pipe_clk` gated from TCXO_CLK by a BUFGCE, and the vendored RGMII MAC sending its UDP
   frames to the DP83867 (125 MHz + 90-degree clocks from the module's 200 MHz SYS_CLK via an
-  MMCM; TX only; PHY_RESET_N pulsed after configuration; `rtl/mdio_init.v` then sets the
+  MMCM; on receive -- RX inputs centred by fixed IDELAYs -- `rtl/arp_responder.v` answers
+  ARP for the board's IP and slips the replies in between UDP packets; PHY_RESET_N pulsed after configuration; `rtl/mdio_init.v` then sets the
   PHY to advertise 1000 Mb/s only over MDIO and reads it back, lighting the LED red if it
   didn't take; `sim-mdio-init`, against `sim/mdio_phy_model.v`). `sim-board-top`
   checks it from the pins: modelled mics on DATA, all 96 FIR outputs bit-exact, and the
   RGMII TX frames decoded back to bytes (preamble, body, FCS) plus the PHY's TXC-to-data
-  timing.
+  timing, with ARP requests driven into RGMII RX and the replies checked on TX.
   `make build-top` runs `vivado/build_top.tcl` through to a bitstream
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
 

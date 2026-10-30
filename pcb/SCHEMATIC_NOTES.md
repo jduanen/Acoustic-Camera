@@ -310,7 +310,10 @@ once. Rotating U3 90° counter-clockwise would remove that crossing.
   mode 5, 0 ns: the FPGA then had to shift TXC 90° itself, and that closed timing with
   only ~20 ps either side across process corners, so they were left unfitted.
 - RX clock skew: GPIO_0/GPIO_1 unstrapped → **mode 1, 2.0 ns**. The PHY centres RXC in the
-  data (≥1.2 ns setup and hold at its pins), so the FPGA captures with no added delay.
+  data (≥1.2 ns setup and hold at its pins). The FPGA's BUFIO capture clock lands ~1 ns
+  late against that, so it delays each RX input with a fixed IDELAYE2 (11 taps, ~0.86 ns),
+  leaving ~0.45 ns setup and hold. The receive path is live: the FPGA answers ARP
+  requests for the board's IP.
 - RX_CTRL = mode 3 (R11 5.76k / R12 2.49k), as the datasheet requires; autoneg enabled.
   LED_1 mode 1 sets ANEG_SEL = 0 (as mode 2 did): the PHY comes out of reset advertising
   10/100/1000. The FPGA then rewrites that over MDIO (PHY address 0, RX_D0/RX_D2

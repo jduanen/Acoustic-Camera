@@ -38,6 +38,7 @@ read_verilog [list \
     $repo_root/fpga/single_fpga/rtl/single_fpga_pipeline_top.v \
     $repo_root/fpga/single_fpga/rtl/status_led.v \
     $repo_root/fpga/single_fpga/rtl/mdio_init.v \
+    $repo_root/fpga/single_fpga/rtl/arp_responder.v \
     $repo_root/fpga/single_fpga/rtl/pdm_sampler.v \
     $repo_root/fpga/single_fpga/rtl/single_fpga_top.v \
 ]

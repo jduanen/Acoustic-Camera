@@ -223,6 +223,9 @@ set_false_path -from [get_ports MDIO]
 # at the PHY's pins data is valid >= 1.2 ns before and after each RXC edge (TsetupT,
 # TholdT with internal delay). Board skew within the RX group is a few mm (<0.05 ns).
 # Center-aligned DDR input: max = T/2 - setup = 2.8 ns, min = hold = 1.2 ns, both edges.
+# The BUFIO capture clock arrives ~1 ns late against this, so the RTL delays each RX input
+# by a fixed IDELAYE2 (RX_IDELAY_TAPS = 11, ~0.86 ns), centring the window: ~0.45 ns
+# setup and hold.
 create_clock -period 8.000 -name RGMII_RXC [get_ports RGMII_RXC]
 set_input_delay -clock RGMII_RXC -max 2.8 [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
 set_input_delay -clock RGMII_RXC -min 1.2 [get_ports {RGMII_RXD[*] RGMII_RX_CTL}]
@@ -252,10 +255,10 @@ set_false_path -hold  -fall_from [get_clocks -of_objects [get_pins mmcm_gtx/CLKO
 # handled in logic: the packetizer's toggle-synchronized ping-pong handoff (TCXO ->
 # 125 MHz), status_led's pkt_toggle synchronizer (125 MHz -> TCXO), and the MAC's own
 # RXC-rate speed detector (RXC -> 125 MHz).
-# The vendored MAC's RXC -> gtx_clk synchronizers, marked ASYNC_REG here rather than in
-# third_party/ (kept unmodified): the speed detector's prescaler sync, and the MII-select
-# sync into the RX clock domain (unused while RX is disabled, hence -quiet).
-set_property -quiet ASYNC_REG TRUE [get_cells -quiet {u_mac/rx_prescale_sync_reg[*] u_mac/rx_mii_select_sync_reg[*]}]
+# The vendored MAC's clock-crossing synchronizers, marked ASYNC_REG here rather than in
+# third_party/ (kept unmodified): the speed detector's prescaler sync (RXC -> gtx_clk),
+# the MII-select sync and the RX reset synchronizer (gtx_clk -> RXC).
+set_property -quiet ASYNC_REG TRUE [get_cells -quiet {u_mac/rx_prescale_sync_reg[*] u_mac/rx_mii_select_sync_reg[*] u_mac/rgmii_phy_if_inst/rx_rst_reg_reg[*]}]
 set_clock_groups -asynchronous \
     -group [get_clocks -include_generated_clocks TCXO_CLK] \
     -group [get_clocks -include_generated_clocks SYS_CLK] \

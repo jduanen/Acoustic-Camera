@@ -14,17 +14,21 @@
 // Clocks, power-on reset, the status LED, DATA sampling (pdm_sampler.v), the
 // 96-channel CIC+FIR+packetizer pipeline (single_fpga_pipeline_top.v) and the
 // vendored 1G RGMII MAC (third_party/verilog-ethernet/eth_mac_1g_rgmii.v)
-// sending the packetizer's UDP frames to the PHY. TX only: received frames
-// are dropped, but the MAC still needs RGMII_RXC -- it sets its own speed
-// from RXC's rate, and with no RXC it falls back to 10 Mb/s.
+// sending the packetizer's UDP frames to the PHY. On receive, arp_responder.v
+// answers ARP requests for the board's IP and merges the replies into the
+// UDP stream between packets; every other received frame is dropped. The MAC
+// also sets its own speed from RGMII_RXC's rate (no RXC = 10 Mb/s).
 //
 // RGMII timing follows the board's DP83867 straps (pcb/SCHEMATIC_NOTES.md
 // "GbE PHY, RGMII and Y1"): TX and RX clock skew both strap mode 1, so the PHY
 // adds 2 ns to each clock itself. TXC therefore leaves the FPGA edge-aligned
 // with its data (USE_CLK90 "FALSE": forwarded from gtx_clk by an ODDR like
-// the data), and RXC arrives centred in its data, captured with no FPGA-side
-// delay (BUFIO/BUFR, which needs RXC and all RX inputs in one bank -- bank
-// 15). A 90-degree FPGA-side TXC shift, with the PHY's TX delay strapped off,
+// the data), and RXC arrives centred in its data. RX is captured by the
+// MAC's BUFIO/BUFR-clocked IDDRs, which needs RXC and all RX inputs in one
+// bank (bank 15); the BUFIO path lands the clock ~1 ns late against the PHY's
+// +-1.2 ns window, so each RX input first goes through a fixed IDELAYE2
+// (RX_IDELAY_TAPS x 78 ps, 200 MHz IDELAYCTRL reference from the MMCM),
+// leaving ~0.45 ns of setup and hold. A 90-degree FPGA-side TXC shift, with the PHY's TX delay strapped off,
 // left ~20 ps of margin across corners, which is why R5/R6 are now unfitted.
 //
 // PHY_RESET_N is held low for PHY_RST_CYCLES TCXO cycles (~10.7 ms) after
@@ -37,7 +41,7 @@
 // advertisement back; if it didn't take, the status LED shows solid red.
 //
 // The status LED's streaming indication comes from pkt_toggle, flipped in
-// the MAC's tx_clk domain on the last byte of each frame accepted.
+// the MAC's tx_clk domain on the last byte of each UDP frame accepted.
 //
 // TCXO_CLK's ball isn't clock-capable, so the BUFG is reached over fabric
 // routing (CLOCK_DEDICATED_ROUTE FALSE in the XDC) and the divide is a plain
@@ -56,7 +60,8 @@
 module single_fpga_top #(
     parameter integer POR_CYCLES     = 16,
     parameter integer PHY_RST_CYCLES = 1 << 17,
-    parameter integer MDIO_WAIT      = 1 << 13   // mdio_init's post-reset wait
+    parameter integer MDIO_WAIT      = 1 << 13,  // mdio_init's post-reset wait
+    parameter integer RX_IDELAY_TAPS = 11
 ) (
     input  wire        TCXO_CLK,
     output wire        PDM_CLK,
@@ -117,24 +122,46 @@ module single_fpga_top #(
         .pdm_l(pdm_l), .pdm_r(pdm_r), .pdm_valid(pdm_valid)
     );
 
-    // ---- 125 MHz RGMII clock from the 200 MHz SYS_CLK ----
-    // VCO 1000 MHz (x5); 125 MHz = /8.
-    wire sys_clk, mmcm_fb, gtx_clk_mmcm, mmcm_locked;
+    // ---- 125 MHz RGMII clock and 200 MHz IDELAY reference from SYS_CLK ----
+    // VCO 1000 MHz (x5); 125 MHz = /8, 200 MHz = /5.
+    wire sys_clk, mmcm_fb, gtx_clk_mmcm, ref_clk_mmcm, mmcm_locked;
     IBUFDS ibufds_sys (.I(SYS_CLK_P), .IB(SYS_CLK_N), .O(sys_clk));
     MMCME2_BASE #(
         .CLKIN1_PERIOD(5.000),
         .DIVCLK_DIVIDE(1),
         .CLKFBOUT_MULT_F(5.000),
-        .CLKOUT0_DIVIDE_F(8.000)
+        .CLKOUT0_DIVIDE_F(8.000),
+        .CLKOUT1_DIVIDE(5)
     ) mmcm_gtx (
         .CLKIN1(sys_clk), .CLKFBIN(mmcm_fb), .CLKFBOUT(mmcm_fb),
-        .CLKOUT0(gtx_clk_mmcm), .CLKOUT1(),
+        .CLKOUT0(gtx_clk_mmcm), .CLKOUT1(ref_clk_mmcm),
         .CLKOUT0B(), .CLKOUT1B(), .CLKOUT2(), .CLKOUT2B(), .CLKOUT3(), .CLKOUT3B(),
         .CLKOUT4(), .CLKOUT5(), .CLKOUT6(), .CLKFBOUTB(),
         .LOCKED(mmcm_locked), .PWRDWN(1'b0), .RST(1'b0)
     );
-    wire gtx_clk;
+    wire gtx_clk, ref_clk;
     BUFG bufg_gtx (.I(gtx_clk_mmcm), .O(gtx_clk));
+    BUFG bufg_ref (.I(ref_clk_mmcm), .O(ref_clk));
+
+    // ---- RGMII RX input delays (see header) ----
+    (* IODELAY_GROUP = "rgmii_rx" *)
+    IDELAYCTRL idelayctrl_rx (.REFCLK(ref_clk), .RST(!mmcm_locked), .RDY());
+    wire [4:0] rx_in = {RGMII_RX_CTL, RGMII_RXD};
+    wire [4:0] rx_dly;
+    genvar ri;
+    generate
+        for (ri = 0; ri < 5; ri = ri + 1) begin : g_rx_dly
+            (* IODELAY_GROUP = "rgmii_rx" *)
+            IDELAYE2 #(
+                .IDELAY_TYPE("FIXED"), .DELAY_SRC("IDATAIN"), .IDELAY_VALUE(RX_IDELAY_TAPS),
+                .HIGH_PERFORMANCE_MODE("TRUE"), .SIGNAL_PATTERN("DATA"), .REFCLK_FREQUENCY(200.0)
+            ) idelay (
+                .IDATAIN(rx_in[ri]), .DATAOUT(rx_dly[ri]),
+                .C(1'b0), .CE(1'b0), .INC(1'b0), .LD(1'b0), .LDPIPEEN(1'b0), .REGRST(1'b0),
+                .CINVCTRL(1'b0), .CNTVALUEIN(5'd0), .DATAIN(1'b0), .CNTVALUEOUT()
+            );
+        end
+    endgenerate
 
     // gtx_rst: asserted while the MMCM is unlocked, released synchronously.
     reg [3:0] gtx_rst_sync = 4'hf;
@@ -162,22 +189,39 @@ module single_fpga_top #(
     );
     assign MDIO = mdio_oe ? mdio_o : 1'bz;
 
-    wire       tx_clk, tx_rst, tx_axis_tready;
-    wire [7:0] tx_axis_tdata;
-    wire       tx_axis_tvalid, tx_axis_tlast, tx_axis_tuser;
-
     // Addresses are the same placeholders tb_gbe_pipeline.v and the Stage 2
     // spike use -- set the host's MAC/IP before connecting to a real network.
+    // The board answers ARP for BOARD_IP with BOARD_MAC.
+    localparam [47:0] BOARD_MAC = 48'h001122334455, HOST_MAC = 48'hAABBCCDDEEFF;
+    localparam [31:0] BOARD_IP  = 32'hC0A80002,     HOST_IP  = 32'hC0A80001;
+
+    wire       tx_clk, tx_rst, rx_clk, rx_rst;
+    wire [7:0] pkt_tdata, tx_axis_tdata, rx_axis_tdata;     // packetizer / to MAC / from MAC
+    wire       pkt_tvalid, pkt_tready, pkt_tlast, pkt_tuser;
+    wire       tx_axis_tvalid, tx_axis_tready, tx_axis_tlast, tx_axis_tuser;
+    wire       rx_axis_tvalid, rx_axis_tlast, rx_axis_tuser;
+
     single_fpga_pipeline_top #(
-        .DST_MAC(48'hAABBCCDDEEFF), .SRC_MAC(48'h001122334455),
-        .SRC_IP(32'hC0A80002),      .DST_IP(32'hC0A80001),
+        .DST_MAC(HOST_MAC), .SRC_MAC(BOARD_MAC),
+        .SRC_IP(BOARD_IP),  .DST_IP(HOST_IP),
         .SRC_PORT(16'd50000),       .DST_PORT(16'd50000)
     ) u_pipeline (
         .clk(pipe_clk), .rst(pipe_rst), .ch_l(pdm_l), .ch_r(pdm_r),
         .tx_clk(tx_clk), .tx_rst(tx_rst),
-        .tx_axis_tdata(tx_axis_tdata), .tx_axis_tvalid(tx_axis_tvalid),
-        .tx_axis_tready(tx_axis_tready), .tx_axis_tlast(tx_axis_tlast),
-        .tx_axis_tuser(tx_axis_tuser)
+        .tx_axis_tdata(pkt_tdata), .tx_axis_tvalid(pkt_tvalid),
+        .tx_axis_tready(pkt_tready), .tx_axis_tlast(pkt_tlast),
+        .tx_axis_tuser(pkt_tuser)
+    );
+
+    arp_responder #(.MY_MAC(BOARD_MAC), .MY_IP(BOARD_IP)) u_arp (
+        .rx_clk(rx_clk), .rx_rst(rx_rst),
+        .rx_tdata(rx_axis_tdata), .rx_tvalid(rx_axis_tvalid),
+        .rx_tlast(rx_axis_tlast), .rx_tuser(rx_axis_tuser),
+        .tx_clk(tx_clk), .tx_rst(tx_rst),
+        .s_tdata(pkt_tdata), .s_tvalid(pkt_tvalid), .s_tready(pkt_tready),
+        .s_tlast(pkt_tlast), .s_tuser(pkt_tuser),
+        .m_tdata(tx_axis_tdata), .m_tvalid(tx_axis_tvalid), .m_tready(tx_axis_tready),
+        .m_tlast(tx_axis_tlast), .m_tuser(tx_axis_tuser)
     );
 
     eth_mac_1g_rgmii #(
@@ -187,26 +231,27 @@ module single_fpga_top #(
         .USE_CLK90("FALSE")
     ) u_mac (
         .gtx_clk(gtx_clk), .gtx_clk90(1'b0), .gtx_rst(gtx_rst),
-        .rx_clk(), .rx_rst(),
+        .rx_clk(rx_clk), .rx_rst(rx_rst),
         .tx_clk(tx_clk), .tx_rst(tx_rst),
 
         .tx_axis_tdata(tx_axis_tdata), .tx_axis_tvalid(tx_axis_tvalid),
         .tx_axis_tready(tx_axis_tready), .tx_axis_tlast(tx_axis_tlast),
         .tx_axis_tuser(tx_axis_tuser),
 
-        .rx_axis_tdata(), .rx_axis_tvalid(), .rx_axis_tlast(), .rx_axis_tuser(),
+        .rx_axis_tdata(rx_axis_tdata), .rx_axis_tvalid(rx_axis_tvalid),
+        .rx_axis_tlast(rx_axis_tlast), .rx_axis_tuser(rx_axis_tuser),
 
-        .rgmii_rx_clk(RGMII_RXC), .rgmii_rxd(RGMII_RXD), .rgmii_rx_ctl(RGMII_RX_CTL),
+        .rgmii_rx_clk(RGMII_RXC), .rgmii_rxd(rx_dly[3:0]), .rgmii_rx_ctl(rx_dly[4]),
         .rgmii_tx_clk(RGMII_TXC), .rgmii_txd(RGMII_TXD), .rgmii_tx_ctl(RGMII_TX_CTL),
 
         .tx_error_underflow(), .rx_error_bad_frame(), .rx_error_bad_fcs(), .speed(),
 
-        .cfg_ifg(8'd12), .cfg_tx_enable(1'b1), .cfg_rx_enable(1'b0)
+        .cfg_ifg(8'd12), .cfg_tx_enable(1'b1), .cfg_rx_enable(1'b1)
     );
 
     reg pkt_toggle = 1'b0;              // tx_clk domain; status_led syncs it
-    always @(posedge tx_clk)
-        if (tx_axis_tvalid && tx_axis_tready && tx_axis_tlast)
+    always @(posedge tx_clk)            // UDP frames only, not ARP replies
+        if (pkt_tvalid && pkt_tready && pkt_tlast)
             pkt_toggle <= ~pkt_toggle;
 
     status_led u_status_led (

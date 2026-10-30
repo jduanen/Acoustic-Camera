@@ -10,6 +10,13 @@
 //   - the frames on the RGMII pins, decoded from TXC's two edges back into
 //     bytes: 7 x 0x55 + 0xD5 preamble/SFD, the body bit-exact against
 //     board_top_expected_packets.mem, and a correct Ethernet FCS.
+// RX/ARP: frames are driven onto RGMII_RXD/RX_CTL the way the PHY sends them
+// (RXC shifted 2 ns, so centred in each nibble): A, an ARP request for the
+// board's IP (broadcast); B, one for another IP; C, A again with a corrupted
+// FCS; D, a unicast request from a second host, sent while the first UDP
+// frame is on the wire. Exactly two ARP replies must come out on TX -- A's
+// before any UDP frame, D's right after UDP frame 0 (not cutting into it) --
+// each bit-exact (padded by the MAC to 60 bytes) with a good FCS.
 // SYS_CLK is a 200 MHz differential source and RGMII_RXC an idle 125 MHz
 // clock (the MAC sets its speed from RXC's rate). PHY_RESET_N must stay low
 // for PHY_RST_CYCLES (shortened here) and then go high, and the MDIO PHY
@@ -47,6 +54,8 @@ module tb_single_fpga_top;
     wire [N_LINES-1:0] data;
 
     localparam integer PHY_RST_CYCLES = 64;
+    reg [3:0] rxd_d = 4'h0;
+    reg       rxctl_d = 1'b0;
 
     reg sys_clk = 1'b0;
     always #2.5 sys_clk = ~sys_clk;     // 200 MHz
@@ -66,7 +75,7 @@ module tb_single_fpga_top;
         .DATA(data),
         .SYS_CLK_P(sys_clk), .SYS_CLK_N(~sys_clk),
         .RGMII_TXC(txc), .RGMII_TXD(txd), .RGMII_TX_CTL(tx_ctl),
-        .RGMII_RXC(rxc), .RGMII_RXD(4'h0), .RGMII_RX_CTL(1'b0),
+        .RGMII_RXC(rxc), .RGMII_RXD(rxd_d), .RGMII_RX_CTL(rxctl_d),
         .PHY_RESET_N(phy_reset_n),
         .MDC(mdc), .MDIO(mdio)
     );
@@ -170,43 +179,157 @@ module tb_single_fpga_top;
         end
     endfunction
 
+    // ARP replies expected on TX, in order (requests A and D)
+    localparam [47:0] BOARD_MAC = 48'h001122334455;
+    localparam [31:0] BOARD_IP  = 32'hC0A80002;
+    localparam integer N_ARP = 2;
+    reg [47:0] arp_sha [0:N_ARP-1];
+    reg [31:0] arp_spa [0:N_ARP-1];
+    initial begin
+        arp_sha[0] = 48'h020000000001; arp_spa[0] = 32'hC0A80001;
+        arp_sha[1] = 48'h020000000002; arp_spa[1] = 32'hC0A80005;
+    end
+    integer n_arp = 0, n_udp = 0, udp_at_arp1 = -1;
+
+    function [7:0] arp_reply_byte(input integer a, input integer i);
+        reg [47:0] sha; reg [31:0] spa;
+        begin
+            sha = arp_sha[a]; spa = arp_spa[a];
+            if      (i < 6)  arp_reply_byte = sha >> (8 * (5 - i));
+            else if (i < 12) arp_reply_byte = BOARD_MAC >> (8 * (11 - i));
+            else if (i < 22) arp_reply_byte = (i == 12) ? 8'h08 : (i == 13) ? 8'h06 : (i == 14) ? 8'h00 :
+                                              (i == 15) ? 8'h01 : (i == 16) ? 8'h08 : (i == 17) ? 8'h00 :
+                                              (i == 18) ? 8'h06 : (i == 19) ? 8'h04 : (i == 20) ? 8'h00 : 8'h02;
+            else if (i < 28) arp_reply_byte = BOARD_MAC >> (8 * (27 - i));
+            else if (i < 32) arp_reply_byte = BOARD_IP >> (8 * (31 - i));
+            else if (i < 38) arp_reply_byte = sha >> (8 * (37 - i));
+            else if (i < 42) arp_reply_byte = spa >> (8 * (41 - i));
+            else             arp_reply_byte = 8'h00;           // MAC padding to 60
+        end
+    endfunction
+
     task check_frame;
         reg [31:0] crc, fcs;
-        integer e0;
+        integer e0, body, nf;
+        reg [7:0] want;
         begin
             e0 = errors;
-            if (flen != 8 + PKT_BYTES + 4) begin
-                $display("FAIL: frame %0d is %0d bytes, expected %0d", n_pkts, flen, 8 + PKT_BYTES + 4);
+            body = flen - 12;                                 // minus preamble/SFD and FCS
+            for (k = 0; k < 7; k = k + 1)
+                if (fbuf[k] !== 8'h55) errors = errors + 1;
+            if (fbuf[7] !== 8'hD5) errors = errors + 1;
+            if (errors != e0) $display("FAIL: TX frame preamble/SFD wrong");
+            crc = 32'hFFFFFFFF;
+            for (k = 0; k < body && k < 2036; k = k + 1) crc = crc32_byte(crc, fbuf[8+k]);
+            fcs = {fbuf[8+body+3], fbuf[8+body+2], fbuf[8+body+1], fbuf[8+body]};
+            if (fcs !== ~crc) begin
+                $display("FAIL: TX frame FCS %08h, expected %08h", fcs, ~crc);
                 errors = errors + 1;
-            end else begin
-                for (k = 0; k < 7; k = k + 1)
-                    if (fbuf[k] !== 8'h55) errors = errors + 1;
-                if (fbuf[7] !== 8'hD5) errors = errors + 1;
-                if (errors != e0) $display("FAIL: frame %0d preamble/SFD wrong", n_pkts);
-                crc = 32'hFFFFFFFF;
-                for (k = 0; k < PKT_BYTES; k = k + 1) begin
-                    if (n_pkts < N_PACKETS && fbuf[8+k] !== pkt_exp[n_pkts*PKT_BYTES + k]) begin
-                        if (errors - e0 < 10)
-                            $display("FAIL: frame %0d byte %0d got %02h expected %02h",
-                                     n_pkts, k, fbuf[8+k], pkt_exp[n_pkts*PKT_BYTES + k]);
-                        errors = errors + 1;
+            end
+            if ({fbuf[8+12], fbuf[8+13]} == 16'h0806) begin
+                nf = n_arp;
+                if (n_arp >= N_ARP) begin
+                    $display("FAIL: unexpected ARP reply %0d", n_arp);
+                    errors = errors + 1;
+                end else if (body != 60) begin
+                    $display("FAIL: ARP reply %0d body is %0d bytes, expected 60", n_arp, body);
+                    errors = errors + 1;
+                end else begin
+                    for (k = 0; k < 60; k = k + 1) begin
+                        want = arp_reply_byte(n_arp, k);
+                        if (fbuf[8+k] !== want) begin
+                            if (errors - e0 < 10)
+                                $display("FAIL: ARP reply %0d byte %0d got %02h expected %02h", n_arp, k, fbuf[8+k], want);
+                            errors = errors + 1;
+                        end
                     end
-                    crc = crc32_byte(crc, fbuf[8+k]);
                 end
-                fcs = {fbuf[8+PKT_BYTES+3], fbuf[8+PKT_BYTES+2], fbuf[8+PKT_BYTES+1], fbuf[8+PKT_BYTES]};
-                if (fcs !== ~crc) begin
-                    $display("FAIL: frame %0d FCS %08h, expected %08h", n_pkts, fcs, ~crc);
+                if (n_arp == 0 && n_udp != 0) begin
+                    $display("FAIL: ARP reply A came after %0d UDP frames, expected before any", n_udp);
                     errors = errors + 1;
                 end
+                if (n_arp == 1) udp_at_arp1 = n_udp;
+                $display("RGMII: ARP reply %0d, %0d bytes, %0s", n_arp, flen, errors == e0 ? "ok" : "BAD");
+                n_arp = n_arp + 1;
+            end else begin
+                nf = n_udp;
+                if (body != PKT_BYTES) begin
+                    $display("FAIL: UDP frame %0d body is %0d bytes, expected %0d", n_udp, body, PKT_BYTES);
+                    errors = errors + 1;
+                end else if (n_udp >= N_PACKETS) begin
+                    $display("FAIL: unexpected UDP frame %0d beyond %0d", n_udp, N_PACKETS);
+                    errors = errors + 1;
+                end else begin
+                    for (k = 0; k < PKT_BYTES; k = k + 1)
+                        if (fbuf[8+k] !== pkt_exp[n_udp*PKT_BYTES + k]) begin
+                            if (errors - e0 < 10)
+                                $display("FAIL: UDP frame %0d byte %0d got %02h expected %02h",
+                                         n_udp, k, fbuf[8+k], pkt_exp[n_udp*PKT_BYTES + k]);
+                            errors = errors + 1;
+                        end
+                end
+                $display("RGMII: UDP frame %0d, %0d bytes, %0s", n_udp, flen, errors == e0 ? "ok" : "BAD");
+                n_udp = n_udp + 1;
             end
-            if (n_pkts >= N_PACKETS) begin
-                $display("FAIL: unexpected frame %0d beyond %0d", n_pkts, N_PACKETS);
-                errors = errors + 1;
-            end
-            $display("RGMII: frame %0d, %0d bytes, %0s", n_pkts, flen, errors == e0 ? "ok" : "BAD");
             n_pkts = n_pkts + 1;
         end
     endtask
+
+    // ---- RGMII RX: frames into the MAC, as the PHY sends them ----
+    reg [7:0] rbuf [0:127];
+    integer   rlen = 0;
+
+    task rx_byte(input [7:0] b);                      // data centred on RXC (2 ns shift)
+        begin
+            @(negedge rxc); #2.0; rxd_d = b[3:0]; rxctl_d = 1'b1;
+            @(posedge rxc); #2.0; rxd_d = b[7:4]; rxctl_d = 1'b1;
+        end
+    endtask
+
+    task rx_send(input bad_fcs);
+        reg [31:0] crc;
+        integer i;
+        begin
+            crc = 32'hFFFFFFFF;
+            for (i = 0; i < rlen; i = i + 1) crc = crc32_byte(crc, rbuf[i]);
+            crc = ~crc ^ (bad_fcs ? 32'h00000001 : 32'h0);
+            for (i = 0; i < 7; i = i + 1) rx_byte(8'h55);
+            rx_byte(8'hD5);
+            for (i = 0; i < rlen; i = i + 1) rx_byte(rbuf[i]);
+            for (i = 0; i < 4; i = i + 1) rx_byte(crc >> (8 * i));
+            @(negedge rxc); #2.0; rxd_d = 4'h0; rxctl_d = 1'b0;
+            repeat (24) @(posedge rxc);               // inter-frame gap
+        end
+    endtask
+
+    task build_arp_request(input [47:0] dst, input [47:0] sha, input [31:0] spa, input [31:0] tpa);
+        integer i;
+        begin
+            for (i = 0; i < 60; i = i + 1) rbuf[i] = 8'h00;   // includes the 18-byte pad
+            for (i = 0; i < 6; i = i + 1) begin
+                rbuf[i]      = dst >> (8 * (5 - i));
+                rbuf[6 + i]  = sha >> (8 * (5 - i));
+                rbuf[22 + i] = sha >> (8 * (5 - i));
+            end
+            rbuf[12] = 8'h08; rbuf[13] = 8'h06; rbuf[15] = 8'h01; rbuf[16] = 8'h08;
+            rbuf[18] = 8'h06; rbuf[19] = 8'h04; rbuf[21] = 8'h01;
+            for (i = 0; i < 4; i = i + 1) begin
+                rbuf[28 + i] = spa >> (8 * (3 - i));
+                rbuf[38 + i] = tpa >> (8 * (3 - i));
+            end
+            rlen = 60;
+        end
+    endtask
+
+    initial begin
+        #30_000;
+        build_arp_request(48'hFFFFFFFFFFFF, arp_sha[0], arp_spa[0], BOARD_IP);      rx_send(1'b0); // A
+        build_arp_request(48'hFFFFFFFFFFFF, arp_sha[0], arp_spa[0], 32'hC0A80063);  rx_send(1'b0); // B
+        #5_000;
+        build_arp_request(48'hFFFFFFFFFFFF, arp_sha[0], arp_spa[0], BOARD_IP);      rx_send(1'b1); // C
+        wait (n_udp == 0 && en_r && flen > 200);                                     // inside UDP frame 0
+        build_arp_request(BOARD_MAC, arp_sha[1], arp_spa[1], BOARD_IP);             rx_send(1'b0); // D
+    end
 
     // TX pin timing: the PHY delays TXC by 2 ns internally (TX skew strap mode
     // 1), so TXC must leave the FPGA edge-aligned with its data -- RGMII TskewT,
@@ -252,7 +375,11 @@ module tb_single_fpga_top;
         end
     end
 
-    always @(posedge tcxo) if (fir_done && n_pkts == N_PACKETS) begin
+    always @(posedge tcxo) if (fir_done && n_udp == N_PACKETS) begin
+        if (n_arp != N_ARP || udp_at_arp1 != 1) begin
+            $display("FAIL: %0d ARP replies (want %0d); reply D after %0d UDP frames (want 1)", n_arp, N_ARP, udp_at_arp1);
+            errors = errors + 1;
+        end
         if (dut.mdio_done !== 1'b1 || dut.mdio_fault !== 1'b0 || phy.writes != 2 || phy.reads != 1
             || phy.regs[4] !== 16'h0001 || red_seen) begin
             $display("FAIL: MDIO config: done=%b fault=%b, PHY saw %0d writes %0d reads, ANAR=%04h, red LED %0s",
@@ -260,8 +387,8 @@ module tb_single_fpga_top;
             errors = errors + 1;
         end
         if (errors == 0)
-            $display("PASS: tb_single_fpga_top, %0d channels x %0d frames and %0d RGMII frames bit-exact",
-                     N_CH, N_FRAMES, N_PACKETS);
+            $display("PASS: tb_single_fpga_top, %0d channels x %0d frames, %0d UDP frames and %0d ARP replies bit-exact",
+                     N_CH, N_FRAMES, N_PACKETS, N_ARP);
         else
             $display("FAIL: tb_single_fpga_top, %0d errors", errors);
         $finish;
@@ -269,8 +396,8 @@ module tb_single_fpga_top;
 
     initial begin
         #800_000;
-        $display("FAIL: tb_single_fpga_top timed out, %0d/%0d outputs checked, %0d/%0d frames",
-                 checked, N_FRAMES * N_CH, n_pkts, N_PACKETS);
+        $display("FAIL: tb_single_fpga_top timed out, %0d/%0d outputs checked, %0d/%0d UDP frames, %0d/%0d ARP replies",
+                 checked, N_FRAMES * N_CH, n_udp, N_PACKETS, n_arp, N_ARP);
         $finish;
     end
 endmodule
