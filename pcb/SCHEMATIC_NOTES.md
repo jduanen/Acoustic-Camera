@@ -59,6 +59,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
 | C117–C137 | mic_array | 100 nF 0603 GND–MIC_3V3 clock return-path stitching caps on F.Cu (see PDM Clock Distribution) |
 | C138–C156 | mic_array | 100 nF 0603 extra CLK_3V3 decoupling for U110 and the arm CDCLVC1108s (in `misc.kicad_sch`; see PDM Clock Distribution) |
+| C157–C183 | mic_array | 100 nF 0603 GND–MIC_3V3 return-path stitching caps on F.Cu, second pass: clock vias >10 mm from a cap and the J1 area (in `mic_array_misc.kicad_sch`; see PDM Clock Distribution) |
 | C97 | mic_array | 100 nF CLK_3V3 decoupling (TCXO / CDCLVC1112) |
 | C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
@@ -87,6 +88,9 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U4 | front_end | TLV75525PDBV LDO, +3V3_ETH → +2V5_ETH (EN tied to IN) |
 | U5 | front_end | TLV75510PDRV LDO (WSON-6), +3V3_ETH → +1V0_ETH (EN tied to IN) |
 | C24, C25 | front_end | 10 µF input caps for U4, U5 |
+| C4–C11, C14–C23 | front_end | U3 decoupling: a 1 µF + 0.1 µF pair per supply pin (TI requirement), the 0.1 µF placed closest to its pin |
+| C32 | front_end | 0.1 µF from J3 pin 1 (net ETH_CT, the magjack's common PHY-side centre tap) to GND, per the DP83867 datasheet |
+| C33, C34 | front_end | 22 µF 0805 + 0.1 µF local decoupling for the AC7200 +5V input (CON1 pins 1–8), just outside the module outline |
 | U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH); 4.1 mm exposed pad has 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) |
 | TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
 | TP7, TP8 | front_end | Clock test points: TCXO_CLK (2.6 mm stub, near CON1.21) and PDM_CLK (3.7 mm stub, near CON1.25) |
@@ -99,7 +103,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 
 Mic numbering is a clean U1–U96 block (mic index + 1); the twelve per-arm
 CDCLVC1108 buffers follow as U97–U108. The two boards are annotated
-independently, so some references (J1, R1–R13, C1–C31, U1–U6, TP1–TP4, Y1)
+independently, so some references (J1, R1–R13, C1–C34, U1–U6, TP1–TP4, Y1)
 exist on both boards as different parts.
 
 ---
@@ -263,8 +267,19 @@ F.Cu↔B.Cu clock via the return current has to cross between the two planes, wh
 via can't provide; a GND–MIC_3V3 capacitor next to the via does. C117–C137 (100 nF 0603,
 F.Cu, so the board stays single-sided) are placed 1.0–2.6 mm from the 21 clock vias
 that previously had no GND via or GND–MIC_3V3 cap within 10 mm, each pad dropping to its
-plane through its own via. Prefer
-keeping clocks on F.Cu when re-routing; any new layer change should get a cap like these.
+plane through its own via. A second pass, C157–C183 (27 more, same style), counts only
+GND–MIC_3V3 caps (a GND via is no help here): every clock layer-change via that was more
+than 10 mm from such a cap, and the DATA/clock vias around J1, got a cap within 4 mm
+(6.5 mm where nothing closer fits), placed clear of courtyards, labels and the camera
+cut-out. Clock vias by distance to the nearest cap are now 39 / 35 / 90 / 8 in the
+0–3 / 3–5 / 5–10 / 10–20 mm bands (was 25 / 13 / 75 / 59). The rest:
+- ~46 vias in J1's own fan-out between its pin rows have no room for a cap; J1's GND pins
+  carry their return to the front_end.
+- 5 clock vias still have no spot: three at the lower edge of the camera cut-out
+  (ARM_00/01/03_CLK) and two next to U107/U108 (MIC_CLK_80, MIC_CLK_92).
+
+Prefer keeping clocks on F.Cu when re-routing; any new layer change should get a cap like
+these.
 
 
 **Buffer decoupling.** Each CDCLVC11xx VDD pin should have a cap within ~1–2 mm, but on
@@ -422,10 +437,29 @@ Both boards are 4-layer:
 F.Cu    signal: mic pads, DATA,            signal
         per-arm clock fan-out
 In1.Cu  GND plane                          GND plane
-In2.Cu  MIC_3V3 plane                      +5V plane
+In2.Cu  MIC_3V3 plane                      GND, with a +5V island (below)
 B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
         connector fan-out
 ```
+
+**front_end In2.** In2 used to be one +5V plane, so every signal on B.Cu returned on +5V
+and each F.Cu↔B.Cu signal via (107 of them) needed a +5V–GND cap nearby; the nearest
+were 15–56 mm away. In2 is now a GND fill ("Ground Plane In2", priority 0) with a +5V
+island ("+5V Island", priority 1) that only covers where +5V goes:
+- a strip on the right from J1/C3/TP1 up to CON1 (x 128.5–140, y 77.5–157), widening to
+  x 119.3 at CON1's +5V pins (y 77.5–84.5);
+- a branch west along y 127–135 to the two bucks' input vias (U1, U6, C1, C30).
+
+D1's anode gets +5V from a 0.5 mm In2 track from the island (94.2, 134) to its via at
+(84, 154.2); it crosses only the +2V5_ETH power trace on B.Cu. The only B.Cu traces over
+or across the island are LED_R/G/B, which are effectively DC.
+
+With both inner layers GND, a layer change only needs a GND via next to it; 26 were added.
+Of the 123 signal layer-change vias outside the island, 69 have a GND via within 2 mm and
+99 within 3 mm. The other 24 sit in the dense J2 / CON2 / CON3 fan-outs, where a 0.6 mm
+via doesn't fit; those connectors' GND pins are the return there.
+
+The layer is still named "In2.Cu (PWR)" in the stackup.
 
 ---
 
@@ -441,7 +475,8 @@ B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
 - **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
   entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
 - **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
-  including the row-grouped RGMII pins, R5/R6 DNP and the re-balanced RGMII lengths above.
+  including the row-grouped RGMII pins, R5/R6 DNP and the re-balanced RGMII lengths above,
+  In2 converted to GND + a +5V island, the J3 centre-tap cap C32 and the CON1 caps C33/C34.
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
   - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;
