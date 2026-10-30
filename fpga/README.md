@@ -56,6 +56,11 @@ working alternate, staged in three parts:
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
   Routed: 43.5% Slice LUTs, 13.8% registers, 96 DSP48E1, 1 RAMB36 (the packetizer's
   ping-pong payload memory, three channels per 72-bit word), timing met on xc7a200t-2.
+  Network addresses are `single_fpga_top` parameters (`BOARD_MAC`, `BOARD_IP`: the board's
+  own, used as the UDP source and for ARP; `HOST_MAC`, `HOST_IP`: where the stream goes),
+  defaulting to test placeholders (board 00:11:22:33:44:55 / 192.168.0.2, host
+  aa:bb:cc:dd:ee:ff / 192.168.0.1). Override any of them at build time, e.g.
+  `make build-top BOARD_IP=10.0.0.2 HOST_IP=10.0.0.1 HOST_MAC=a4:5e:60:12:34:56`.
 
 The MAC is `alexforencich/verilog-ethernet` (MIT license), vendored unmodified — see
 `rtl/third_party/verilog-ethernet/README.md` for provenance and why it was chosen over

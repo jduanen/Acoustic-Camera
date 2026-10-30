@@ -61,7 +61,14 @@ module single_fpga_top #(
     parameter integer POR_CYCLES     = 16,
     parameter integer PHY_RST_CYCLES = 1 << 17,
     parameter integer MDIO_WAIT      = 1 << 13,  // mdio_init's post-reset wait
-    parameter integer RX_IDELAY_TAPS = 11
+    parameter integer RX_IDELAY_TAPS = 11,
+    // Network addresses (make build-top BOARD_MAC=... BOARD_IP=... HOST_MAC=...
+    // HOST_IP=... overrides them -- see vivado/build_top.tcl). The defaults are
+    // the test placeholders the testbenches' golden vectors are built with.
+    parameter [47:0] BOARD_MAC = 48'h001122334455,  // this board: UDP source, ARP replies
+    parameter [31:0] BOARD_IP  = 32'hC0A80002,      // 192.168.0.2: UDP source, ARP target
+    parameter [47:0] HOST_MAC  = 48'hAABBCCDDEEFF,  // where the UDP stream is sent
+    parameter [31:0] HOST_IP   = 32'hC0A80001       // 192.168.0.1
 ) (
     input  wire        TCXO_CLK,
     output wire        PDM_CLK,
@@ -189,11 +196,8 @@ module single_fpga_top #(
     );
     assign MDIO = mdio_oe ? mdio_o : 1'bz;
 
-    // Addresses are the same placeholders tb_gbe_pipeline.v and the Stage 2
-    // spike use -- set the host's MAC/IP before connecting to a real network.
-    // The board answers ARP for BOARD_IP with BOARD_MAC.
-    localparam [47:0] BOARD_MAC = 48'h001122334455, HOST_MAC = 48'hAABBCCDDEEFF;
-    localparam [31:0] BOARD_IP  = 32'hC0A80002,     HOST_IP  = 32'hC0A80001;
+    // Addresses: the BOARD_*/HOST_* parameters. The board answers ARP for
+    // BOARD_IP with BOARD_MAC.
 
     wire       tx_clk, tx_rst, rx_clk, rx_rst;
     wire [7:0] pkt_tdata, tx_axis_tdata, rx_axis_tdata;     // packetizer / to MAC / from MAC

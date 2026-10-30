@@ -11,6 +11,14 @@
 # Usage: make build-top   (from the repo root; runs ~/bin/vivado.sh, which sets
 #        up Vivado's environment -- see Makefile), or directly:
 #        vivado -mode batch -source build_top.tcl
+#
+# Network addresses: set any of BOARD_MAC, BOARD_IP, HOST_MAC, HOST_IP in the
+# environment (make passes them through) to override single_fpga_top.v's
+# defaults, e.g.
+#        make build-top BOARD_IP=10.0.0.2 HOST_IP=10.0.0.1 HOST_MAC=a4:5e:60:12:34:56
+# MACs as six hex octets separated by ':' or '-', IPs as dotted decimal. Unset
+# or empty leaves the default; a malformed value stops the build before
+# synthesis.
 # (run from anywhere; all paths below are relative to this script's own
 # location via [file dirname [info script]], not the invoking shell's cwd)
 
@@ -44,7 +52,36 @@ read_verilog [list \
 ]
 read_xdc $repo_root/fpga/single_fpga/xdc/single_fpga_top.xdc
 
-synth_design -top single_fpga_top -part $part
+# ---- network address overrides (see Usage) ----
+proc mac_generic {name s} {
+    set o [split [string trim $s] ":-"]
+    if {[llength $o] != 6} { error "$name: '$s' is not a MAC address (six hex octets)" }
+    set hex ""
+    foreach b $o {
+        if {![regexp {^[0-9A-Fa-f]{1,2}$} $b]} { error "$name: '$s' is not a MAC address" }
+        append hex [format %02x [scan $b %x]]
+    }
+    return "$name=48'h$hex"
+}
+proc ip_generic {name s} {
+    set o [split [string trim $s] "."]
+    if {[llength $o] != 4} { error "$name: '$s' is not a dotted-decimal IPv4 address" }
+    set hex ""
+    foreach b $o {
+        if {![regexp {^[0-9]{1,3}$} $b] || [scan $b %d] > 255} { error "$name: '$s' is not an IPv4 address" }
+        append hex [format %02x [scan $b %d]]
+    }
+    return "$name=32'h$hex"
+}
+set generics {}
+foreach {name kind} {BOARD_MAC mac BOARD_IP ip HOST_MAC mac HOST_IP ip} {
+    if {[info exists ::env($name)] && [string trim $::env($name)] ne ""} {
+        lappend generics -generic [${kind}_generic $name $::env($name)]
+    }
+}
+puts "Network address overrides: [expr {[llength $generics] ? [join [lmap {f g} $generics {set g}] {, }] : {none (defaults)}}]"
+
+synth_design -top single_fpga_top -part $part {*}$generics
 write_checkpoint -force $outdir/post_synth.dcp
 
 opt_design

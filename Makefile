@@ -180,8 +180,10 @@ build-stage2-spike:
 	cd fpga/single_fpga/vivado
 	$(VIVADO) -mode batch -source build_stage2_spike.tcl -journal build_stage2.jou -log build_stage2.log
 
+# Optional: BOARD_MAC, BOARD_IP, HOST_MAC, HOST_IP (see vivado/build_top.tcl).
 build-top:
 	cd fpga/single_fpga/vivado
+	BOARD_MAC='$(BOARD_MAC)' BOARD_IP='$(BOARD_IP)' HOST_MAC='$(HOST_MAC)' HOST_IP='$(HOST_IP)' \
 	$(VIVADO) -mode batch -source build_top.tcl -journal build_top.jou -log build_top.log
 
 golden-test:
