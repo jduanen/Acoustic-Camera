@@ -334,13 +334,15 @@ tuning meanders after the row-grouping pin move:
 For scale: the PHY accepts TXC within ±1.0 ns of its data and gives ±1.2 ns of RX setup
 and hold, so these skews are a few percent of the margin.
 
-**U3 exposed pad.** 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) are marked
-**filled and capped** (IPC-4761 Type VII) in their via properties; every other via uses
-the board default (tented both sides). ODB++ export carries this as
-`filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (17 vias each). Gerber + Excellon do
-**not** — for a Gerber order, send the fab note that sits on User.Drawings below the
-board outline, or put it in the order comments. User.Drawings isn't in the board's saved
-Gerber plot layers yet; tick it in File → Plot and save the board to include it.
+**U3 and U5 exposed pads.** U3's 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) and
+U5's 2 (0.6/0.3 mm, under its two paste windows) are marked **filled and capped**
+(IPC-4761 Type VII) in their via properties, so paste over them can't wick down the
+barrels; every other via uses the board default (tented both sides). ODB++ export carries
+this as `filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (19 vias each). Gerber + Excellon do
+**not** — for a Gerber order, the fab note on User.Drawings below the board outline
+carries it (User.Drawings is in the board's saved plot layers, so it plots as
+`front_end-User_Drawings.gbr`); point the fab at it or repeat it in the order comments.
+The saved plot format is SVG, so pick Gerber in File → Plot before plotting.
 
 **Y1 crystal circuit.** Y1 uses `Device:Crystal_GND24` on
 `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm`: crystal on pads **1 (XO) and 3 (XI)**
@@ -443,8 +445,8 @@ B.Cu    signal: longer DATA runs,          signal (J2 is mounted on B.Cu)
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
   - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;
-  - add User.Drawings to the front_end Gerber plot layers (or send ODB++) so the U3
-    filled/capped-via note reaches the fab;
+  - ~~add User.Drawings to the front_end Gerber plot layers~~ — done; the U3 + U5
+    filled/capped-via note now plots with the Gerbers (or send ODB++);
   - confirm the J1/J2 boss-hole orientation relative to pin 1 against Panasonic's
     product specification drawing (see `cad/assembly/README.md`).
 
