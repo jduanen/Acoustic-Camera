@@ -459,7 +459,7 @@ Of the 123 signal layer-change vias outside the island, 69 have a GND via within
 99 within 3 mm. The other 24 sit in the dense J2 / CON2 / CON3 fan-outs, where a 0.6 mm
 via doesn't fit; those connectors' GND pins are the return there.
 
-The layer is still named "In2.Cu (PWR)" in the stackup.
+The layer is named "In2.Cu (GND & +5V)" in the stackup.
 
 ---
 
