@@ -24,7 +24,15 @@ module tb_gbe_packetizer;
 
     reg rst = 1'b1;
     reg tx_rst = 1'b1;
-    reg tx_ready = 1'b1; // no backpressure -- functional check only
+    // Pseudo-random backpressure (tready low ~1 cycle in 4, mid-frame included):
+    // exercises the packetizer holding its byte position and its block-RAM read
+    // address while the MAC stalls.
+    reg        tx_ready = 1'b1;
+    reg [15:0] bp_lfsr  = 16'hACE1;
+    always @(posedge tx_clk) begin
+        bp_lfsr  <= {bp_lfsr[14:0], bp_lfsr[15] ^ bp_lfsr[13] ^ bp_lfsr[12] ^ bp_lfsr[10]};
+        tx_ready <= |bp_lfsr[1:0];
+    end
 
     reg [N_CH-1:0]        fir_valid_in = 0;
     reg [N_CH*24-1:0]     fir_data_in  = 0;
@@ -63,10 +71,11 @@ module tb_gbe_packetizer;
             fir_valid_in = {N_CH{1'b1}};
             @(posedge clk); #1;
             fir_valid_in = 0;
-            // idle gap between frames -- real magnitude doesn't matter here
-            // (no real pipeline timing to match), just needs to comfortably
-            // exceed one packet's drain time so production never outruns
-            // consumption (see GBE_FRAMING.md's margin note).
+            // idle gap between frames: at least 32 clks, the packetizer's RAM
+            // write time per frame (the real pipeline's frames are 64 clks
+            // apart), and long enough that a 5-frame batch outlasts one
+            // packet's drain time so production never outruns consumption
+            // (see GBE_FRAMING.md's margin note).
             repeat (100) @(posedge clk);
         end
     end

@@ -17,8 +17,11 @@
 // crossing" section for the margin analysis (~8.7x) backing why a single ping-pong pair is
 // enough, no deeper queuing needed.
 //
-// Payload storage is a proper array-addressed memory (pkt_ch_mem[bank][slot], one 24-bit
-// channel sample per address) rather than a flat bit-vector sliced at a dynamic bit offset.
+// Payload storage is one block RAM (pkt_mem, three 24-bit channel samples per 72-bit
+// word), written over 32 cycles per frame -- see "Payload memory" below. Before that it
+// was a register array (pkt_ch_mem[bank][slot], one channel per address, all 96 written
+// in the cycle fir_valid_in pulsed), which no RAM can take: ~23K flip-flops. Before
+// *that* it was a flat bit-vector sliced at a dynamic bit offset.
 // An earlier version used the latter (`pkt_buf[wr_bank][(...)*8 +: 2304] <= ...`) -- it
 // simulated correctly, but a real placed build showed it cost ~46K LUTs on
 // xc7a200tfbg484-1 (see the project's plan file, Stage 2 utilization section): Vivado
@@ -74,7 +77,6 @@ module gbe_packetizer #(
     localparam integer PKT_PAYLOAD_BYTES = HDR_FIELD_BYTES + PAYLOAD_CH_TOTAL*3; // 1452
     localparam integer TOTAL_PKT_BYTES   = HDR_TOTAL_BYTES + PAYLOAD_CH_TOTAL*3; // 1494
     localparam integer BYTE_CNT_W        = $clog2(TOTAL_PKT_BYTES);
-    localparam integer CH_IDX_W          = $clog2(PAYLOAD_CH_TOTAL);
     localparam integer FRAME_IDX_W       = $clog2(FRAMES_PER_PKT);
 
     // ------------------------------------------------------------------
@@ -118,57 +120,90 @@ module gbe_packetizer #(
     };
 
     // ------------------------------------------------------------------
-    // clk domain: frame collector. Each fir valid pulse writes all N_CH
-    // channels' raw samples (untouched -- MSB-first byte extraction happens
-    // on the read side below) into pkt_ch_mem[wr_bank][frame_idx*N_CH + c],
-    // one array-indexed word per channel.
+    // Payload memory: one block RAM, simple dual port -- written in the clk
+    // domain, read in tx_clk. Three channels per 72-bit word (ch 3k in
+    // [71:48], 3k+1 in [47:24], 3k+2 in [23:0]), so a bank's 5 frames x 96
+    // channels are 160 words; each bank gets 256 addresses (bank = address
+    // bit 8), 512 x 72 in all -- exactly one RAMB36 in SDP mode. Channel slot
+    // s = frame*N_CH + ch lives in word s/3 = frame*32 + ch/3, position s%3.
+    //
+    // A RAM can't take all N_CH channels in the one cycle fir_valid_in pulses,
+    // so a frame is written as WORDS_PER_FRAME (32) words over the following
+    // 32 clk cycles. That relies on fir_data_in holding still until the next
+    // frame -- fir_compensator holds data_out between valids, and frames are
+    // 64 clks apart in the pipeline (100 in tb_gbe_packetizer.v). The batch is
+    // stamped and handed to tx_clk only once its last frame's words are in.
     // ------------------------------------------------------------------
-    wire frame_valid = &fir_valid_in; // fully parallel, identical latency per channel -- see
-                                       // GBE_FRAMING.md's "real architectural advantage" note
+    localparam integer CH_PER_WORD     = 3;
+    localparam integer WORDS_PER_FRAME = N_CH / CH_PER_WORD;          // 32
+    localparam integer WORDS_PER_BANK  = FRAMES_PER_PKT * WORDS_PER_FRAME; // 160
+    localparam integer WORD_W          = CH_PER_WORD * FIR_WIDTH;     // 72
+    localparam integer WADDR_W         = 8;                           // within a bank
+    initial if (N_CH % CH_PER_WORD != 0 || WORDS_PER_BANK > (1 << WADDR_W)) begin
+        $display("FATAL: gbe_packetizer payload RAM layout needs N_CH %% 3 == 0 and <= 256 words per bank");
+        $finish;
+    end
 
-    reg [FIR_WIDTH-1:0] pkt_ch_mem [0:1][0:PAYLOAD_CH_TOTAL-1]; // ping-pong payload memory
+    wire frame_valid = &fir_valid_in; // all N_CH channels' samples valid together
+
+    (* ram_style = "block" *) reg [WORD_W-1:0] pkt_mem [0:(2 << WADDR_W)-1];
     reg [31:0]           pkt_seq_r [0:1]; // this bank's stamped seq_num, latched at batch close
     reg [63:0]           pkt_ts_r  [0:1]; // this bank's stamped timestamp, latched at batch close
 
     reg [FRAME_IDX_W-1:0] frame_idx;
     reg                   wr_bank;
+    reg                   wr_active;
+    reg [$clog2(WORDS_PER_FRAME)-1:0] wr_word;
     reg [63:0]            sample_counter;   // free-running, increments once per frame (48kHz)
     reg [63:0]            batch_ts_r;       // timestamp of frame 0 of the batch being filled
     reg [31:0]            pkt_seq;
     reg                   pkt_ready_toggle;
 
-    integer wc;
+    wire [WADDR_W-1:0] wr_addr = frame_idx * WORDS_PER_FRAME + wr_word;
+    wire [WORD_W-1:0]  wr_data = {fir_data_in[FIR_WIDTH*(CH_PER_WORD*wr_word)     +: FIR_WIDTH],
+                                  fir_data_in[FIR_WIDTH*(CH_PER_WORD*wr_word + 1) +: FIR_WIDTH],
+                                  fir_data_in[FIR_WIDTH*(CH_PER_WORD*wr_word + 2) +: FIR_WIDTH]};
+
+    always @(posedge clk)
+        if (wr_active)
+            pkt_mem[{wr_bank, wr_addr}] <= wr_data;
 
     always @(posedge clk) begin
         if (rst) begin
             frame_idx        <= {FRAME_IDX_W{1'b0}};
             wr_bank           <= 1'b0;
+            wr_active         <= 1'b0;
+            wr_word           <= 0;
             sample_counter    <= 64'd0;
             batch_ts_r        <= 64'd0;
             pkt_seq           <= 32'd0;
             pkt_ready_toggle  <= 1'b0;
-        end else if (frame_valid) begin
-            sample_counter <= sample_counter + 64'd1;
+        end else begin
+            if (frame_valid && !wr_active) begin
+                sample_counter <= sample_counter + 64'd1;
+                if (frame_idx == {FRAME_IDX_W{1'b0}})
+                    batch_ts_r <= sample_counter;
+                wr_active <= 1'b1;
+                wr_word   <= 0;
+            end else if (wr_active) begin
+                if (wr_word != WORDS_PER_FRAME - 1) begin
+                    wr_word <= wr_word + 1'b1;
+                end else begin
+                    wr_active <= 1'b0;
+                    if (frame_idx == FRAMES_PER_PKT-1) begin
+                        // batch complete: stamp this bank's seq_num/timestamp, hand it
+                        // off to the tx_clk domain, and start filling the other bank.
+                        pkt_seq_r[wr_bank] <= pkt_seq;
+                        pkt_ts_r[wr_bank]  <= batch_ts_r;
 
-            if (frame_idx == {FRAME_IDX_W{1'b0}})
-                batch_ts_r <= sample_counter;
-
-            // this frame's N_CH channels, at slot frame_idx*N_CH + c
-            for (wc = 0; wc < N_CH; wc = wc + 1)
-                pkt_ch_mem[wr_bank][frame_idx*N_CH + wc] <= fir_data_in[FIR_WIDTH*wc +: FIR_WIDTH];
-
-            if (frame_idx == FRAMES_PER_PKT-1) begin
-                // batch complete: stamp this bank's seq_num/timestamp, hand it off to the
-                // tx_clk domain, and start filling the other bank.
-                pkt_seq_r[wr_bank] <= pkt_seq;
-                pkt_ts_r[wr_bank]  <= batch_ts_r;
-
-                pkt_seq          <= pkt_seq + 32'd1;
-                pkt_ready_toggle <= ~pkt_ready_toggle;
-                wr_bank          <= ~wr_bank;
-                frame_idx        <= {FRAME_IDX_W{1'b0}};
-            end else begin
-                frame_idx <= frame_idx + 1'b1;
+                        pkt_seq          <= pkt_seq + 32'd1;
+                        pkt_ready_toggle <= ~pkt_ready_toggle;
+                        wr_bank          <= ~wr_bank;
+                        frame_idx        <= {FRAME_IDX_W{1'b0}};
+                    end else begin
+                        frame_idx <= frame_idx + 1'b1;
+                    end
+                end
             end
         end
     end
@@ -183,10 +218,12 @@ module gbe_packetizer #(
     // transferred across the crossing, only the toggle.
     //
     // byte_cnt free-runs 0..TOTAL_PKT_BYTES-1 across the whole packet (drives
-    // tlast); ch_idx/byte_in_ch track position within the payload region only
-    // (0..PAYLOAD_CH_TOTAL-1 channels x 3 bytes each), avoiding a runtime
-    // divide-by-3 to recover a channel/byte-within-channel address pair from
-    // a flat byte offset.
+    // tlast); word_idx/ch_in_word/byte_in_ch track position within the payload
+    // region only (0..WORDS_PER_BANK-1 words x 3 channels x 3 bytes), avoiding a
+    // runtime divide-by-3 to recover a word/channel/byte address from a flat
+    // byte offset. The RAM is addressed with word_nx, the word the *next*
+    // cycle needs, so its one-cycle read latency is absorbed; tready low just
+    // holds the address.
     // ------------------------------------------------------------------
     (* ASYNC_REG = "TRUE" *) reg [2:0] tog_sync;
     wire      pkt_pulse = tog_sync[2] ^ tog_sync[1];
@@ -195,7 +232,8 @@ module gbe_packetizer #(
     reg                     rd_bank;
     reg                     tx_active;
     reg [BYTE_CNT_W-1:0]    byte_cnt;
-    reg [CH_IDX_W-1:0]      ch_idx;
+    reg [WADDR_W-1:0]       word_idx;
+    reg [1:0]               ch_in_word;
     reg [1:0]               byte_in_ch;
 
     always @(posedge tx_clk) begin
@@ -206,19 +244,34 @@ module gbe_packetizer #(
         end
     end
 
+    wire advance    = tx_active && tx_axis_tready;
+    wire in_payload = (byte_cnt >= HDR_TOTAL_BYTES);
+    wire [WADDR_W-1:0] word_nx =
+        (advance && in_payload && byte_in_ch == 2'd2 && ch_in_word == 2'd2) ? word_idx + 1'b1 :
+        (!tx_active)                                                       ? {WADDR_W{1'b0}} :
+                                                                             word_idx;
+
+    reg [WORD_W-1:0] rd_word;
+    always @(posedge tx_clk)
+        rd_word <= pkt_mem[{rd_bank, word_nx}];
+
     always @(posedge tx_clk) begin
         if (tx_rst) begin
             pkt_pending <= 1'b0;
             rd_bank     <= 1'b0;
             tx_active   <= 1'b0;
             byte_cnt    <= {BYTE_CNT_W{1'b0}};
-            ch_idx      <= {CH_IDX_W{1'b0}};
+            word_idx    <= {WADDR_W{1'b0}};
+            ch_in_word  <= 2'd0;
             byte_in_ch  <= 2'd0;
         end else begin
             if (pkt_pulse)
                 pkt_pending <= 1'b1;
+            word_idx <= word_nx;
 
             if (!tx_active) begin
+                ch_in_word <= 2'd0;
+                byte_in_ch <= 2'd0;
                 if (pkt_pending) begin
                     tx_active   <= 1'b1;
                     pkt_pending <= 1'b0;
@@ -229,14 +282,10 @@ module gbe_packetizer #(
                     tx_active <= 1'b0;
                     rd_bank   <= ~rd_bank;
                 end else begin
-                    if (byte_cnt == HDR_TOTAL_BYTES-1) begin
-                        // last header byte this cycle; next byte starts the payload
-                        ch_idx     <= {CH_IDX_W{1'b0}};
-                        byte_in_ch <= 2'd0;
-                    end else if (byte_cnt >= HDR_TOTAL_BYTES) begin
+                    if (in_payload) begin
                         if (byte_in_ch == 2'd2) begin
                             byte_in_ch <= 2'd0;
-                            ch_idx     <= ch_idx + 1'b1;
+                            ch_in_word <= (ch_in_word == 2'd2) ? 2'd0 : ch_in_word + 1'b1;
                         end else begin
                             byte_in_ch <= byte_in_ch + 1'b1;
                         end
@@ -256,7 +305,9 @@ module gbe_packetizer #(
         ? pkt_seq_r[rd_bank][(3 - hdr_field_idx)*8 +: 8]
         : pkt_ts_r[rd_bank][(11 - hdr_field_idx)*8 +: 8];
 
-    wire [FIR_WIDTH-1:0] cur_ch_val = pkt_ch_mem[rd_bank][ch_idx];
+    wire [FIR_WIDTH-1:0] cur_ch_val = (ch_in_word == 2'd0) ? rd_word[71:48] :
+                                      (ch_in_word == 2'd1) ? rd_word[47:24] :
+                                                             rd_word[23:0];
     wire [7:0] payload_byte = (byte_in_ch == 2'd0) ? cur_ch_val[23:16] :
                                (byte_in_ch == 2'd1) ? cur_ch_val[15:8]  :
                                                        cur_ch_val[7:0];

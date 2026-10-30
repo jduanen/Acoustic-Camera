@@ -54,6 +54,8 @@ working alternate, staged in three parts:
   timing, with ARP requests driven into RGMII RX and the replies checked on TX.
   `make build-top` runs `vivado/build_top.tcl` through to a bitstream
   (`vivado/build_top/single_fpga_top.bit`, plus routed timing/utilization/IO reports there).
+  Routed: 43.5% Slice LUTs, 13.8% registers, 96 DSP48E1, 1 RAMB36 (the packetizer's
+  ping-pong payload memory, three channels per 72-bit word), timing met on xc7a200t-2.
 
 The MAC is `alexforencich/verilog-ethernet` (MIT license), vendored unmodified — see
 `rtl/third_party/verilog-ethernet/README.md` for provenance and why it was chosen over
