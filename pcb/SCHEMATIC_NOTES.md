@@ -342,7 +342,7 @@ this as `filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (19 vias each). Gerber 
 **not** — for a Gerber order, the fab note on User.Drawings below the board outline
 carries it (User.Drawings is in the board's saved plot layers, so it plots as
 `front_end-User_Drawings.gbr`); point the fab at it or repeat it in the order comments.
-The saved plot format is SVG, so pick Gerber in File → Plot before plotting.
+The saved plot format is Gerber.
 
 **Y1 crystal circuit.** Y1 uses `Device:Crystal_GND24` on
 `Crystal:Crystal_SMD_3225-4Pin_3.2x2.5mm`: crystal on pads **1 (XO) and 3 (XI)**
