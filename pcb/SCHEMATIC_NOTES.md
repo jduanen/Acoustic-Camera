@@ -59,6 +59,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
 | C117–C137 | mic_array | 100 nF 0603 GND–MIC_3V3 clock return-path stitching caps on F.Cu (see PDM Clock Distribution) |
 | C138–C156 | mic_array | 100 nF 0603 extra CLK_3V3 decoupling for U110 and the arm CDCLVC1108s (in `misc.kicad_sch`; see PDM Clock Distribution) |
+| C184, C185 | mic_array | 100 nF 0402 extra CLK_3V3 decoupling for U103 / U105, on each buffer's CLK_3V3 feed (in `mic_array_misc.kicad_sch`; see Buffer decoupling) |
 | C157–C183 | mic_array | 100 nF 0603 GND–MIC_3V3 return-path stitching caps on F.Cu, second pass: clock vias >10 mm from a cap and the J1 area (in `mic_array_misc.kicad_sch`; see PDM Clock Distribution) |
 | C97 | mic_array | 100 nF CLK_3V3 decoupling (TCXO / CDCLVC1112) |
 | C100, C101 | mic_array | 1 µF output caps for VR1 (MIC_3V3) and VR2 (CLK_3V3) |
@@ -286,9 +287,17 @@ these.
 F.Cu the area outside the VDD pins is taken by the fanning-out clock outputs. C138–C156
 (19 × 100 nF, F.Cu, in `misc.kicad_sch`) are tied into the CLK_3V3 trace that runs under
 each buffer and bring every VDD pin of U110 and of U97–U102, U104 and U106–U108 to within
-2.0–5.8 mm of a cap (previously up to 9–13 mm). U103 and U105 had no room and still have
-pins 10/14 about 9 mm from C108/C110. Opening space around those two buffers, or adding
-caps on B.Cu under them, is the remaining improvement.
+2.0–5.8 mm of a cap (previously up to 9–13 mm). U103 and U105 had no room at pins 10/14
+(about 9 mm from C108/C110). C184/C185 (100 nF 0402, F.Cu) now sit on those pins' CLK_3V3
+feeds:
+- C185 is tied into U105's F.Cu feed trace.
+- C184 connects through a new via onto U103's B.Cu feed, 1.5 mm past the feed's existing
+  via.
+
+That brings U103 pins 10/14 to 6.2 / 5.1 mm and U105 to 3.4 / 6.0 mm. Every CDCLVC1108 VDD
+pin is now within 6.2 mm of a cap. Getting closer than that would mean opening space
+around those two buffers, or a B.Cu cap, which would make the board double-sided for
+assembly.
 
 ---
 
@@ -459,7 +468,8 @@ Of the 123 signal layer-change vias outside the island, 69 have a GND via within
 99 within 3 mm. The other 24 sit in the dense J2 / CON2 / CON3 fan-outs, where a 0.6 mm
 via doesn't fit; those connectors' GND pins are the return there.
 
-The layer is named "In2.Cu (GND & +5V)" in the stackup.
+The inner layers carry no description in their names (plain "In1.Cu" / "In2.Cu"), so the
+plotted Gerbers are `front_end-In1_Cu.gbr` / `front_end-In2_Cu.gbr`.
 
 ---
 
