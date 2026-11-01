@@ -477,6 +477,86 @@ plotted Gerbers are `front_end-In1_Cu.gbr` / `front_end-In2_Cu.gbr`.
 
 - `mic_array.kicad_pcb`: circular, **Ø320 mm**, with a Ø12 mm centre cut-out.
 - `front_end.kicad_pcb`: **120 mm × 120 mm** rectangle.
+- `mic_test.kicad_pcb`: **120 mm × 120 mm** rectangle, with mic_array's Ø12 mm cut-out (see below).
+
+---
+
+## Mic test board (`pcb/mic_test/`)
+
+A cheaper board for proving out the mic side before ordering the full Ø320 mm array. It is the
+centre 120 × 120 mm of mic_array, roughly 1/7 of its area, and plugs into a real front_end. The
+front_end itself has no cut-down version: the real board is the test vehicle for J4 programming,
+GbE, D1 and its rails. The bring-up procedure is in
+[`mic_test/TEST_PLAN.md`](mic_test/TEST_PLAN.md).
+
+**How it was made.**
+- The project is a copy of mic_array's, renamed `mic_test`. mic_array's files are untouched.
+- Every symbol whose footprint lies outside the 120 mm square is marked *not on board / not in
+  BOM / DNP*, so all sheets and nets stay as in mic_array. The 175 excluded parts are 68 mics,
+  their caps, and the stitching caps.
+- The board kept mic_array's footprints and routing inside the square, verbatim and at the same
+  absolute coordinates:
+  - J1, the HENC1–4 M4 holes, the HCAM1–4 camera holes, the cut-out, Y1, R15, U110, VR1/VR2,
+    TP1–TP3;
+  - the TCXO_CLK / PDM_CLK feeds, the J1 fan-out, the DATA routing of the fitted mics, and
+    MIC_3V3/GND.
+- J1 and every hole match mic_array exactly, so the J1/J2 and standoff alignment tested here is
+  the real one.
+- Same 4-layer stackup, design rules and DRU (In1 GND, In2 MIC_3V3).
+
+**What it carries.**
+- The 28 mics whose courtyards lie inside the square, 2–3 per arm, at their real positions: U1,
+  U2, U9–U11, U17, U18, U25, U26, U33–U35, U41, U42, U49, U50, U57–U59, U65, U66, U73, U74,
+  U81–U83, U89, U90. They use 16 DATA lines.
+- The whole clock tree: Y1, U110, and all twelve CDCLVC1108s U97–U108. Each buffer moved in from
+  r ≈ 85 mm to r ≈ 53–69 mm along its own arm's direction, together with its OE pull-up and
+  decoupling caps.
+- Test additions, in `test_extras.kicad_sch`:
+  - **R16–R47**: 10 kΩ pull-ups to MIC_3V3 on the 32 DATA lines with no fitted mic. The FPGA reads
+    them as a constant 1, which checks every J1/J2 DATA pin.
+  - **R48**: 0.1 Ω 1 % 0805 shunt between J1's +3V6 and the regulators' new net **+3V6_A**.
+    TP5 "3V6 IN" is on the J1 side and TP3 is on +3V6_A. VR1/VR2, C98/C99 and TP3 are now on
+    +3V6_A.
+  - **R49**: 51 Ω 2512, DNP. Fit it to load MIC_3V3 with ≈65 mA, about what the 68 missing mics
+    would draw.
+  - Probe pairs, each with a GND TP 3 mm away:
+    - TP6/TP7 on ARM_02_CLK at U99's input;
+    - TP8/TP9 on MIC_CLK_72 at U73;
+    - TP10/TP11 on DATA_00 near J1.
+  - Silkscreen "MIC TEST rev A".
+
+**Routing still to do** (by hand; the placement of the buffers, pull-ups and test points is a
+starting point):
+- **ARM_nn_CLK**: U110 → each buffer, meandered to its mic_array length so U110's fan-out and the
+  line SI match the real board:
+
+  | Arm | Buffer | ARM_nn_CLK on mic_array (mm) | Fitted mics | Their MIC_CLK on mic_array (mm) |
+  |---|---|---|---|---|
+  | 0 | U97 | 147.5 | U1, U2 | 81, 61 |
+  | 1 | U98 | 149.0 | U9, U10, U11 | 68, 47, 51 |
+  | 2 | U99 | 156.0 | U17, U18 | 70, 47 |
+  | 3 | U100 | 145.7 | U25, U26 | 83, 53 |
+  | 4 | U101 | 150.1 | U33, U34, U35 | 76, 51, 40 |
+  | 5 | U102 | 148.3 | U41, U42 | 80, 65 |
+  | 6 | U103 | 143.9 | U49, U50 | 82, 54 |
+  | 7 | U104 | 143.7 | U57, U58, U59 | 85, 67, 50 |
+  | 8 | U105 | 136.0 | U65, U66 | 90, 81 |
+  | 9 | U106 | 134.7 | U73, U74 | 91, 80 |
+  | 10 | U107 | 142.0 | U81, U82, U83 | 84, 61, 44 |
+  | 11 | U108 | 147.3 | U89, U90 | 81, 72 |
+
+- **MIC_CLK**: natural length is fine, but meander **MIC_CLK_72** (the probed one) to 91 mm, the
+  worst case on the full board. The buffer outputs feeding unfitted mics stay unconnected.
+- The CLK_3V3 feed and GND to each moved buffer.
+- The pull-ups, R48 (the cut +3V6 feed: J1 fan-out at (259.5, 194.9) → R48 → the +3V6_A stub at
+  (259.5, 196.05)), R49, and the test points.
+- Any new F.Cu↔B.Cu clock via gets a GND–MIC_3V3 cap within a few mm, as on mic_array. The
+  stitching caps that came along with the square have lost the vias they served:
+  - C121–C125, C131, C171, C179;
+  - reuse them for the new vias, or mark them not-on-board.
+
+After routing, DRC should show only the 8 board-only holes as parity items, the same as
+mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
 
 ---
 
