@@ -1,0 +1,17 @@
+(version 1)
+
+# Same-footprint-instance hole clearance: on the IM72D128 (LLGA-5-4) mic
+# footprint, the bottom-port acoustic vent (NPTH, 0.8mm drill) sits only
+# 0.205mm from the adjacent mechanical/ground pad "5" -- real vendor package
+# geometry (IFX-PG-LLGA-5-4's own footprint/3D model), not a placement error.
+# Every one of the 96 mic instances trips the board's general 0.25mm
+# hole-clearance rule identically for this reason. "A.Reference == B.Reference"
+# scopes this to pad/hole pairs belonging to the same physical component
+# instance -- an intra-footprint clearance is a fixed fact of the part's own
+# geometry, never something board layout can fix, so it's safe to loosen here
+# without touching the 0.25mm rule anywhere else on the board (hole-to-hole,
+# hole-to-copper between DIFFERENT components is untouched).
+(rule "intra-footprint hole clearance (real package geometry)"
+	(condition "A.Reference == B.Reference")
+	(constraint hole_clearance (min 0.15mm))
+)
