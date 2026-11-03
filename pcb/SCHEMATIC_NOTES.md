@@ -77,7 +77,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | J3 | front_end | HanRun HR911130A RJ45 magjack (GbE) |
 | J4 | front_end | 2×7 2 mm JTAG header |
 | Y1 | front_end | 25 MHz crystal for the DP83867, `Device:Crystal_GND24` on a 3225 4-pad footprint (part still to be chosen; see "GbE PHY, RGMII and Y1") — unrelated to mic_array's Y1 |
-| C12, C13 | front_end | 18 pF Y1 load caps (C12 on XO, C13 on XI) |
+| C12, C13 | front_end | 15 pF Y1 load caps (C12 on XO, C13 on XI) |
 | J1 | front_end | +5V/GND main power input (front_end's J1; unrelated to mic_array's J1) |
 | Q4 | front_end | AO3401A P-MOSFET (SOT-23, LCSC C15127) reverse-polarity protection on the +5V input: drain to J1 pin 1 (net +5V_IN), source to +5V, gate to GND |
 | C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
@@ -396,13 +396,13 @@ Table 9-3 / §9.2.1.3):
 | Frequency tolerance over operating temperature | ±50 ppm max (±20–30 ppm parts recommended for margin) |
 | Frequency stability, 1-year aging | ±50 ppm max |
 | Package / pinout | 3.2 × 2.5 mm, 4 pads, crystal between pads 1 and 3, pads 2/4 GND or case — confirm against the chosen part's datasheet |
-| Load capacitance (CL) | Match to C12/C13: **12 pF** with the fitted 18 pF caps (≈18/2 + ~3 pF stray), or TI's recommended **18 pF** with C12/C13 changed to ~27 pF |
+| Load capacitance (CL) | Match to C12/C13: **12 pF** with 15–18 pF caps (≈C/2 + 3–4 pF stray), or TI's recommended **18 pF** with C12/C13 changed to ~27 pF |
 | Temperature range | Cover the board's operating range; the tolerance above must hold over it |
 
 **Chosen:** YXC X322525MOB4SI (LCSC C9006): 25 MHz, CL 12 pF, ±10 ppm tolerance, ±20 ppm
-stability, SMD3225-4P. The 12 pF load matches the fitted 18 pF C12/C13, so they stay as they
-are. Check its datasheet pad drawing against the footprint (crystal on pads 1 and 3) before
-ordering.
+stability, SMD3225-4P. C12/C13 changed from 18 pF to 15 pF (FH 0402CG150J500NT, C1548) to
+centre the 12 pF load (15/2 + ~4 pF stray ≈ 11.5 pF). The datasheet land pattern (1.4 × 1.2 mm
+pads, 0.8 × 0.5 mm gaps; #1 bottom-left, anticlockwise; GND on #2/#4) matches the footprint.
 
 ---
 
@@ -581,7 +581,7 @@ mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
   In2 converted to GND + a +5V island, the J3 centre-tap cap C32 and the CON1 caps C33/C34.
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
-  - ~~choose Y1's part and add its MPN~~ — done: YXC X322525MOB4SI, 12 pF, C12/C13 unchanged;
+  - ~~choose Y1's part and add its MPN~~ — done: YXC X322525MOB4SI, 12 pF, C12/C13 → 15 pF, footprint checked;
   - ~~add User.Drawings to the front_end Gerber plot layers~~ — done; the U3 + U5
     filled/capped-via note now plots with the Gerbers (or send ODB++);
   - confirm the J1/J2 boss-hole orientation relative to pin 1 against Panasonic's
