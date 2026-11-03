@@ -297,9 +297,11 @@ area("rim", (0.0, 0.8, 0.4), 12, 0.5)
 
 # ------------------------------------------------------------------ render
 r = scn.render
-# Cycles on CPU: this machine only has software OpenGL, where EEVEE is far slower.
+# Cycles, not EEVEE: this machine has only software OpenGL, where EEVEE is far slower.
+# Cycles renders on the CUDA GPUs; make_assembly.sh enables them (and the CPU) at render
+# time, since the compute device is a user preference. Without one, Blender uses the CPU.
 r.engine = 'CYCLES'
-scn.cycles.device = 'CPU'
+scn.cycles.device = 'GPU'
 scn.cycles.samples = 24
 scn.cycles.use_denoising = True
 scn.cycles.max_bounces = 4

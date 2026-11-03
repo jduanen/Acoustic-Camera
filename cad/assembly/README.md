@@ -17,14 +17,21 @@ running through its mounting holes, landing at its real connector mated height.
 
 ```bash
 cd cad/assembly
-./make_assembly.sh              # export + build .blend + render (~45 min)
+./make_assembly.sh              # export + build .blend + render (~4 min on the GPUs)
 ./make_assembly.sh --no-render  # export + build .blend only (~1 min)
 ```
 
 Requires `kicad-cli`, `blender` (5.x), `ffmpeg` and `python3`. The script creates
 `build/venv` with [`cascadio`](https://pypi.org/project/cascadio/) (OpenCASCADE
-STEP→GLB) because Blender can't import STEP. Rendering uses Cycles on the CPU: this
+STEP→GLB) because Blender can't import STEP. Rendering uses Cycles, not EEVEE: this
 machine has only software OpenGL (llvmpipe), where EEVEE takes minutes per frame.
+
+Cycles renders on both CUDA GPUs (RTX 2080 Ti + RTX 2060 SUPER) plus all CPU threads; this
+Blender build has CUDA but not OptiX. On a 10-frame test that was 19 s against 42 s on the
+16-thread CPU alone (adding the CPU to the GPUs makes little difference). The first GPU render
+on a machine compiles the CUDA kernels into `~/.cache/cycles/kernels`, which takes about four
+minutes once. `RENDER_DEVICE=CPU ./make_assembly.sh` forces CPU-only rendering. The board and
+STEP exports also run in parallel.
 
 ## Inputs
 
