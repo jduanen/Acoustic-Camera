@@ -79,6 +79,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | Y1 | front_end | 25 MHz crystal for the DP83867, `Device:Crystal_GND24` on a 3225 4-pad footprint (part still to be chosen; see "GbE PHY, RGMII and Y1") — unrelated to mic_array's Y1 |
 | C12, C13 | front_end | 18 pF Y1 load caps (C12 on XO, C13 on XI) |
 | J1 | front_end | +5V/GND main power input (front_end's J1; unrelated to mic_array's J1) |
+| Q4 | front_end | AO3401A P-MOSFET (SOT-23, LCSC C15127) reverse-polarity protection on the +5V input: drain to J1 pin 1 (net +5V_IN), source to +5V, gate to GND |
 | C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
 | U1 | front_end | TLV62569DBV buck, +5V → +3V6 |
 | L1, R1, R2 | front_end | U1's 2.2 µH inductor and 499 kΩ / 100 kΩ feedback divider |
@@ -130,7 +131,7 @@ discussion below (kept for historical context only — see
 ## Power
 
 ```
-+5V  (front_end J1 "Main Power Input"; C3 100 µF/25 V bulk)
++5V  (front_end J1 "Main Power Input" → Q4 reverse-polarity P-FET; C3 100 µF/25 V bulk)
  ├─ AC7200 SOM VCCIN (CON1 pins 1–8)
  ├─ U1 TLV62569 buck (L1 2.2 µH, R1/R2 = 499k/100k) → +3V6  (≈3.59 V)
  │    └─ J2 pins 1–8 ══► mic_array J1 pins 1–8
@@ -142,6 +143,16 @@ discussion below (kept for historical context only — see
       ├─ U4 TLV75525 LDO → +2V5_ETH  (U3 VDDA2P5)
       └─ U5 TLV75510 LDO → +1V0_ETH  (U3 VDD1P0)
 ```
+
+**Reverse-polarity protection.** Q4 (AO3401A, P-channel, −30 V/−4 A, ≈60 mΩ at Vgs = −4.5 V)
+sits in series between J1 pin 1 (+5V_IN) and +5V, ahead of C3, so a reversed cable can't reach the
+bulk cap, the bucks or the AC7200. With correct polarity the body diode conducts first, pulling the
+source up; Vgs ≈ −5 V then turns the channel fully on. Reversed, the body diode blocks and Vgs ≈ 0.
+Load estimate: the AC7200 ≈ 0.3–0.4 A at 5 V (Vivado report_power on the routed design: 0.45 W
+on-chip, 0.19 A Vccint, 0.10 A Vccaux; plus DDR3, flash and converter losses) and the front_end's own
+rails ≈ 0.3 A, so ≈ 0.6–0.7 A total, i.e. ≈ 30 mV and ≈ 25 mW in Q4. On the board, Q4 is just left of
+J1: a 0.8 mm F.Cu track from J1 pin 1 to the drain, the source dropping into the In2 +5V island
+through two vias, the gate to a GND via.
 
 Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/Rbottom).
 
@@ -376,7 +387,7 @@ standard 3225 crystals — so it would not have oscillated. Y1 sits 5.4–5.8 mm
 14/15; XI is 9.35 mm and XO 10.02 mm, F.Cu, no vias; C12 is 1.6 mm and C13 3.3 mm from
 their Y1 pads.
 
-**Y1 part requirements** (no part number has been chosen yet; DP83867 datasheet
+**Y1 part requirements** (DP83867 datasheet
 Table 9-3 / §9.2.1.3):
 
 | Parameter | Requirement |
@@ -388,9 +399,10 @@ Table 9-3 / §9.2.1.3):
 | Load capacitance (CL) | Match to C12/C13: **12 pF** with the fitted 18 pF caps (≈18/2 + ~3 pF stray), or TI's recommended **18 pF** with C12/C13 changed to ~27 pF |
 | Temperature range | Cover the board's operating range; the tolerance above must hold over it |
 
-Typical families that fit: Abracon ABM8, NDK NX3225SA, ECS-250-…-CKM. When chosen, add
-its manufacturer part number to Y1 in `gbe.kicad_sch` and set C12/C13 to its recommended
-load caps.
+**Chosen:** YXC X322525MOB4SI (LCSC C9006): 25 MHz, CL 12 pF, ±10 ppm tolerance, ±20 ppm
+stability, SMD3225-4P. The 12 pF load matches the fitted 18 pF C12/C13, so they stay as they
+are. Check its datasheet pad drawing against the footprint (crystal on pads 1 and 3) before
+ordering.
 
 ---
 
@@ -569,7 +581,7 @@ mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
   In2 converted to GND + a +5V island, the J3 centre-tap cap C32 and the CON1 caps C33/C34.
 - **top.kicad_sch**: only the two expected PWR_FLAG power-output-to-power-output errors.
 - **Before fab:**
-  - choose Y1's part and add its MPN (requirements above); set C12/C13 to suit its CL;
+  - ~~choose Y1's part and add its MPN~~ — done: YXC X322525MOB4SI, 12 pF, C12/C13 unchanged;
   - ~~add User.Drawings to the front_end Gerber plot layers~~ — done; the U3 + U5
     filled/capped-via note now plots with the Gerbers (or send ODB++);
   - confirm the J1/J2 boss-hole orientation relative to pin 1 against Panasonic's
