@@ -54,7 +54,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | Range | Board | Parts |
 |---|---|---|
 | U1–U96 | mic_array | IM72D128 mics, 8 per arm (arm *n* = U(8n+1)–U(8n+8)) |
-| U97–U108 | mic_array | CDCLVC1108 stage-2 clock buffers, one per arm (arm *n* = U(97+n)) |
+| U97–U108 | mic_array | 1:8 stage-2 clock buffers, one per arm (arm *n* = U(97+n)): fitted as TI LMK1C1108PWR (LCSC C2868241), the pin-compatible successor to the CDCLVC1108 the symbols are named for (1.71–3.465 V supply; CLK_3V3 is 3.3 V) |
 | C1–C96 | mic_array | 100 nF decoupling, one per mic VDD pin |
 | C105–C116 | mic_array | 100 nF decoupling, one per arm's CDCLVC1108 |
 | C117–C137 | mic_array | 100 nF 0603 GND–MIC_3V3 clock return-path stitching caps on F.Cu (see PDM Clock Distribution) |
@@ -67,7 +67,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
 | R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
 | TP1–TP4 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3 (TCXO_CLK is probed at front_end TP7) |
-| Y1 | mic_array | 12.288 MHz TCXO |
+| Y1 | mic_array | 12.288 MHz master oscillator: Abracon ASFL1-12.288MHZ-LCS-T (LCSC C276419), 3.3 V HCMOS, ±50 ppm, 5.0 × 3.2 mm; pin 1 tri-state, left open (= running). Replaced the ECS-TXO-5032 ±2.5 ppm TCXO, which LCSC doesn't stock: every mic shares this clock, so ±50 ppm only shifts the absolute sample rate (≈2.4 Hz at 48 kHz) and doesn't affect beamforming |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
 | VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs (+3V6 in) — separate MIC_3V3 and CLK_3V3 rails |
 | C98, C99 | mic_array | 1 µF input caps for VR1, VR2 |
@@ -87,8 +87,8 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U6 | front_end | TLV62569DBV buck, +5V → +3V3_ETH |
 | L2, R13, R14 | front_end | U6's 2.2 µH inductor and 453 kΩ / 100 kΩ feedback divider |
 | C30, C31 | front_end | U6 input (4.7 µF) and output (10 µF) caps |
-| U4 | front_end | TLV75525PDBV LDO, +3V3_ETH → +2V5_ETH (EN tied to IN) |
-| U5 | front_end | TLV75510PDRV LDO (WSON-6), +3V3_ETH → +1V0_ETH (EN tied to IN) |
+| U4 | front_end | TLV74325PDBV LDO (SOT-23-5, 300 mA, LCSC C485154; same pinout as the earlier TLV75525PDBV), +3V3_ETH → +2V5_ETH (EN tied to IN) |
+| U5 | front_end | TLV75710PDRV LDO (WSON-6, 1 A, LCSC C2861391; same pinout as the earlier TLV75510PDRV), +3V3_ETH → +1V0_ETH (EN tied to IN) |
 | C24, C25 | front_end | 10 µF input caps for U4, U5 |
 | C4–C11, C14–C23 | front_end | U3 decoupling: a 1 µF + 0.1 µF pair per supply pin (TI requirement), the 0.1 µF placed closest to its pin |
 | C32 | front_end | 0.1 µF from J3 pin 1 (net ETH_CT, the magjack's common PHY-side centre tap) to GND, per the DP83867 datasheet |
@@ -140,8 +140,8 @@ discussion below (kept for historical context only — see
  │                                          12× CDCLVC1108, OE pull-ups)
  └─ U6 TLV62569 buck (L2 2.2 µH, R13/R14 = 453k/100k) → +3V3_ETH  (≈3.32 V)
       ├─ U3 DP83867 VDDIO (pins 19/30/41), MDIO pull-ups, PHY straps, J4 pin 2
-      ├─ U4 TLV75525 LDO → +2V5_ETH  (U3 VDDA2P5)
-      └─ U5 TLV75510 LDO → +1V0_ETH  (U3 VDD1P0)
+      ├─ U4 TLV74325 LDO → +2V5_ETH  (U3 VDDA2P5)
+      └─ U5 TLV75710 LDO → +1V0_ETH  (U3 VDD1P0)
 ```
 
 **Reverse-polarity protection.** Q4 (AO3401A, P-channel, −30 V/−4 A, ≈60 mΩ at Vgs = −4.5 V)
@@ -161,7 +161,7 @@ Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/
   outputs from it, isolating the mic supply from clock-buffer switching noise.
 - **Only +3V6 and GND cross the inter-board connector** (J2/J1 pins 1–8 carry
   +3V6). No +5V or regulated 3.3 V rail is shared between boards.
-- **+2V5_ETH** uses a TLV75525 (≈0.2–0.3 V dropout) because an AMS1117-2.5 needs
+- **+2V5_ETH** uses a TLV74325 (≈0.2–0.3 V dropout) because an AMS1117-2.5 needs
   ≈1.0–1.1 V of headroom and would sag below the DP83867's VDDA2P5 minimum when
   fed from 3.3 V.
 - The DP83867's VDDA1P8 pins (13, 48) are unconnected.
@@ -233,7 +233,7 @@ These constraints are in
 [`fpga/single_fpga/xdc/single_fpga_top.xdc`](../fpga/single_fpga/xdc/single_fpga_top.xdc).
 
 ```
-Y1  ECS-TXO-5032-122.8, 12.288 MHz TCXO, ±2.5 ppm  (mic_array, CLK_3V3)
+Y1  ASFL1-12.288MHZ-LCS-T, 12.288 MHz HCMOS oscillator, ±50 ppm  (mic_array, CLK_3V3)
  │   R15 33 Ω series → TCXO_CLK → J1/J2 pin 41 (probe at front_end TP7)
  │                    → CON1 pin 21, B13_L5_P, ball Y13 (3.3 V input)
  │
