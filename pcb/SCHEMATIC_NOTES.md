@@ -68,7 +68,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
 | TP1–TP4 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3 (TCXO_CLK is probed at front_end TP7) |
 | Y1 | mic_array | 12.288 MHz master oscillator: Abracon ASFL1-12.288MHZ-LCS-T (LCSC C276419), 3.3 V HCMOS, ±50 ppm, 5.0 × 3.2 mm; pin 1 tri-state, left open (= running). Replaced the ECS-TXO-5032 ±2.5 ppm TCXO, which LCSC doesn't stock: every mic shares this clock, so ±50 ppm only shifts the absolute sample rate (≈2.4 Hz at 48 kHz) and doesn't affect beamforming |
-| U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer |
+| U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer: TI CDCLVC1112PWR (LCSC C2876940) |
 | VR1, VR2 | mic_array | MCP1700T-3302E 3.3V LDOs (+3V6 in) — separate MIC_3V3 and CLK_3V3 rails |
 | C98, C99 | mic_array | 1 µF input caps for VR1, VR2 |
 | J1 | mic_array | Inter-board connector (Panasonic AXK6S80637YG header) |
