@@ -12,7 +12,7 @@ Wireshark, a phone/speaker for test tones.
 1. Visual: U3/U5 exposed pads and paste, J2/CON1–4 alignment, D1 orientation.
 2. Resistance to GND at TP1 (+5V), TP3 (+3V6), TP4 (+3V3_ETH), TP5 (+2V5_ETH),
    TP6 (+1V0_ETH): none below ~100 Ω.
-3. Apply 5 V at J1, 200 mA limit. Expect TP1 5.0 V, TP3 ≈3.59 V, TP4 ≈3.32 V, TP5 2.50 V,
+3. Apply 5 V at J1, 200 mA limit. Expect TP1 5.0 V, TP3 ≈3.89 V, TP4 ≈3.32 V, TP5 2.50 V,
    TP6 1.00 V. Idle current is the PHY only.
 4. Ripple at TP3/TP4 with the ground spring (TP2/TP10 ground): note the buck switching
    ripple, then repeat under load in step 2.5.

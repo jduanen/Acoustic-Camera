@@ -3,7 +3,7 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "HanRun single-port 10/100/1000Base-T RJ45 magjack, integrated magnetics + Bob-Smith termination + Green/Yellow LEDs. Pad geometry corrected using the real vendor STEP model (../../../../cad/hanrun_HR911105A_socket.step), which shows the part is physically marked 'HanRun HR911105A' (see ../../../../cad/HR911105A_v2.png) -- NOT a separate 'HR911130A'-specific pattern as the earlier version of this footprint assumed from a different scanned PDF. Direct pin-by-pin reverse-engineering of the STEP's pin solids turned out to be unreliable (the MDI pins are bent, angled leads whose raw bounding boxes don't cleanly decode into flat XY pad positions without risking overlapping/shorted pads -- confirmed by rendering the mesh), so instead this footprint reuses KiCad's own official, already-correct 'Connector_RJ:RJ45_Hanrun_HR911105A_Horizontal' library footprint's graphics and pad layout verbatim (same body outline, same pad positions/sizes/drills) for literally this same physical part, cross-checked against the STEP model's own unambiguous overall body envelope (16.04 x 16.55mm -- matches well). Pad NUMBERS are remapped from the official footprint's generic 1-12/SH numbering onto this project's existing HR911130A.kicad_sym pin names/numbers (already wired in gbe.kicad_sch): official pins 1-8 (MDI zigzag row, 2.54mm same-row pitch / 1.26mm stagger) -> schematic pins 2-9 (MDI0_P..MDI3_N) in the same left-to-right order; official pins 9-12 (2 LED pairs, flanking the MDI row) -> schematic pins 11-14 (LED_G_A/K, LED_Y_A/K) -- which physical LED pair is green vs yellow is NOT independently confirmed, assumed left pair=green/11-12, right pair=yellow/13-14; official's 2 'SH' pads -> schematic pins 1/10 (BCT1/BCT2) -- confirmed electrically correct, since gbe.kicad_sch ties BCT1+BCT2 together straight to GND (junction + #PWR089), identical in function to a chassis shield/ground tab. The 2 non-plated mechanical mounting holes from the official footprint are kept (unnumbered). VERIFY the green/yellow LED assignment and pin-1 orientation against the physical part before fab.")
+	(descr "HanRun HR911130A single-port 10/100/1000Base-T RJ45 magjack, integrated magnetics + Bob-Smith termination + Green/Yellow LEDs. Pad pattern per the HR911130A datasheet mounting pattern (datasheets/hr911130a.pdf page 2): 10 signal pins dia 0.89 in two rows (2-4-6-8-10 and 1-3-5-7-9, 1.27 mm stagger), 2 shield tabs dia 1.63 (pads SH), 2 NPTH pegs dia 3.25, 4 LED pins dia 1.02 (11/12 green A/K, 14/13 yellow A/K). Pin 1 = transformer centre taps, pin 10 = Bob-Smith termination common. Body graphics are from KiCad's RJ45_Hanrun_HR911105A_Horizontal, which has the same outline.")
 	(tags "HanRun HR911105A HR911130A RJ45 magjack 10/100/1000Base-T")
 	(property "Reference" "J**"
 		(at 4.44 -5 0)
@@ -326,13 +326,21 @@
 		(layers "*.Cu" "*.Mask")
 		(uuid "3626b909-2a2e-4297-a8a5-b7d3020bea81")
 	)
-	(pad "2" thru_hole roundrect
-		(at 0 0)
+	(pad "1" thru_hole roundrect
+		(at -1.27 -2.54)
 		(size 1.5 1.5)
 		(drill 0.89)
 		(layers "*.Cu" "*.Mask")
 		(remove_unused_layers no)
 		(roundrect_rratio 0.167)
+		(uuid "56cd5016-3450-4b34-a5d5-69dd369beab4")
+	)
+	(pad "2" thru_hole circle
+		(at 0 0)
+		(size 1.5 1.5)
+		(drill 0.89)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
 		(uuid "5ebe45a0-44a9-491a-8703-437c0e22009d")
 	)
 	(pad "3" thru_hole circle
@@ -391,6 +399,14 @@
 		(remove_unused_layers no)
 		(uuid "178f4a9f-8de1-4f27-b2b2-6a184e23d991")
 	)
+	(pad "10" thru_hole circle
+		(at 10.16 0)
+		(size 1.5 1.5)
+		(drill 0.89)
+		(layers "*.Cu" "*.Mask")
+		(remove_unused_layers no)
+		(uuid "8469978f-173a-44ca-b223-361730cfb81c")
+	)
 	(pad "11" thru_hole circle
 		(at -2.185 11.26)
 		(size 1.5 1.5)
@@ -423,7 +439,7 @@
 		(remove_unused_layers no)
 		(uuid "95e40be4-9e03-4812-8c78-d4e13786951d")
 	)
-	(pad "10" thru_hole circle
+	(pad "SH" thru_hole circle
 		(at -3.305 3.31)
 		(size 2.5 2.5)
 		(drill 1.63)
@@ -431,7 +447,7 @@
 		(remove_unused_layers no)
 		(uuid "20f3ee30-c6a9-47a0-a426-b1fc61d0799e")
 	)
-	(pad "1" thru_hole circle
+	(pad "SH" thru_hole circle
 		(at 12.185 3.31)
 		(size 2.5 2.5)
 		(drill 1.63)

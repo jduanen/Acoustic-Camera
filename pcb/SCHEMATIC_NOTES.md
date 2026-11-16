@@ -74,7 +74,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | J1 | mic_array | Inter-board connector (Panasonic AXK6S80637YG header) |
 | CON1–CON4 | front_end | Panasonic AXK680337YG headers that the AC7200 SOM plugs into |
 | U2 | front_end (PCB only) | AC7200 SOM mechanical footprint (not in the schematic or BOM) |
-| J3 | front_end | HanRun HR911130A RJ45 magjack (GbE) |
+| J3 | front_end | HanRun HR911130A RJ45 magjack (GbE). Footprint follows the datasheet mounting pattern: 10 signal pins Ø0.89 (pin 1 = centre taps, pin 10 = Bob-Smith common → GND), two Ø1.63 shield tabs (pads `SH` → GND), 4 LED pins, 2 NPTH pegs. The earlier footprint was the 8-pin HR911105A pattern, with pins 1/10 on the shield tabs and no holes for the real pins 1 and 10 |
 | J4 | front_end | 2×7 2 mm JTAG header |
 | Y1 | front_end | 25 MHz crystal for the DP83867, `Device:Crystal_GND24` on a 3225 4-pad footprint (part still to be chosen; see "GbE PHY, RGMII and Y1") — unrelated to mic_array's Y1 |
 | C12, C13 | front_end | 15 pF Y1 load caps (C12 on XO, C13 on XI) |
@@ -82,7 +82,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | Q4 | front_end | AO3401A P-MOSFET (SOT-23, LCSC C15127) reverse-polarity protection on the +5V input: drain to J1 pin 1 (net +5V_IN), source to +5V, gate to GND |
 | C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
 | U1 | front_end | TLV62569DBV buck, +5V → +3V6 |
-| L1, R1, R2 | front_end | U1's 2.2 µH inductor and 499 kΩ / 100 kΩ feedback divider |
+| L1, R1, R2 | front_end | U1's 2.2 µH inductor and 549 kΩ / 100 kΩ feedback divider |
 | C1, C2 | front_end | U1 input (4.7 µF) and output (10 µF) caps |
 | U6 | front_end | TLV62569DBV buck, +5V → +3V3_ETH |
 | L2, R13, R14 | front_end | U6's 2.2 µH inductor and 453 kΩ / 100 kΩ feedback divider |
@@ -133,7 +133,7 @@ discussion below (kept for historical context only — see
 ```
 +5V  (front_end J1 "Main Power Input" → Q4 reverse-polarity P-FET; C3 100 µF/25 V bulk)
  ├─ AC7200 SOM VCCIN (CON1 pins 1–8)
- ├─ U1 TLV62569 buck (L1 2.2 µH, R1/R2 = 499k/100k) → +3V6  (≈3.59 V)
+ ├─ U1 TLV62569 buck (L1 2.2 µH, R1/R2 = 549k/100k) → +3V6  (≈3.89 V)
  │    └─ J2 pins 1–8 ══► mic_array J1 pins 1–8
  │         ├─ VR1 MCP1700-3302E → MIC_3V3  (96 IM72D128 mics)
  │         └─ VR2 MCP1700-3302E → CLK_3V3  (TCXO Y1, U110 CDCLVC1112,
@@ -156,6 +156,9 @@ through two vias, the gate to a GND via.
 
 Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/Rbottom).
 
+- **+3V6** is ≈3.89 V despite its name (R1 raised from 499k, which gave 3.59 V). With U1's ±2 % reference
+  and 1 % resistors, 3.59 V could fall to ≈3.46 V, only ≈95 mV above a high MCP1700 output and less than
+  its worst-case dropout at the mics' ≈110 mA; 3.89 V leaves ≥0.38 V.
 - **+3V6** exists only to feed the mic board's two MCP1700 3.3 V LDOs with headroom
   above their dropout; nothing else uses it. MIC_3V3 and CLK_3V3 are separate LDO
   outputs from it, isolating the mic supply from clock-buffer switching noise.
