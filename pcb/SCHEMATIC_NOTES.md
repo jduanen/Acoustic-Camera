@@ -656,6 +656,12 @@ mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
   - ~~choose Y1's part and add its MPN~~ — done: YXC X322525MOB4SI, 12 pF, C12/C13 → 15 pF, footprint checked;
   - ~~add User.Drawings to the front_end Gerber plot layers~~ — done; the U3 + U5
     filled/capped-via note now plots with the Gerbers (or send ODB++);
+  - ~~add fiducials~~ — done: three `Fiducial_1mm_Mask2mm` per assembled side, near the top-left,
+    top-right and bottom-left corners (asymmetric so a rotated board is caught), centres ≥ 5 mm
+    from the edge. front_end FID1–3 on F.Cu and FID4–6 on B.Cu (for the 0.5 mm-pitch J2);
+    mic_array and mic_test FID1–3 on F.Cu. Board-only footprints (no schematic symbol),
+    excluded from BOM and position files; 0.5 mm pad clearance keeps zone copper out of the
+    2 mm mask ring;
   - confirm the J1/J2 boss-hole orientation relative to pin 1 against Panasonic's
     product specification drawing (see `cad/assembly/README.md`).
 
