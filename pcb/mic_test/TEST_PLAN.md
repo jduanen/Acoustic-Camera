@@ -53,9 +53,10 @@ Power front_end only; mic_test is fed through J2/J1.
    - overshoot and undershoot within the CDCLVC1108's input ratings (−0.3 V / VDD+0.3 V);
    - monotonic edges through VIL/VIH, with no ledge or ring-back across the thresholds;
    - duty cycle and period jitter.
-   This sets the value of mic_array's R50–R61 (and front_end's R22): mic_test has no series
-   resistor here, so a clean edge means 0 Ω will do, and overshoot or ring-back means fitting
-   22–47 Ω. A resistor can be tried on mic_test by cutting the trace at U110's output.
+   mic_array has no series resistors on these lines (R50–R61 were removed; see SCHEMATIC_NOTES
+   "Clock series termination"), and neither does mic_test. A clean edge confirms that design.
+   Overshoot or ring-back means adding the resistors back (10–22 Ω). A resistor can be tried
+   on mic_test by cutting the trace at U110's output.
 4. MIC_CLK_72 at mic_test TP8 (GND TP9). This is U73's CLK pin, at the end of the longest fitted
    mic clock (91 mm, matched). Same checks, against the IM72D128 clock input.
 5. CLK_3V3 ripple at TP4 with all 12 + 12×(2–3) outputs switching (simultaneous-switching

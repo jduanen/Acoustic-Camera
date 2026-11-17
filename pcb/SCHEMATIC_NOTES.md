@@ -66,7 +66,6 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
 | R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
-| R50–R61 | mic_array | 33 Ω 0402 source-series resistors on U110's twelve outputs (arm *n* = R(50+n)): U110 Y*x* → R → ARM_nn_CLK. Fit 0 Ω or tune the value from the mic_test measurements (see "Clock series termination") |
 | TP1–TP4 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3 (TCXO_CLK is probed at front_end TP7) |
 | Y1 | mic_array | 12.288 MHz master oscillator: Abracon ASFL1-12.288MHZ-LCS-T (LCSC C276419), 3.3 V HCMOS, ±50 ppm, 5.0 × 3.2 mm; pin 1 tri-state, left open (= running). Replaced the ECS-TXO-5032 ±2.5 ppm TCXO, which LCSC doesn't stock: every mic shares this clock, so ±50 ppm only shifts the absolute sample rate (≈2.4 Hz at 48 kHz) and doesn't affect beamforming |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer: TI CDCLVC1112PWR (LCSC C2876940) |
@@ -277,19 +276,25 @@ CDCLVC1108s) rather than driven from the FPGA.
 
 **Clock series termination.** ARM_nn_CLK (135–156 mm) and PDM_CLK are point-to-point
 lines driven by sub-nanosecond edges, so they behave as transmission lines (≈45 Ω for a
-0.2 mm track over 0.1 mm prepreg). Each now has a source-series resistor so ringing can be
-tuned without a board change:
-- **R50–R61** (mic_array, 33 Ω 0402), one per U110 output, placed at the output pin ahead
-  of the via. A ledge or ring-back at a CDCLVC1108 input would double-clock all 8 mics of
-  that arm.
+0.2 mm track over 0.1 mm prepreg).
+- **ARM_nn_CLK: no resistor, by design.** U110 (CDCLVC1112) already has 45 Ω typical output
+  impedance at 3.3 V, which roughly source-matches the ≈45 Ω line by itself. The far end then
+  steps to ~VDD on the first edge, well clear of the CDCLVC1108's VDD/2 threshold. Even a
+  ±15 Ω spread in output impedance only adds 10–20 % overshoot, not a threshold re-crossing.
+  A 33 Ω resistor would over-damp the line (≈78 Ω source; the first step is only ~0.73 VDD).
+  R50–R61 (33 Ω 0402, one per U110 output) were added on 2026-11-16 and removed on
+  2026-11-17 before they reached the board. *To bring them back:* restore them from commit
+  0416fe9 (`mic_array.kicad_sch`; U110 Y*x* → R(50+n) → ARM_nn_CLK), place each at its output
+  pin ahead of the via, and start at 10–22 Ω. Reasons to do so: mic_test TP6 (TEST_PLAN step
+  5.3) shows overshoot beyond the CDCLVC1108 input rating (−0.3 V / VDD+0.3 V), or a ledge
+  near VDD/2, or EMC trouble from the 12 × ~150 mm fast-edge lines. mic_test's arm feeds have
+  no resistor either, so its measurement is the as-built case.
 - **R22** (front_end, 33 Ω 0402) on PDM_CLK next to CON1 pin 25. With R22 fitted, the FPGA's
-  DRIVE 12 setting no longer has to do the matching on its own.
+  DRIVE 12 setting no longer has to do the matching on its own. The same reasoning probably
+  applies, so 0 Ω is likely enough; set its value from the TP8 measurement (TEST_PLAN step 5.2).
 
-33 Ω is a starting value (driver output impedance + R ≈ line impedance). Set it from the
-mic_test measurements at TP6 (TEST_PLAN step 5.3); fit 0 Ω if the edges are clean without
-it. The 96 MIC_CLK outputs (36–91 mm) have no resistor; add them only if TEST_PLAN step 5.4
-shows a problem at the mic pins. mic_test itself does not have R50–R61 or R22: its sheets
-are separate copies.
+The 96 MIC_CLK outputs (36–91 mm) have no resistor; add them only if TEST_PLAN step 5.4
+shows a problem at the mic pins.
 
 **Clock trace lengths.** Matching isn't functionally required at 3.072 MHz: the
 mics' own DATA-driven delay (tDD) varies 40–80 ns part to part, the two buffer stages allow
@@ -638,9 +643,9 @@ mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
 
 - **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
   entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
-- **Open layout work (2026-11-16):** the schematics have R50–R61 (mic_array) and R22
-  (front_end), which are not on the boards yet (Update PCB from Schematic, place, re-route
-  U110's fan-out and PDM_CLK). The MDI pairs on front_end were re-routed to the
+- **Open layout work (2026-11-16):** R22 (front_end) is on the board. R50–R61 were removed
+  from mic_array on 2026-11-17 (see "Clock series termination"), so mic_array needs no
+  changes. The MDI pairs on front_end were re-routed to the
   differential-pair rule on 2026-11-17 (see "MDI pairs" above). The two entries below describe the boards
   before these changes.
 - **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
