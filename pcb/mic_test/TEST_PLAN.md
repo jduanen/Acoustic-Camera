@@ -25,6 +25,8 @@ Wireshark, a phone/speaker for test tones.
    the board answers ARP (`arping`), and the UDP stream appears in Wireshark while D1
    alternates green/blue.
 5. Repeat the step 1.4 ripple check with the FPGA running.
+   Record the ripple frequency as well as its amplitude: below about 150 mA of load the
+   +3V6 buck (U1) leaves 1.5 MHz PWM for power-save bursts at a lower frequency.
 
 ## 3. mic_test on its own
 Inject 3.6 V (100 mA limit) at TP5 "3V6 IN" (J1 side of the shunt R48), GND at TP1.
@@ -51,6 +53,9 @@ Power front_end only; mic_test is fed through J2/J1.
    - overshoot and undershoot within the CDCLVC1108's input ratings (−0.3 V / VDD+0.3 V);
    - monotonic edges through VIL/VIH, with no ledge or ring-back across the thresholds;
    - duty cycle and period jitter.
+   This sets the value of mic_array's R50–R61 (and front_end's R22): mic_test has no series
+   resistor here, so a clean edge means 0 Ω will do, and overshoot or ring-back means fitting
+   22–47 Ω. A resistor can be tried on mic_test by cutting the trace at U110's output.
 4. MIC_CLK_72 at mic_test TP8 (GND TP9). This is U73's CLK pin, at the end of the longest fitted
    mic clock (91 mm, matched). Same checks, against the IM72D128 clock input.
 5. CLK_3V3 ripple at TP4 with all 12 + 12×(2–3) outputs switching (simultaneous-switching
@@ -84,6 +89,11 @@ use 16 DATA lines: 00, 04, 05, 08, 12, 16, 17, 20, 24, 28, 29, 32, 36, 40, 41, 4
    this board would draw.
 2. Check MIC_3V3 droop at TP2, VR1 temperature, and the +3V6 shunt current (TP5 − TP3). Then
    check front_end TP3 (+3V6 at the buck) to see the drop across J2/J1.
+3. MIC_3V3 noise at TP2 (ground spring to TP1), with and without R49, the FPGA streaming.
+   Look from 100 Hz to a few hundred kHz for the buck's power-save burst frequency seen in
+   steps 1.4/2.5. Compare a quiet-room spectrum of one channel against the same capture with
+   mic_test fed from a bench 3.6 V supply at TP5. If the buck adds in-band spurs, apply the
+   options under "Mic supply noise" in SCHEMATIC_NOTES before ordering mic_array.
 
 ## 8. Soak
 Run 30 min stacked and streaming at room temperature. Then repeat steps 5.3–5.5 and 6.5, and

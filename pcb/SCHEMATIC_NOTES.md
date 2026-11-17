@@ -66,6 +66,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | R1–R12 | mic_array | 10 kΩ pull-ups on each arm's CDCLVC1108 output-enable pin (arm *n* = R(n+1)) |
 | R13 | mic_array | 10 kΩ pull-up on CDCLVC1112's output-enable pin |
 | R15 | mic_array | 33 Ω source-series resistor on Y1's output (TCXO_CLK to J1) |
+| R50–R61 | mic_array | 33 Ω 0402 source-series resistors on U110's twelve outputs (arm *n* = R(50+n)): U110 Y*x* → R → ARM_nn_CLK. Fit 0 Ω or tune the value from the mic_test measurements (see "Clock series termination") |
 | TP1–TP4 | mic_array | Test points: GND, MIC_3V3, +3V6, CLK_3V3 (TCXO_CLK is probed at front_end TP7) |
 | Y1 | mic_array | 12.288 MHz master oscillator: Abracon ASFL1-12.288MHZ-LCS-T (LCSC C276419), 3.3 V HCMOS, ±50 ppm, 5.0 × 3.2 mm; pin 1 tri-state, left open (= running). Replaced the ECS-TXO-5032 ±2.5 ppm TCXO, which LCSC doesn't stock: every mic shares this clock, so ±50 ppm only shifts the absolute sample rate (≈2.4 Hz at 48 kHz) and doesn't affect beamforming |
 | U110 | mic_array | CDCLVC1112, stage-1 (1:12) PDM clock buffer: TI CDCLVC1112PWR (LCSC C2876940) |
@@ -93,6 +94,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | C4–C11, C14–C23 | front_end | U3 decoupling: a 1 µF + 0.1 µF pair per supply pin (TI requirement), the 0.1 µF placed closest to its pin |
 | C32 | front_end | 0.1 µF from J3 pin 1 (net ETH_CT, the magjack's common PHY-side centre tap) to GND, per the DP83867 datasheet |
 | C33, C34 | front_end | 22 µF 0805 + 0.1 µF local decoupling for the AC7200 +5V input (CON1 pins 1–8), just outside the module outline |
+| C186, C187 | front_end | 10 µF 0805 + 0.1 µF 0402 +3V6 decoupling at J2 pins 1–8, on F.Cu above J2's pin-1 end, fed through two capped/filled vias in J2's pin 1/2 pads; in `front_end.kicad_sch`. Numbered after mic_array's C185 so they are unique across `top` |
 | U3 | front_end | DP83867IRRGZ GbE PHY (loads +3V3_ETH, +2V5_ETH, +1V0_ETH); 4.1 mm exposed pad has 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) |
 | TP1–TP6 | front_end | Test points: +5V, GND, +3V6, +3V3_ETH, +2V5_ETH, +1V0_ETH |
 | TP7, TP8 | front_end | Clock test points: TCXO_CLK (2.6 mm stub, near CON1.21) and PDM_CLK (3.7 mm stub, near CON1.25) |
@@ -100,6 +102,7 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | D1 | front_end | Broadcom ASMB-MTB0-0A3A2 common-anode RGB status LED (PLCC-4), anode on +5V; see "Status LED" |
 | Q1–Q3 | front_end | 2N7002 low-side switches for D1's red, green, blue cathodes (gates = LED_R/G/B) |
 | R16–R18 | front_end | D1 cathode current limits (0603): 620 Ω (red), 390 Ω (green), 390 Ω (blue), ≈5 mA each |
+| R22 | front_end | 33 Ω 0402 source-series resistor on PDM_CLK at CON1 pin 25 (in `ac7200_conn1.kicad_sch`); TP8 and J2 pin 45 are on the line side |
 | R19–R21 | front_end | 100 kΩ gate pull-downs (0603) on Q1–Q3 (LED off until the FPGA drives it) |
 | J2 | front_end | Inter-board connector (AXK5S80337YG socket, mates J1) |
 
@@ -164,6 +167,8 @@ Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/
   outputs from it, isolating the mic supply from clock-buffer switching noise.
 - **Only +3V6 and GND cross the inter-board connector** (J2/J1 pins 1–8 carry
   +3V6). No +5V or regulated 3.3 V rail is shared between boards.
+  C186/C187 (10 µF + 0.1 µF) decouple +3V6 where it leaves front_end at J2; before
+  them the nearest +3V6 cap was C2 at the buck, about 49 mm away.
 - **+2V5_ETH** uses a TLV74325 (≈0.2–0.3 V dropout) because an AMS1117-2.5 needs
   ≈1.0–1.1 V of headroom and would sag below the DP83867's VDDA2P5 minimum when
   fed from 3.3 V.
@@ -176,6 +181,18 @@ Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/
   power-output-to-power-output errors; these are expected and can be excluded.
 - Power symbols must use a **power input** pin: a power symbol with a power-output
   pin does not join its global net in KiCad 10 (this disconnected +3V3_ETH once).
+
+**Mic supply noise (to be measured).** MIC_3V3 comes from an MCP1700, a micropower LDO
+with little supply rejection above the low audio band (44 dB at 100 Hz, falling with
+frequency). Its input is the U1 buck, which leaves fixed 1.5 MHz PWM for power-save mode
+when the inductor current goes discontinuous, at roughly 150 mA here. The +3V6 load is about
+150–200 mA, so U1 may run in bursts at a much lower frequency, and that ripple would reach
+the mics largely unattenuated. The IM72D128 has its own rejection (PSR −80 dBFS at 1 kHz
+for 100 mVpp), so this may not matter; nothing has been changed. TEST_PLAN steps 1.4, 2.5
+and 7.3 measure it. If in-band ripple shows on MIC_3V3, the options in order of effort:
+1. a ferrite bead plus 10 µF at the mic_array +3V6 entry (needs two footprints);
+2. a forced-PWM buck in place of U1, so the ripple stays at 1.5 MHz;
+3. a higher-PSRR LDO for VR1.
 
 ---
 
@@ -257,6 +274,22 @@ so there's no per-sheet net-name collision risk despite every arm sheet
 being a copy of the same template. Both buffer ICs have their
 output-enable pin pulled up locally (R13 for U110, R1–R12 for the arms'
 CDCLVC1108s) rather than driven from the FPGA.
+
+**Clock series termination.** ARM_nn_CLK (135–156 mm) and PDM_CLK are point-to-point
+lines driven by sub-nanosecond edges, so they behave as transmission lines (≈45 Ω for a
+0.2 mm track over 0.1 mm prepreg). Each now has a source-series resistor so ringing can be
+tuned without a board change:
+- **R50–R61** (mic_array, 33 Ω 0402), one per U110 output, placed at the output pin ahead
+  of the via. A ledge or ring-back at a CDCLVC1108 input would double-clock all 8 mics of
+  that arm.
+- **R22** (front_end, 33 Ω 0402) on PDM_CLK next to CON1 pin 25. With R22 fitted, the FPGA's
+  DRIVE 12 setting no longer has to do the matching on its own.
+
+33 Ω is a starting value (driver output impedance + R ≈ line impedance). Set it from the
+mic_test measurements at TP6 (TEST_PLAN step 5.3); fit 0 Ω if the edges are clean without
+it. The 96 MIC_CLK outputs (36–91 mm) have no resistor; add them only if TEST_PLAN step 5.4
+shows a problem at the mic pins. mic_test itself does not have R50–R61 or R22: its sheets
+are separate copies.
 
 **Clock trace lengths.** Matching isn't functionally required at 3.072 MHz: the
 mics' own DATA-driven delay (tDD) varies 40–80 ns part to part, the two buffer stages allow
@@ -360,6 +393,31 @@ once. Rotating U3 90° counter-clockwise would remove that crossing.
   reads ANAR back; anything but 0x0001 (0xFFFF if the PHY doesn't answer, 0x01E1 if it
   ignored the write) turns the status LED solid red.
 
+**MDI pairs (U3 ↔ J3).** The eight nets are named `MDI0_P/N` … `MDI3_P/N` (labels in
+`gbe.kicad_sch`), so KiCad treats them as differential pairs. `front_end.kicad_dru` has
+the rule "MDI differential pairs (100 ohm)": 0.13 mm tracks, 0.20 mm gap (≈97 Ω on this
+stackup by formula; confirm with the fab's calculator), at most 6 mm uncoupled and 0.5 mm
+skew within a pair. TI's PHY layout note (SNLA387) asks for intra-pair matching within
+20 mil (0.5 mm) at 1G.
+
+As routed (2026-11-17), all on F.Cu over In1 except pair 1, which drops to B.Cu (over In2)
+through two vias at (68.6, 136.05)/(69.43, 136.05), with GND stitching vias beside them at
+(67.75, 136.6) and (70.1, 136.6). Pair 1 has to change layer because it lands on J3 pins 4
+and 7, either side of pair 2 (pins 5, 6). Each pair runs coupled down the gaps between U3's
+decoupling caps and splits just above J3. J3's two pin rows are 2.54 mm apart, so the leg
+going to the upper row (3, 5, 7, 9) is short; each short leg is lengthened right at the
+connector by a horizontal detour that enters its pin at 45°. Lengths, pad to pad:
+
+| Pair | P | N | Skew |
+|---|---|---|---|
+| MDI0 | 13.33 mm | 13.33 mm | 0.00 mm |
+| MDI1 | 13.11 mm | 13.25 mm | 0.15 mm (one via each) |
+| MDI2 | 13.36 mm | 13.43 mm | 0.08 mm |
+| MDI3 | 14.32 mm | 14.32 mm | 0.00 mm |
+
+The pairs come within about 0.3 mm of each other at the J3 end (MDI0_N / MDI2_P), against
+TI's suggested 0.76 mm between pairs; there is no room for more at 2.54 mm pin pitch.
+
 **RGMII lengths** (front_end only, pad to pad; each net has 2 vias, counted at 1.545 mm
 each; the AC7200 module's internal routing is unknown and adds to these). Re-balanced with
 tuning meanders after the row-grouping pin move:
@@ -372,11 +430,12 @@ tuning meanders after the row-grouping pin move:
 For scale: the PHY accepts TXC within ±1.0 ns of its data and gives ±1.2 ns of RX setup
 and hold, so these skews are a few percent of the margin.
 
-**U3 and U5 exposed pads.** U3's 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) and
-U5's 2 (0.6/0.3 mm, under its two paste windows) are marked **filled and capped**
+**U3 and U5 exposed pads, J2 pins 1/2.** U3's 17 GND vias (4×4 at 1.2 mm + centre, 0.6/0.3 mm) and
+U5's 2 (0.6/0.3 mm, under its two paste windows), and the two +3V6 vias that sit inside
+J2's pin 1 and pin 2 pads (feeding C186/C187 on F.Cu) are marked **filled and capped**
 (IPC-4761 Type VII) in their via properties, so paste over them can't wick down the
 barrels; every other via uses the board default (tented both sides). ODB++ export carries
-this as `filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (19 vias each). Gerber + Excellon do
+this as `filling_f.cu-b.cu` / `capping_f.cu-b.cu` layers (21 vias each). Gerber + Excellon do
 **not** — for a Gerber order, the fab note on User.Drawings below the board outline
 carries it (User.Drawings is in the board's saved plot layers, so it plots as
 `front_end-User_Drawings.gbr`); point the fab at it or repeat it in the order comments.
@@ -579,6 +638,11 @@ mic_array. Plot output goes to `pcb/mic_test/gerbers/`.
 
 - **mic_array**: routed, ERC- and DRC-clean (0 violations, 0 unconnected; the only parity
   entries are the 8 board-only mounting holes, excluded). Clock tree balanced as above.
+- **Open layout work (2026-11-16):** the schematics have R50–R61 (mic_array) and R22
+  (front_end), which are not on the boards yet (Update PCB from Schematic, place, re-route
+  U110's fan-out and PDM_CLK). The MDI pairs on front_end were re-routed to the
+  differential-pair rule on 2026-11-17 (see "MDI pairs" above). The two entries below describe the boards
+  before these changes.
 - **front_end**: routed, ERC- and DRC-clean (0 violations, 0 unconnected, 0 parity),
   including the row-grouped RGMII pins, R5/R6 DNP and the re-balanced RGMII lengths above,
   In2 converted to GND + a +5V island, the J3 centre-tap cap C32 and the CON1 caps C33/C34.

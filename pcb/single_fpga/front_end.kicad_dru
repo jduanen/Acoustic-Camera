@@ -27,3 +27,19 @@
 	(constraint courtyard_clearance)
 	(severity ignore)
 )
+
+# 1000BASE-T MDI pairs, U3 (DP83867) to J3 (HR911130A): 100 ohm differential.
+# On this stackup (0.1 mm prepreg to the adjacent GND plane, er 4.5, 35 um copper)
+# 0.13 mm tracks with a 0.20 mm gap come out at about 97 ohm by the IPC microstrip
+# formulas; confirm with the fab's impedance calculator for their actual prepreg.
+# The board-wide 0.2 mm minimum track width is relaxed for these nets only.
+# Pair 1 (J3 pins 4 and 7) has to split around pair 2 (pins 5 and 6) at the
+# connector, hence the uncoupled-length allowance. The gap maximum of 0.4 mm covers
+# the 0.5 mm-pitch breakout at U3's pads.
+(rule "MDI differential pairs (100 ohm)"
+	(condition "A.inDiffPair('/Ethernet Interface/MDI*')")
+	(constraint track_width (min 0.12mm) (opt 0.13mm) (max 0.2mm))
+	(constraint diff_pair_gap (min 0.18mm) (opt 0.2mm) (max 0.4mm))
+	(constraint diff_pair_uncoupled (max 6mm))
+	(constraint skew (max 0.5mm) (within_diff_pairs))
+)
