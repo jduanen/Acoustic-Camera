@@ -545,7 +545,7 @@ CON1 (VCCO 3.3 V → LVCMOS33); each also runs to one spare inter-board pin on J
 | Side | Board | Part |
 |---|---|---|
 | J1 | mic_array | Panasonic AXK6S80637YG (P5KS 80-pin header, 0.5mm pitch, 9.0mm mated height, positioning bosses) |
-| J2 | front_end | Panasonic AXK5S80337YG (mating P5KS socket, positioning bosses) |
+| J2 | front_end | Panasonic AXK5S80337YG (mating P5KS socket, positioning bosses; LCSC C5572475, listed but not stocked, so JLCPCB needs a pre-order) |
 
 Carries all 48 DATA_nn nets plus +3V6 (pins 1–8), GND (16 pins, plus pin 43), and the two
 clocks: TCXO_CLK (pin 41, mic_array → FPGA) and PDM_CLK (pin 45, FPGA → mic_array) — see
