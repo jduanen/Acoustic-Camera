@@ -76,10 +76,13 @@ it is U2, the board-only mechanical footprint `single_fpga:AC7200_Module`
 | U2 | front_end (PCB only) | AC7200 SOM mechanical footprint (not in the schematic or BOM) |
 | J3 | front_end | HanRun HR911130A RJ45 magjack (GbE). Footprint follows the datasheet mounting pattern: 10 signal pins Ø0.89 (pin 1 = centre taps, pin 10 = Bob-Smith common → GND), two Ø1.63 shield tabs (pads `SH` → GND), 4 LED pins, 2 NPTH pegs. The earlier footprint was the 8-pin HR911105A pattern, with pins 1/10 on the shield tabs and no holes for the real pins 1 and 10 |
 | J4 | front_end | 2×7 2 mm JTAG header |
+| J5 | front_end | 2×4 0.1" bring-up header (hanxia HX PZ2.54-2x4P ZZ, LCSC C32713277): +3V3_ETH, GND ×2, AUX_IO0–4; see "Bring-up Header" |
 | Y1 | front_end | 25 MHz crystal for the DP83867, `Device:Crystal_GND24` on a 3225 4-pad footprint (part still to be chosen; see "GbE PHY, RGMII and Y1") — unrelated to mic_array's Y1 |
 | C12, C13 | front_end | 15 pF Y1 load caps (C12 on XO, C13 on XI) |
 | J1 | front_end | +5V/GND main power input (front_end's J1; unrelated to mic_array's J1) |
 | Q4 | front_end | AO3401A P-MOSFET (SOT-23, LCSC C15127) reverse-polarity protection on the +5V input: drain to J1 pin 1 (net +5V_IN), source to +5V, gate to GND |
+| F1 | front_end | BHFUSE BSMD1206-150-16V polyfuse (1206, 1.5 A hold / 3 A trip, 16 V, ≤0.13 Ω, LCSC C883133) between Q4's source (net Net-(Q4-S)) and +5V |
+| D2 | front_end | Littelfuse SMAJ5.0A TVS (SMA, 400 W, 5.0 V standoff, 6.4 V min breakdown, 9.2 V clamp at 43.5 A, LCSC C83329), +5V to GND after F1 |
 | C3 | front_end | 100 µF / 25 V aluminium electrolytic bulk on +5V (CP_Elec_6.3x5.8) |
 | U1 | front_end | TLV62569DBV buck, +5V → +3V6 |
 | L1, R1, R2 | front_end | U1's 2.2 µH inductor and 549 kΩ / 100 kΩ feedback divider |
@@ -133,7 +136,7 @@ discussion below (kept for historical context only — see
 ## Power
 
 ```
-+5V  (front_end J1 "Main Power Input" → Q4 reverse-polarity P-FET; C3 100 µF/25 V bulk)
++5V  (front_end J1 "Main Power Input" → Q4 reverse-polarity P-FET → F1 1.5 A polyfuse → D2 SMAJ5.0A TVS; C3 100 µF/25 V bulk)
  ├─ AC7200 SOM VCCIN (CON1 pins 1–8)
  ├─ U1 TLV62569 buck (L1 2.2 µH, R1/R2 = 549k/100k) → +3V6  (≈3.89 V)
  │    └─ J2 pins 1–8 ══► mic_array J1 pins 1–8
@@ -153,8 +156,17 @@ source up; Vgs ≈ −5 V then turns the channel fully on. Reversed, the body di
 Load estimate: the AC7200 ≈ 0.3–0.4 A at 5 V (Vivado report_power on the routed design: 0.45 W
 on-chip, 0.19 A Vccint, 0.10 A Vccaux; plus DDR3, flash and converter losses) and the front_end's own
 rails ≈ 0.3 A, so ≈ 0.6–0.7 A total, i.e. ≈ 30 mV and ≈ 25 mW in Q4. On the board, Q4 is just left of
-J1: a 0.8 mm F.Cu track from J1 pin 1 to the drain, the source dropping into the In2 +5V island
-through two vias, the gate to a GND via.
+J1: a 0.8 mm F.Cu track from J1 pin 1 to the drain, the gate to a GND via.
+
+**Over-current and over-voltage.** After Q4 come F1 (1.5 A hold / 3 A trip polyfuse, 16 V, ≤0.13 Ω,
+so ≈ 0.1 V at the ≈ 0.7 A load) and then D2 (SMAJ5.0A TVS, cathode on +5V). Q4 ahead of D2 means a
+reversed supply never forward-biases the TVS; F1 ahead of D2 means a sustained over-voltage that
+makes D2 conduct trips F1 instead of burning D2. D2 is a transient clamp only (9.2 V at 43.5 A); it
+does not protect the TLV62569s (6 V abs max) against a steady wrong-voltage supply. Leakage is
+≤ 800 µA at 5.0 V and rises above that, so keep the supply ≤ 5.25 V. On the board, F1 sits left of
+Q4 (0.8 mm track from Q4's source); F1's output runs on F.Cu under Q4 to Q4's old two +5V vias into
+the In2 +5V island (the island only reaches x ≥ 128.5 mm there); D2 sits below with its cathode
+teed onto that track and its anode on two GND vias.
 
 Buck setpoints follow the TLV62569's 0.6 V reference: Vout = 0.6 V × (1 + Rtop/Rbottom).
 
@@ -503,6 +515,31 @@ three drive nets come from free bank-13 (3.3 V) pins on CON1:
 
 ---
 
+## Bring-up Header (front_end)
+
+J5 is a 2×4 0.1" pin header (odd pins on one row, even on the other; a GND in each row), on the
+`front_end_misc` sheet, placed right of CON1 just outside the In2 +5V island (pin 1 at
+144.0, 84.0 mm), with pin names on the silkscreen. AUX_IO0–4 are the five spare bank-13 pins on
+CON1 (VCCO 3.3 V → LVCMOS33); each also runs to one spare inter-board pin on J2.
+
+| J5 pin | Net | CON1 pin | FPGA pin | Ball | J2 pin |
+|---|---|---|---|---|---|
+| 1 | +3V3_ETH | — | — | — | — |
+| 2, 7 | GND | — | — | — | — |
+| 3 | AUX_IO0 | 16 | B13_L4_P | AA15 | 42 |
+| 4 | AUX_IO1 | 18 | B13_L4_N | AB15 | 44 |
+| 5 | AUX_IO2 | 22 | B13_L1_P | Y16 | 46 |
+| 6 | AUX_IO3 | 23 | B13_L5_N | AA14 | 47 |
+| 8 | AUX_IO4 | 27 | B13_L7_N | AB12 | 48 |
+
+- The 3V3 pin is the PHY's +3V3_ETH rail (front_end has no other 3.3 V rail; the AC7200 exports
+  none), so a load on the header shares U6 with the DP83867. Keep it to light loads.
+- AUX_IO3 is the N side of TCXO_CLK's pair (B13_L5) and AUX_IO4 the N side of PDM_CLK's pair
+  (B13_L7): use them as inputs or slow outputs so they don't couple into the clocks.
+- No series resistors or ESD protection; the pins go straight to the FPGA.
+- The FPGA constraints aren't in `single_fpga_top.xdc` yet; add a port per pin with
+  `IOSTANDARD LVCMOS33` when the RTL uses them.
+
 ## Inter-board Connector
 
 | Side | Board | Part |
@@ -512,7 +549,8 @@ three drive nets come from free bank-13 (3.3 V) pins on CON1:
 
 Carries all 48 DATA_nn nets plus +3V6 (pins 1–8), GND (16 pins, plus pin 43), and the two
 clocks: TCXO_CLK (pin 41, mic_array → FPGA) and PDM_CLK (pin 45, FPGA → mic_array) — see
-"PDM Clock Distribution" above. Pins 42 and 44–48 are unused.
+"PDM Clock Distribution" above. Pins 42, 44, 46, 47 and 48 carry AUX_IO0–4 from the front_end bring-up
+header (see "Bring-up Header"); on mic_array and mic_test the matching J1 pins are still unconnected.
 
 ---
 
