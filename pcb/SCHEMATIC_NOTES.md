@@ -537,8 +537,8 @@ CON1 (VCCO 3.3 V → LVCMOS33); each also runs to one spare inter-board pin on J
 - AUX_IO3 is the N side of TCXO_CLK's pair (B13_L5) and AUX_IO4 the N side of PDM_CLK's pair
   (B13_L7): use them as inputs or slow outputs so they don't couple into the clocks.
 - No series resistors or ESD protection; the pins go straight to the FPGA.
-- The FPGA constraints aren't in `single_fpga_top.xdc` yet; add a port per pin with
-  `IOSTANDARD LVCMOS33` when the RTL uses them.
+- FPGA: `single_fpga_top.v` port `AUX_IO[4:0]` (inout, left high-Z for now), constrained in
+  `fpga/single_fpga/xdc/single_fpga_top.xdc` as LVCMOS33, DRIVE 4, SLEW SLOW, PULLDOWN.
 
 ## Inter-board Connector
 

@@ -61,6 +61,23 @@ set_property -dict {PACKAGE_PIN Y14  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW} [get
 # timing requirement to meet. Exclude them from timing analysis.
 set_false_path -to [get_ports {LED_R LED_G LED_B}]
 
+# Spare I/O on the front_end bring-up header J5, each also on a spare inter-board pin
+# to mic_array (pcb/SCHEMATIC_NOTES.md "Bring-up Header"). Five otherwise-unused
+# bank-13 pins on CON1; ball numbers from the AC7200 user manual's CON1 table:
+#   AUX_IO[0]  CON1 pin 16  B13_L4_P  AA15  J5 pin 3  J2 pin 42
+#   AUX_IO[1]  CON1 pin 18  B13_L4_N  AB15  J5 pin 4  J2 pin 44
+#   AUX_IO[2]  CON1 pin 22  B13_L1_P  Y16   J5 pin 5  J2 pin 46
+#   AUX_IO[3]  CON1 pin 23  B13_L5_N  AA14  J5 pin 6  J2 pin 47
+#   AUX_IO[4]  CON1 pin 27  B13_L7_N  AB12  J5 pin 8  J2 pin 48
+# single_fpga_top.v leaves them high-Z for now; PULLDOWN keeps the header pins at a
+# defined level. AUX_IO[3]/[4] are the N sides of TCXO_CLK's and PDM_CLK's pairs, so
+# if they're ever driven, keep the minimum drive and slow slew set here.
+set_property -dict {PACKAGE_PIN AA15 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW PULLDOWN TRUE} [get_ports {AUX_IO[0]}]
+set_property -dict {PACKAGE_PIN AB15 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW PULLDOWN TRUE} [get_ports {AUX_IO[1]}]
+set_property -dict {PACKAGE_PIN Y16  IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW PULLDOWN TRUE} [get_ports {AUX_IO[2]}]
+set_property -dict {PACKAGE_PIN AA14 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW PULLDOWN TRUE} [get_ports {AUX_IO[3]}]
+set_property -dict {PACKAGE_PIN AB12 IOSTANDARD LVCMOS33 DRIVE 4 SLEW SLOW PULLDOWN TRUE} [get_ports {AUX_IO[4]}]
+
 # Mic data lines DATA_00..DATA_47 (front_end CON3, VCCO 3.3V), one bit per
 # net: DATA[n] = DATA_nn. Each line carries two IM72D128 mics, L on the falling PDM_CLK
 # edge and R on the rising (pcb/SCHEMATIC_NOTES.md "Data Line Assignment"). CON3 pin,

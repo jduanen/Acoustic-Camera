@@ -5,6 +5,7 @@
 //   TCXO_CLK   in   12.288 MHz from mic_array Y1 (CON1.21, ball Y13)
 //   PDM_CLK    out  3.072 MHz mic clock, TCXO/4, 50 % duty (CON1.25, AB11)
 //   LED_R/G/B  out  status LED, active high (CON1.32-34, W14/AB13/Y14)
+//   AUX_IO[4:0] io  bring-up header J5 / spare J2 pins (CON1.16/18/22/23/27); high-Z for now
 //   DATA[47:0] in   mic data lines, DATA[n] = net DATA_nn (CON3, banks 15/16)
 //   SYS_CLK_P/N in  AC7200's own 200 MHz oscillator (R4/T4, bank 34, 1.5 V)
 //   RGMII_*         to the DP83867 (front_end U3): TX in bank 16, RX in bank 15
@@ -76,6 +77,7 @@ module single_fpga_top #(
     output wire        LED_G,
     output wire        LED_B,
     input  wire [47:0] DATA,
+    inout  wire [4:0]  AUX_IO,
 
     input  wire        SYS_CLK_P,
     input  wire        SYS_CLK_N,
@@ -96,6 +98,8 @@ module single_fpga_top #(
     always @(posedge clk)
         pdm_div <= pdm_div + 2'd1;
     assign PDM_CLK = pdm_div[1];
+
+    assign AUX_IO = 5'bz;              // unused spare I/O (XDC pulls them down)
 
     reg pipe_ce = 1'b0;                 // high for the cycle before pdm_div 2->3
     always @(posedge clk)
